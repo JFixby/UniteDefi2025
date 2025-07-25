@@ -3,7 +3,6 @@ __pycache__/
 venv/
 trading_positions.db
 
-
 .idea/
 venv/
 .venv/
