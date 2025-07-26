@@ -1,13 +1,15 @@
 from web3 import Web3
 import json
+import time
+import random
 
 import SECRETS
 from oinch.get_quote import get_quote
+from tokens import get_symbol_from_address, get_address_from_symbol
 
-MATIC_TOKEN = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"  # Native MATIC (1inch convention)
-WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"  # Wrapped ETH on Polygon
-BNL_TOKEN = "0x24d84aB1fd4159920084deB1D1B8F129AfF97505"
-USDC_TOKEN = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC on Polygon
+# Use token addresses from tokens.py
+BNL_TOKEN = get_address_from_symbol("BNL")
+USDC_TOKEN = get_address_from_symbol("USDC")
 
 
 def format_token_amount(amount_wei, decimals):
@@ -56,32 +58,76 @@ def print_quote_results(quote, from_token_address, to_token_address, input_amoun
         for step in hop:
             for protocol in step:
                 print(f"     {protocol['name']} ({protocol['part']}%)")
-                print(f"     {protocol['fromTokenAddress']} → {protocol['toTokenAddress']}")
+                # Find token symbols for better readability using token mapping
+                from_symbol = get_symbol_from_address(protocol['fromTokenAddress'])
+                to_symbol = get_symbol_from_address(protocol['toTokenAddress'])
+                
+                # If symbol is "Unknown", show shortened address
+                if from_symbol == "Unknown":
+                    from_symbol = protocol['fromTokenAddress'][:8] + "..." if len(protocol['fromTokenAddress']) > 10 else protocol['fromTokenAddress']
+                if to_symbol == "Unknown":
+                    to_symbol = protocol['toTokenAddress'][:8] + "..." if len(protocol['toTokenAddress']) > 10 else protocol['toTokenAddress']
+                
+                print(f"     {from_symbol} → {to_symbol}")
+                
+                # Add helpful comment for intermediate tokens
+                if (protocol['fromTokenAddress'].lower() != from_token['address'].lower() and 
+                    protocol['toTokenAddress'].lower() != to_token['address'].lower()):
+                    print(f"     (intermediate token)")
     
     print("\n" + "=" * 60)
+
+
+def get_quote_with_retry(from_token, to_token, amount, api_key, max_retries=5):
+    """Get quote with automatic retry on failure"""
+    for attempt in range(max_retries):
+        try:
+            print(f"🔍 Attempt {attempt + 1}/{max_retries}: Getting quote from 1inch Swap API v5.2...")
+            quote = get_quote(from_token, to_token, amount, api_key)
+            
+            if quote is not None:
+                print(f"✅ Quote received successfully on attempt {attempt + 1}")
+                return quote
+            else:
+                print(f"❌ Attempt {attempt + 1} failed - no quote received")
+                
+        except Exception as e:
+            print(f"❌ Attempt {attempt + 1} failed with error: {e}")
+        
+        # If this wasn't the last attempt, wait before retrying
+        if attempt < max_retries - 1:
+            # Exponential backoff with jitter
+            wait_time = (2 ** attempt) + random.uniform(0, 1)
+            print(f"⏳ Waiting {wait_time:.1f} seconds before retry...")
+            time.sleep(wait_time)
+    
+    print(f"❌ All {max_retries} attempts failed")
+    return None
 
 
 if __name__ == "__main__":
     # Test the 1inch Swap API v5.2 Quote service
     # This service provides quotes for token swaps by aggregating liquidity from multiple DEXs
     w3 = Web3()
-    amount = w3.to_wei(1, 'ether')  # 0.1 MATIC in wei
+    amount = w3.to_wei(1, 'ether')  # 1 BNL in wei
 
     from_token = BNL_TOKEN
     to_token = USDC_TOKEN
     
-    print("🔍 Getting quote from 1inch Swap API v5.2...")
-    
-    # Get a quote for swapping BNL to USDC using 1inch Swap API
-    quote = get_quote(from_token, to_token, amount, SECRETS.YOUR_1INCH_API_KEY)
+    # Get a quote for swapping BNL to USDC using 1inch Swap API with retry logic
+    quote = get_quote_with_retry(from_token, to_token, amount, SECRETS.YOUR_1INCH_API_KEY)
     
     # Check if quote was successful
     if quote is None:
-        print("❌ Failed to get quote from 1inch API")
+        print("❌ Failed to get quote from 1inch API after all retries")
         print("   Please check your API key and network connection")
         exit(1)
     
     # Print results in human readable format
+    # Also print raw JSON for debugging (optional)
+    print("\n📄 Raw JSON Response:")
+    print(json.dumps(quote, indent=2))
+
     print_quote_results(quote, from_token, to_token, amount)
     
 
