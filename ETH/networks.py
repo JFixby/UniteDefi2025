@@ -29,6 +29,7 @@ def infra_rpc(network):
 # Common chain IDs for reference
 CHAIN_IDS = {
     'ethereum': 1,
+    'mainnet': 1,  # Alias for ethereum mainnet
     'polygon': 137,
     'bsc': 56,
     'arbitrum': 42161,
