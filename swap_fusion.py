@@ -11,7 +11,7 @@ from tokens import get_address_from_symbol
 PRIVATE_KEY = SECRETS.WALLET_SEED
 API_KEY = SECRETS.YOUR_1INCH_API_KEY
 FUSION_API_URL = 'https://api.1inch.dev/fusion'
-NETWORK_ID = '137'  # Polygon chain ID
+NETWORK_ID = '1'  # Ethereum mainnet chain ID
 
 # --- Setup ---
 # Get the correct RPC URL for the network
@@ -27,16 +27,24 @@ HEADERS = {
 
 # --- Step 1: Get a quote ---
 params = {
-    'fromTokenAddress': get_address_from_symbol('BNL'),
+    'fromTokenAddress': get_address_from_symbol('MATIC'),  # Will update to ETH below
     'toTokenAddress': get_address_from_symbol('USDC'),
-    'amount': str(1 * 10**18),  # 1 BNL (18 decimals)
+    'amount': str(1 * 10**18),  # 1 ETH (18 decimals)
     'walletAddress': wallet_address,
     'network': NETWORK_ID,
     'source': 'sdk-test'
 }
+# 1inch convention for native ETH is 0xeeee... on Ethereum
+params['fromTokenAddress'] = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
 quote_resp = requests.get(f"{FUSION_API_URL}/quote", headers=HEADERS, params=params)
-quote = quote_resp.json()
-print("Quote:", json.dumps(quote, indent=2))
+print(f"Status code: {quote_resp.status_code}")
+print(f"Raw response: {quote_resp.text}")
+try:
+    quote = quote_resp.json()
+    print("Quote:", json.dumps(quote, indent=2))
+except Exception as e:
+    print(f"Failed to parse JSON: {e}")
+    quote = None
 
 # --- Step 2: Print auction amounts ---
 if 'presets' in quote and 'recommendedPreset' in quote:
