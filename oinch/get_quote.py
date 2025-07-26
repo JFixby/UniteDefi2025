@@ -1,14 +1,17 @@
 import requests
+import sys
+import os
 
-# Polygon chain ID
-CHAIN_ID = 137
+# Add the ETH directory to the path so we can import from it
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'ETH'))
+
+from networks import CHAIN_IDS
+
 # 1inch Swap API v5.2 - Quote endpoint
 # This service provides quotes for token swaps across multiple DEXs
-API_URL = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID}/quote"
+BASE_API_URL = "https://api.1inch.dev/swap/v5.2"
 
-# Token addresses on Polygon
-
-def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_key):
+def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_key, network='polygon'):
     """
     Get a quote for swapping tokens using the 1inch Swap API v5.2.
     
@@ -21,6 +24,9 @@ def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_ke
         to_token_address (str): The address of the token to swap to
         amount_wei (int): The amount to swap in wei
         the_1inch_api_key (str): The 1inch API key for authentication
+        network (str): The network to use (default: 'polygon'). Can be a network name or chain ID.
+                      Supported networks: ethereum, polygon, bsc, arbitrum, optimism, etc.
+                      You can also pass a chain ID directly as a string or integer.
     
     Returns:
         dict: The quote response from the 1inch Swap API, or None if there's an error
@@ -30,6 +36,24 @@ def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_ke
         - protocols: Routing information showing which DEXs will be used
         - gas: Estimated gas cost for the swap
     """
+    # Determine chain ID
+    if isinstance(network, int):
+        chain_id = network
+    elif isinstance(network, str):
+        if network.isdigit():
+            chain_id = int(network)
+        else:
+            chain_id = CHAIN_IDS.get(network.lower())
+            if chain_id is None:
+                print(f"Error: Unsupported network '{network}'. Supported networks: {', '.join(CHAIN_IDS.keys())}")
+                return None
+    else:
+        print(f"Error: Invalid network parameter. Expected string or integer, got {type(network)}")
+        return None
+    
+    # Build API URL with chain ID
+    api_url = f"{BASE_API_URL}/{chain_id}/quote"
+    
     headers = {
         'Authorization': f'Bearer {the_1inch_api_key}',
         'Accept': 'application/json'
@@ -45,7 +69,7 @@ def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_ke
     }
     
     try:
-        response = requests.get(API_URL, headers=headers, params=params)
+        response = requests.get(api_url, headers=headers, params=params)
         response.raise_for_status()  # Raise an exception for bad status codes
         return response.json()
     except requests.exceptions.RequestException as e:
