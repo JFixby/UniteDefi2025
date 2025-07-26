@@ -7,8 +7,6 @@ CHAIN_ID = 137
 API_URL = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID}/quote"
 
 # Token addresses on Polygon
-MATIC_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"  # Native MATIC (1inch convention)
-WETH_ADDRESS = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"  # Wrapped ETH on Polygon
 
 def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_key):
     """
