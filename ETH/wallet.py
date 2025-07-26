@@ -22,7 +22,7 @@ def wallet(key=seed.WALLET_SEED):
 def get_balance(address):
     balance_wei = w3.eth.get_balance(address)
     balance_matic = w3.from_wei(balance_wei, 'ether')
-    return balance_matic
+    return float(balance_matic)
 
 
 def get_erc20_poly_balance(address, token_contract):
