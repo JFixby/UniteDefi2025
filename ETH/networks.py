@@ -1,4 +1,4 @@
-from ETH.seed import YOUR_INFURA_PROJECT_ID
+from SECRETS import YOUR_INFURA_PROJECT_ID
 
 NETWORK = "polygon"  # "sepolia"
 

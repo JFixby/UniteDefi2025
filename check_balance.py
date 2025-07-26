@@ -1,5 +1,5 @@
-import ETH.seed
+import SECRETS
 from ETH.wallet import check_balance
 
-key = ETH.seed.WALLET_SEED
+key = SECRETS.WALLET_SEED
 check_balance(key)

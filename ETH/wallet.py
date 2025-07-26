@@ -3,16 +3,15 @@ import json
 import requests
 from web3 import Web3
 
-from ETH import seed
+import SECRETS
 from ETH.networks import infra_rpc, NETWORK
-from ETH.seed import POLYGONSCAN_API_KEY
 
 indra_url = infra_rpc(NETWORK)
 # ✅ Connect to Polygon Network
 w3 = Web3(Web3.HTTPProvider(indra_url))
 
 
-def wallet(key=seed.WALLET_SEED):
+def wallet(key=SECRETS.WALLET_SEED):
     account = w3.eth.account.from_key(key)
     wallet_address = account.address
     print(f"Connected to wallet: {wallet_address}")
@@ -30,7 +29,7 @@ def get_erc20_poly_balance(address, token_contract):
     url = (f"https://api.polygonscan.com/api?module=account&action=tokenbalance"
            f"&contractAddress={caddress}"
            f"&address={address}"
-           f"&tag=latest&apikey={POLYGONSCAN_API_KEY}")
+           f"&tag=latest&apikey={SECRETS.POLYGONSCAN_API_KEY}")
     
     try:
         response = requests.get(url)
