@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "ts-node src/eth-to-usdt-swap.ts",
+    "build": "tsc",
+    "dev": "ts-node --watch src/eth-to-usdt-swap.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,6 +16,7 @@
   "dependencies": {
     "@1inch/fusion-sdk": "^2.3.5",
     "@types/node": "^24.1.0",
+    "dotenv": "^17.2.1",
     "ethers": "^6.15.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
