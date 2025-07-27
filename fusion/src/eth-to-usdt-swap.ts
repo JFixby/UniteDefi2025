@@ -9,11 +9,12 @@ import {
 import { computeAddress, formatUnits, JsonRpcProvider } from "ethers";
 import { spawn } from 'child_process';
 import { promisify } from 'util';
+import * as path from 'path';
 
 // Function to read secrets from SECRETS.py
 async function readSecretsFromPython(): Promise<Record<string, string>> {
     return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python3', ['read_secrets.py'], { cwd: __dirname });
+        const pythonProcess = spawn('python3', ['read_secrets.py'], { cwd: path.join(__dirname, '..') });
         let output = '';
         let error = '';
 
@@ -66,7 +67,7 @@ async function main() {
         secrets = await readSecretsFromPython();
         
         // Update configuration with secrets from SECRETS.py
-        if (secrets.PRIVATE_KEY) PRIVATE_KEY = secrets.PRIVATE_KEY;
+        if (secrets.PRIVATE_KEY) PRIVATE_KEY = secrets.PRIVATE_KEY.startsWith('0x') ? secrets.PRIVATE_KEY : `0x${secrets.PRIVATE_KEY}`;
         if (secrets.NODE_URL) NODE_URL = secrets.NODE_URL;
         if (secrets.DEV_PORTAL_API_TOKEN) DEV_PORTAL_API_TOKEN = secrets.DEV_PORTAL_API_TOKEN;
         
@@ -128,7 +129,7 @@ async function main() {
 
         // Prepare swap parameters
         const params = {
-            fromTokenAddress: ETH_ADDRESS, // ETH
+            fromTokenAddress: WETH_ADDRESS, // WETH
             toTokenAddress: USDT_ADDRESS,  // USDT
             amount: SWAP_AMOUNT,
             walletAddress: walletAddress,
