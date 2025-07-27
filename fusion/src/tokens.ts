@@ -18,6 +18,7 @@ export const TOKEN_ADDRESSES = {
     
     // Polygon Mainnet
     [NetworkEnum.POLYGON]: {
+        MATIC: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // Native token
         WMATIC: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
         USDT: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
         USDC: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',

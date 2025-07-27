@@ -1,74 +1,26 @@
 import 'dotenv/config';
-import { spawn } from 'child_process';
-import * as path from 'path';
-import {
+import { 
     createFusionSDK,
     executeSwap,
     getWalletAddress,
     validateConfig,
     parseTokenAmount,
-    formatTokenAmount
+    readSecretsFromPython,
+    getEthInfo
 } from './helpers.js';
 import { NetworkEnum } from "@1inch/fusion-sdk";
-
-// Function to read secrets from SECRETS.py
-async function readSecretsFromPython(): Promise<Record<string, string>> {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python3', ['read_secrets.py'], { cwd: path.join(__dirname, '..') });
-        let output = '';
-        let error = '';
-
-        pythonProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            error += data.toString();
-        });
-
-        pythonProcess.on('close', (code) => {
-            if (code === 0) {
-                const secrets: Record<string, string> = {};
-                output.trim().split('\n').forEach(line => {
-                    const [key, value] = line.split('=', 2);
-                    if (key && value) {
-                        secrets[key] = value;
-                    }
-                });
-                resolve(secrets);
-            } else {
-                reject(new Error(`Python script failed: ${error}`));
-            }
-        });
-    });
-}
-
-// Function to get ETH balance and estimate gas fees
-async function getEthInfo(sdk: any, walletAddress: string) {
-    try {
-        // This would require additional implementation to get actual gas estimates
-        // For now, we'll use a rough estimate
-        const estimatedGasPrice = 20; // gwei
-        const estimatedGasLimit = 200000; // typical swap gas limit
-        const estimatedFee = (estimatedGasPrice * estimatedGasLimit) / 1e9; // Convert to ETH
-        
-        return {
-            estimatedGasPrice,
-            estimatedGasLimit,
-            estimatedFee
-        };
-    } catch (error) {
-        console.log('⚠️ Could not estimate gas fees:', error);
-        return {
-            estimatedGasPrice: 20,
-            estimatedGasLimit: 200000,
-            estimatedFee: 0.004 // Default estimate
-        };
-    }
-}
+import { 
+    getTokenAddress, 
+    getTokenDecimals,
+    isValidAddress,
+    getSupportedNetworks, 
+    getNetworkInfo,
+    isTokenSupported,
+    getSupportedTokens 
+} from './tokens.js';
 
 // Main fusion swap function
-async function fusion_swap(
+async function fusionSwap(
     fromToken: string,
     toToken: string,
     amount: string,
@@ -78,7 +30,17 @@ async function fusion_swap(
     console.log(`💰 Amount: ${amount} ${fromToken}`);
     console.log(`🌐 Network: ${network === NetworkEnum.ETHEREUM ? 'Ethereum Mainnet' : 
                                network === NetworkEnum.POLYGON ? 'Polygon' : 
-                               network === NetworkEnum.ETHEREUM_TESTNET ? 'Ethereum Testnet' : 'Unknown'}`);
+                               network === NetworkEnum.BINANCE ? 'Binance Smart Chain' :
+                               network === NetworkEnum.ARBITRUM ? 'Arbitrum' :
+                               network === NetworkEnum.AVALANCHE ? 'Avalanche' :
+                               network === NetworkEnum.OPTIMISM ? 'Optimism' :
+                               network === NetworkEnum.FANTOM ? 'Fantom' :
+                               network === NetworkEnum.GNOSIS ? 'Gnosis' :
+                               network === NetworkEnum.COINBASE ? 'Coinbase' :
+                               network === NetworkEnum.LINEA ? 'Linea' :
+                               network === NetworkEnum.ZKSYNC ? 'zkSync' :
+                               network === NetworkEnum.SONIC ? 'Sonic' :
+                               network === NetworkEnum.UNICHAIN ? 'Unichain' : 'Unknown'}`);
     
     // Load secrets
     let secrets: Record<string, string> = {};
@@ -157,7 +119,7 @@ async function fusion_swap(
         console.error(`❌ Error during ${fromToken} → ${toToken} swap:`, error);
         return {
             success: false,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             fromToken,
             toToken,
             amount
@@ -165,58 +127,209 @@ async function fusion_swap(
     }
 }
 
-// Main function to run both swaps
-async function main() {
-    console.log('🚀 Starting Fusion Swap Tests');
+// Configuration for test swaps
+const TEST_CONFIG = {
+    defaultAmount: '1.44',
+    defaultNetwork: NetworkEnum.POLYGON,
+    testPairs: [
+        { from: 'USDT', to: 'USDC' },
+        { from: 'USDC', to: 'USDT' }
+    ],
+    delayBetweenSwaps: 5000 // 5 seconds
+};
+
+// Function to validate test configuration
+function validateTestConfig() {
+    console.log('🔍 Validating test configuration...');
+    
+    const network = TEST_CONFIG.defaultNetwork;
+    const networkInfo = getNetworkInfo(network);
+    console.log(`✅ Network: ${networkInfo.name} (Chain ID: ${networkInfo.chainId})`);
+    
+    // Validate test pairs
+    TEST_CONFIG.testPairs.forEach((pair, index) => {
+        if (!isTokenSupported(pair.from, network)) {
+            throw new Error(`Token ${pair.from} not supported on ${networkInfo.name}`);
+        }
+        if (!isTokenSupported(pair.to, network)) {
+            throw new Error(`Token ${pair.to} not supported on ${networkInfo.name}`);
+        }
+        console.log(`✅ Test ${index + 1}: ${pair.from} → ${pair.to}`);
+    });
+    
+    console.log('✅ All test pairs validated successfully');
+}
+
+// Function to display network information
+function displayNetworkInfo(network: NetworkEnum) {
+    const networkInfo = getNetworkInfo(network);
+    const supportedTokens = getSupportedTokens(network);
+    
+    console.log(`\n🌐 Network Information:`);
+    console.log(`   Name: ${networkInfo.name}`);
+    console.log(`   Chain ID: ${networkInfo.chainId}`);
+    console.log(`   Supported Tokens: ${supportedTokens.length}`);
+    console.log(`   Tokens: ${supportedTokens.slice(0, 5).join(', ')}${supportedTokens.length > 5 ? '...' : ''}`);
+}
+
+// Function to run a single test swap
+async function runTestSwap(
+    fromToken: string, 
+    toToken: string, 
+    amount: string, 
+    network: NetworkEnum,
+    testNumber: number
+) {
+    console.log(`\n📊 Test ${testNumber}: ${fromToken} → ${toToken}`);
     console.log('=====================================');
     
-    const results = [];
+    try {
+        const result = await fusionSwap(fromToken, toToken, amount, network);
+        return { ...result, testNumber };
+    } catch (error) {
+        console.error(`❌ Test ${testNumber} failed:`, error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+            fromToken,
+            toToken,
+            amount,
+            testNumber
+        };
+    }
+}
+
+// Function to generate comprehensive report
+function generateReport(results: any[], network: NetworkEnum) {
+    const networkInfo = getNetworkInfo(network);
     
-    // Test 1: USDT to USDC
-    console.log('\n📊 Test 1: USDT → USDC');
+    console.log('\n📋 Comprehensive Test Report');
     console.log('=====================================');
-    const result1 = await fusion_swap('USDT', 'USDC', '1.44', NetworkEnum.ETHEREUM);
-    results.push(result1);
+    console.log(`🌐 Network: ${networkInfo.name}`);
+    console.log(`📅 Test Date: ${new Date().toISOString()}`);
+    console.log(`🔢 Total Tests: ${results.length}`);
     
-    // Wait a bit between swaps
-    console.log('\n⏳ Waiting 5 seconds before next swap...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // Success statistics
+    const successfulTests = results.filter(r => r.success);
+    const failedTests = results.filter(r => !r.success);
+    const successRate = (successfulTests.length / results.length) * 100;
     
-    // Test 2: USDC to USDT
-    console.log('\n📊 Test 2: USDC → USDT');
-    console.log('=====================================');
-    const result2 = await fusion_swap('USDC', 'USDT', '1.44', NetworkEnum.ETHEREUM);
-    results.push(result2);
+    console.log(`\n📊 Success Statistics:`);
+    console.log(`   ✅ Successful: ${successfulTests.length}`);
+    console.log(`   ❌ Failed: ${failedTests.length}`);
+    console.log(`   📈 Success Rate: ${successRate.toFixed(1)}%`);
     
-    // Summary
-    console.log('\n📋 Summary Report');
-    console.log('=====================================');
-    
-    results.forEach((result, index) => {
-        console.log(`\nTest ${index + 1}: ${result.fromToken} → ${result.toToken}`);
+    // Detailed results
+    console.log(`\n📋 Detailed Results:`);
+    results.forEach((result) => {
+        console.log(`\nTest ${result.testNumber}: ${result.fromToken} → ${result.toToken}`);
         if (result.success) {
-            console.log(`✅ Status: Success`);
-            console.log(`📋 Order Hash: ${result.orderHash}`);
-            console.log(`⏱️ Execution Time: ${result.executionTime}s`);
-            console.log(`⏱️ Total Time: ${result.totalTime}s`);
-            console.log(`⛽ Estimated ETH Fee: ${result.estimatedEthFee} ETH`);
+            console.log(`   ✅ Status: Success`);
+            console.log(`   📋 Order Hash: ${result.orderHash}`);
+            console.log(`   ⏱️ Execution Time: ${result.executionTime}s`);
+            console.log(`   ⏱️ Total Time: ${result.totalTime}s`);
+            console.log(`   ⛽ Estimated ETH Fee: ${result.estimatedEthFee} ETH`);
         } else {
-            console.log(`❌ Status: Failed`);
-            console.log(`❌ Error: ${result.error}`);
+            console.log(`   ❌ Status: Failed`);
+            console.log(`   ❌ Error: ${result.error}`);
         }
     });
     
-    // Calculate total ETH fees
-    const totalEthFees = results
-        .filter(r => r.success)
-        .reduce((sum, r) => sum + (r.estimatedEthFee || 0), 0);
+    // Cost analysis
+    const totalEthFees = successfulTests.reduce((sum, r) => sum + (r.estimatedEthFee || 0), 0);
+    const avgExecutionTime = successfulTests.length > 0 
+        ? successfulTests.reduce((sum, r) => sum + r.executionTime, 0) / successfulTests.length 
+        : 0;
     
-    console.log(`\n💰 Total Estimated ETH Fees: ${totalEthFees} ETH`);
+    console.log(`\n💰 Cost Analysis:`);
+    console.log(`   💸 Total Estimated ETH Fees: ${totalEthFees.toFixed(6)} ETH`);
+    console.log(`   ⏱️ Average Execution Time: ${avgExecutionTime.toFixed(2)}s`);
     
-    // Success rate
-    const successCount = results.filter(r => r.success).length;
-    const successRate = (successCount / results.length) * 100;
-    console.log(`📊 Success Rate: ${successCount}/${results.length} (${successRate.toFixed(1)}%)`);
+    // Performance insights
+    if (successfulTests.length > 0) {
+        const fastestTest = successfulTests.reduce((fastest, current) => 
+            current.executionTime < fastest.executionTime ? current : fastest
+        );
+        const slowestTest = successfulTests.reduce((slowest, current) => 
+            current.executionTime > slowest.executionTime ? current : slowest
+        );
+        
+        console.log(`\n⚡ Performance Insights:`);
+        console.log(`   🏃 Fastest: Test ${fastestTest.testNumber} (${fastestTest.executionTime}s)`);
+        console.log(`   🐌 Slowest: Test ${slowestTest.testNumber} (${slowestTest.executionTime}s)`);
+    }
+    
+    return {
+        network: networkInfo.name,
+        totalTests: results.length,
+        successfulTests: successfulTests.length,
+        failedTests: failedTests.length,
+        successRate,
+        totalEthFees,
+        avgExecutionTime
+    };
+}
+
+// Main function to run comprehensive fusion swap tests
+async function main() {
+    console.log('🚀 Starting Comprehensive Fusion Swap Tests');
+    console.log('=====================================');
+    
+    try {
+        // Validate configuration
+        validateTestConfig();
+        
+        // Display network information
+        displayNetworkInfo(TEST_CONFIG.defaultNetwork);
+        
+        const results = [];
+        
+        // Run all test swaps
+        for (let i = 0; i < TEST_CONFIG.testPairs.length; i++) {
+            const pair = TEST_CONFIG.testPairs[i];
+            const result = await runTestSwap(
+                pair.from, 
+                pair.to, 
+                TEST_CONFIG.defaultAmount, 
+                TEST_CONFIG.defaultNetwork,
+                i + 1
+            );
+            results.push(result);
+            
+            // If this swap failed, stop execution since subsequent swaps depend on it
+            if (!result.success) {
+                console.log(`\n❌ Test ${i + 1} failed. Stopping execution since subsequent swaps depend on this one.`);
+                break;
+            }
+            
+            // Wait between swaps (except for the last one)
+            if (i < TEST_CONFIG.testPairs.length - 1) {
+                console.log(`\n⏳ Waiting ${TEST_CONFIG.delayBetweenSwaps / 1000} seconds before next swap...`);
+                await new Promise(resolve => setTimeout(resolve, TEST_CONFIG.delayBetweenSwaps));
+            }
+        }
+        
+        // Generate comprehensive report
+        const report = generateReport(results, TEST_CONFIG.defaultNetwork);
+        
+        // Final summary
+        console.log('\n🎯 Final Summary');
+        console.log('=====================================');
+        console.log(`✅ Tests completed on ${report.network}`);
+        console.log(`📊 Success Rate: ${report.successRate.toFixed(1)}%`);
+        console.log(`💰 Total Estimated Cost: ${report.totalEthFees.toFixed(6)} ETH`);
+        console.log(`⏱️ Average Performance: ${report.avgExecutionTime.toFixed(2)}s`);
+        
+        if (report.successRate === 100) {
+            console.log('🎉 All tests passed successfully!');
+        } else {
+            console.log(`⚠️ ${report.failedTests} test(s) failed. Check the detailed report above.`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Test suite failed:', error);
+        process.exit(1);
+    }
 }
 
 // Handle unhandled promise rejections
@@ -225,5 +338,5 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
-// Run the tests
+// Run the comprehensive tests
 main().catch(console.error); 
