@@ -1,6 +1,6 @@
 import { NetworkEnum } from "@1inch/fusion-sdk";
 
-// Token addresses for different networks
+// Token addresses for different networks (most common 10 tokens per network)
 export const TOKEN_ADDRESSES = {
     // Ethereum Mainnet
     [NetworkEnum.ETHEREUM]: {
@@ -12,57 +12,8 @@ export const TOKEN_ADDRESSES = {
         LINK: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
         UNI: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
         AAVE: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9',
-        CRV: '0xD533a949740bb3306d119CC777fa900bA034cd52',
-        COMP: '0xc00e94Cb662C3520282E6f5717214004A7f26888',
-        MKR: '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2',
-        YFI: '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad9eC',
-        SNX: '0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F',
-        SUSHI: '0x6B3595068778DD592e39A122f4f5a5cF09C90fE2',
-        BAL: '0xba100000625a3754423978a60c9317c58a424e3D',
-        REN: '0x408e41876cCcDC0F92210600ef50372656052a38',
-        KNC: '0xdd974D5C2e2928deA5F71b9825b8b646686BD200',
-        ZRX: '0xE41d2489571d322189246DaFA5ebDe1F4699F498',
-        REP: '0x1985365e9f78359a9B6AD760e32412f4a445E862',
-        BAT: '0x0D8775F648430679A709E98d2b0Cb6250d2887EF',
-        MANA: '0x0F5D2fB29fb7d3CFeE444a200298f468908cC942',
-        ENJ: '0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c',
-        OMG: '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
-        ZIL: '0x05f4a42e251f2d52b8ed15E9FEdAacFcEF1FAD27',
-        FUN: '0x419D0d8BdD9aF5e606Ae2232ed285Aff190E711b',
-        GNT: '0xa74476443119A942dE498590Fe1f2454d7D4aC0d',
-        CVC: '0x41e5560054824eA6B0732E656E3Ad64e20e94E45',
-        LOOM: '0xA4e8C3Ec456107eA67d3075bF9e3DF3A75823DB0',
-        POLY: '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC',
-        PPT: '0xd4fa1460F537bb9085d22C7bcCB5DD450Ef28e3a',
-        RLC: '0x607F4C5BB672230e8672085532f7e901544a7375',
-        RCN: '0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6',
-        TUSD: '0x0000000000085d4780B73119b644AE5ecd22b376',
-        BUSD: '0x4Fabb145d64652a948d72533023f6E7A623C7C53',
-        SAI: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
-        PAX: '0x8E870D67F660D95d5be530380D0eC0bd388289E1',
-        HUSD: '0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
-        GUSD: '0x056Fd409E1d7a124BD7017459dFEa2F387b6d5Cd',
-        FRAX: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
-        FEI: '0x956F47F50A910163d8BF957Cf5846D573E7f87CA',
-        RAI: '0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919',
-        LUSD: '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
-        alUSD: '0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9',
-        alETH: '0x0100546F2cD4C9D97f798fFA9AeAe7A131D5A6A5',
-        alUSDC: '0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9',
-        alUSDT: '0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9',
-        alWBTC: '0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9',
-        alWETH: '0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9',
-    },
-    
-    // Ethereum Testnet (Goerli)
-    [NetworkEnum.ETHEREUM_TESTNET]: {
-        WETH: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
-        USDT: '0x509Ee0d083DdF8AC028f2a56731412edD63223B9',
-        USDC: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F',
-        DAI: '0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844',
-        LINK: '0x326C977E6efc84E512bB9C30f76E30c160eD06FB',
-        UNI: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
-        WBTC: '0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05',
+        SHIB: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+        PEPE: '0x6982508145454Ce325dDbE47a25d4ec3d2311933',
     },
     
     // Polygon Mainnet
@@ -74,54 +25,9 @@ export const TOKEN_ADDRESSES = {
         WETH: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
         WBTC: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
         LINK: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39',
-        UNI: '0xb33EaAd8d922B1083446DC23f610c2567fB5180f',
         AAVE: '0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
         CRV: '0x172370d5Cd63279eFa6d502DAB29171933a610AF',
-        SUSHI: '0x0b3F868E0BE5597D5DB7fEB59E1CADBb0fdDa50a',
-        BAL: '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3',
-        REN: '0x19782D3Dc4701cEeeDcD90f0993f0A9126ed89d0',
-        KNC: '0x1C954E8fe737F99f68Fa1CCda3e51ebDB291948C',
-        ZRX: '0x5559Edb74751A0edE9DeA4DC23aeE72cCA6b3a97',
-        BAT: '0x3Cef98bb43d732E2F285eE605a8158cDE967D219',
-        MANA: '0xA1c57f48F0Deb89f569dFbE6E2B7f46D33606fD4',
-        ENJ: '0x7eC26842FdBc7dAbC395Df45F475C8844db44548',
-        OMG: '0x62414D03084FbEeDeBac3C213eA7e57D2409B1E9',
-        ZIL: '0x2eC75589856562646aF8F1E3ABAA5182Dd2D1Fdb',
-        FUN: '0x409e41876cCcDC0F92210600ef50372656052a38',
-        GNT: '0xf7F6718Cf69967203740c2437c7c0fD8b2B2c2c2',
-        CVC: '0x66dC5A08091d1968e08C16aA5b27BAC8398b02Be',
-        LOOM: '0x66dC5A08091d1968e08C16aA5b27BAC8398b02Be',
-        POLY: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        PPT: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        RLC: '0xbe662058e00849C3Eef2AC9664f37fEfdF2cdbFE',
-        RCN: '0xbe662058e00849C3Eef2AC9664f37fEfdF2cdbFE',
-        TUSD: '0x2e1AD108fF1D6C782fcBc89eC4b4cD4c2385E365',
-        BUSD: '0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7',
-        SAI: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        PAX: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        HUSD: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        GUSD: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        FRAX: '0x45c32fA6DF82ead1e2EF74d17b76547EDdFaFF89',
-        FEI: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        RAI: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        LUSD: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        alUSD: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        alETH: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        alUSDC: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        alUSDT: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        alWBTC: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-        alWETH: '0x4e78011Ce80ee02d2c3e649Fb657E45898257815',
-    },
-    
-    // Polygon Testnet (Mumbai)
-    [NetworkEnum.POLYGON_TESTNET]: {
-        WMATIC: '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889',
-        USDT: '0xA02f6adc7926efeBBd59Fd43A84f4E0c0c91e832',
-        USDC: '0xe6b8a5CF854791412c1f6EFC7CAf629f5Df1c747',
-        DAI: '0x001B3B88dD26b6a6D1Fd6E2eBcE60C80C2A698F5f',
-        WETH: '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa',
-        LINK: '0x326C977E6efc84E512bB9C30f76E30c160eD06FB',
-        UNI: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+        QUICK: '0xB5C064F955D8e7F38fE0460C556a72987494eE17',
     },
     
     // Binance Smart Chain (BSC)
@@ -133,12 +39,8 @@ export const TOKEN_ADDRESSES = {
         WETH: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
         WBTC: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
         LINK: '0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD',
-        UNI: '0xBf5140A22578168FD562DCcF235E5D43A02ce9B1',
         AAVE: '0xfb6115445Bff7b52FeB98650C87f44907E58f802',
         CAKE: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82',
-        BUSD: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
-        TUSD: '0x14016E85a25aeb13065688cAFB43044C2ef86784',
-        FRAX: '0x90C97F71E18723b0Cf0dfa30ee176Ab653E89F40',
         BUSD: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
     },
     
@@ -154,39 +56,6 @@ export const TOKEN_ADDRESSES = {
         AAVE: '0xba5DdD1F9d7F570dc94a51479a000E3bE9670B08',
         CRV: '0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978',
         SUSHI: '0xd4d42F0b6DEF4CE0383636770eF773390d85c61A',
-        BAL: '0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8',
-        REN: '0x4200000000000000000000000000000000000006',
-        KNC: '0x4200000000000000000000000000000000000006',
-        ZRX: '0x4200000000000000000000000000000000000006',
-        BAT: '0x4200000000000000000000000000000000000006',
-        MANA: '0x4200000000000000000000000000000000000006',
-        ENJ: '0x4200000000000000000000000000000000000006',
-        OMG: '0x4200000000000000000000000000000000000006',
-        ZIL: '0x4200000000000000000000000000000000000006',
-        FUN: '0x4200000000000000000000000000000000000006',
-        GNT: '0x4200000000000000000000000000000000000006',
-        CVC: '0x4200000000000000000000000000000000000006',
-        LOOM: '0x4200000000000000000000000000000000000006',
-        POLY: '0x4200000000000000000000000000000000000006',
-        PPT: '0x4200000000000000000000000000000000000006',
-        RLC: '0x4200000000000000000000000000000000000006',
-        RCN: '0x4200000000000000000000000000000000000006',
-        TUSD: '0x4200000000000000000000000000000000000006',
-        BUSD: '0x4200000000000000000000000000000000000006',
-        SAI: '0x4200000000000000000000000000000000000006',
-        PAX: '0x4200000000000000000000000000000000000006',
-        HUSD: '0x4200000000000000000000000000000000000006',
-        GUSD: '0x4200000000000000000000000000000000000006',
-        FRAX: '0x2E3D870790dC77A83DD1d18184Acc7439A53f475',
-        FEI: '0x4200000000000000000000000000000000000006',
-        RAI: '0x4200000000000000000000000000000000000006',
-        LUSD: '0xc40F949F8a4e094D1b49a23ea9241D289B7b2819',
-        alUSD: '0x4200000000000000000000000000000000000006',
-        alETH: '0x4200000000000000000000000000000000000006',
-        alUSDC: '0x4200000000000000000000000000000000000006',
-        alUSDT: '0x4200000000000000000000000000000000000006',
-        alWBTC: '0x4200000000000000000000000000000000000006',
-        alWETH: '0x4200000000000000000000000000000000000006',
     },
     
     // Optimism
@@ -201,43 +70,10 @@ export const TOKEN_ADDRESSES = {
         AAVE: '0x76FB31fb4af56892A25e32cFC43De717950c9278',
         CRV: '0x0994206dfE8De6Ec6920FF4D779B0d950605Fb53',
         SUSHI: '0x67C10C397dD0BaB4174abC6A3b6F9ec3F6f538ca',
-        BAL: '0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921',
-        REN: '0x4200000000000000000000000000000000000006',
-        KNC: '0x4200000000000000000000000000000000000006',
-        ZRX: '0x4200000000000000000000000000000000000006',
-        BAT: '0x4200000000000000000000000000000000000006',
-        MANA: '0x4200000000000000000000000000000000000006',
-        ENJ: '0x4200000000000000000000000000000000000006',
-        OMG: '0x4200000000000000000000000000000000000006',
-        ZIL: '0x4200000000000000000000000000000000000006',
-        FUN: '0x4200000000000000000000000000000000000006',
-        GNT: '0x4200000000000000000000000000000000000006',
-        CVC: '0x4200000000000000000000000000000000000006',
-        LOOM: '0x4200000000000000000000000000000000000006',
-        POLY: '0x4200000000000000000000000000000000000006',
-        PPT: '0x4200000000000000000000000000000000000006',
-        RLC: '0x4200000000000000000000000000000000000006',
-        RCN: '0x4200000000000000000000000000000000000006',
-        TUSD: '0x4200000000000000000000000000000000000006',
-        BUSD: '0x4200000000000000000000000000000000000006',
-        SAI: '0x4200000000000000000000000000000000000006',
-        PAX: '0x4200000000000000000000000000000000000006',
-        HUSD: '0x4200000000000000000000000000000000000006',
-        GUSD: '0x4200000000000000000000000000000000000006',
-        FRAX: '0x2E3D870790dC77A83DD1d18184Acc7439A53f475',
-        FEI: '0x4200000000000000000000000000000000000006',
-        RAI: '0x4200000000000000000000000000000000000006',
-        LUSD: '0xc40F949F8a4e094D1b49a23ea9241D289B7b2819',
-        alUSD: '0x4200000000000000000000000000000000000006',
-        alETH: '0x4200000000000000000000000000000000000006',
-        alUSDC: '0x4200000000000000000000000000000000000006',
-        alUSDT: '0x4200000000000000000000000000000000000006',
-        alWBTC: '0x4200000000000000000000000000000000000006',
-        alWETH: '0x4200000000000000000000000000000000000006',
     },
-};
+} as const;
 
-// Token decimals for different tokens
+// Token decimals for different tokens (complete coverage of all supported tokens)
 export const TOKEN_DECIMALS = {
     // Ethereum tokens
     ETH: 18,
@@ -251,54 +87,26 @@ export const TOKEN_DECIMALS = {
     AAVE: 18,
     CRV: 18,
     COMP: 18,
-    MKR: 18,
-    YFI: 18,
-    SNX: 18,
-    SUSHI: 18,
-    BAL: 18,
-    REN: 18,
-    KNC: 18,
-    ZRX: 18,
-    REP: 18,
-    BAT: 18,
-    MANA: 18,
-    ENJ: 18,
-    OMG: 18,
-    ZIL: 12,
-    FUN: 8,
-    GNT: 18,
-    CVC: 8,
-    LOOM: 18,
-    POLY: 18,
-    PPT: 8,
-    RLC: 9,
-    RCN: 18,
-    TUSD: 18,
-    BUSD: 18,
-    SAI: 18,
-    PAX: 18,
-    HUSD: 8,
-    GUSD: 2,
-    FRAX: 18,
-    FEI: 18,
-    RAI: 18,
-    LUSD: 18,
-    alUSD: 18,
-    alETH: 18,
-    alUSDC: 6,
-    alUSDT: 6,
-    alWBTC: 8,
-    alWETH: 18,
+    SHIB: 18,
+    PEPE: 18,
     
     // Polygon tokens
     MATIC: 18,
     WMATIC: 18,
+    QUICK: 18,
     
     // BSC tokens
     BNB: 18,
     WBNB: 18,
     CAKE: 18,
-};
+    BUSD: 18,
+    
+    // Arbitrum tokens
+    SUSHI: 18,
+    
+    // Optimism tokens
+    // (same decimals as Ethereum for most tokens)
+} as const;
 
 // Network configuration
 export const NETWORK_CONFIG = {
@@ -307,20 +115,10 @@ export const NETWORK_CONFIG = {
         chainId: 1,
         tokens: TOKEN_ADDRESSES[NetworkEnum.ETHEREUM],
     },
-    [NetworkEnum.ETHEREUM_TESTNET]: {
-        name: 'Ethereum Testnet (Goerli)',
-        chainId: 5,
-        tokens: TOKEN_ADDRESSES[NetworkEnum.ETHEREUM_TESTNET],
-    },
     [NetworkEnum.POLYGON]: {
         name: 'Polygon Mainnet',
         chainId: 137,
         tokens: TOKEN_ADDRESSES[NetworkEnum.POLYGON],
-    },
-    [NetworkEnum.POLYGON_TESTNET]: {
-        name: 'Polygon Testnet (Mumbai)',
-        chainId: 80001,
-        tokens: TOKEN_ADDRESSES[NetworkEnum.POLYGON_TESTNET],
     },
     [NetworkEnum.BINANCE]: {
         name: 'Binance Smart Chain',
@@ -337,51 +135,77 @@ export const NETWORK_CONFIG = {
         chainId: 10,
         tokens: TOKEN_ADDRESSES[NetworkEnum.OPTIMISM],
     },
-};
+} as const;
 
-// Helper function to get token address
+// Type definitions for better type safety
+type SupportedNetwork = keyof typeof TOKEN_ADDRESSES;
+type TokenSymbol = string;
+
+// Helper function to get token address with improved type safety
 export function getTokenAddress(tokenSymbol: string, network: NetworkEnum): string {
-    const networkTokens = TOKEN_ADDRESSES[network];
-    if (!networkTokens) {
+    if (!(network in TOKEN_ADDRESSES)) {
         throw new Error(`Network ${network} not supported`);
     }
     
-    const address = networkTokens[tokenSymbol.toUpperCase() as keyof typeof networkTokens];
-    if (!address) {
-        throw new Error(`Token ${tokenSymbol} not found on ${NETWORK_CONFIG[network]?.name || network}`);
+    const networkTokens = TOKEN_ADDRESSES[network as SupportedNetwork];
+    const upperSymbol = tokenSymbol.toUpperCase();
+    
+    if (!(upperSymbol in networkTokens)) {
+        const networkName = NETWORK_CONFIG[network as SupportedNetwork]?.name || network;
+        throw new Error(`Token ${tokenSymbol} not found on ${networkName}`);
     }
-    return address;
+    
+    return networkTokens[upperSymbol as keyof typeof networkTokens];
 }
 
-// Helper function to get token decimals
+// Helper function to get token decimals with improved type safety
 export function getTokenDecimals(tokenSymbol: string): number {
-    const decimals = TOKEN_DECIMALS[tokenSymbol.toUpperCase() as keyof typeof TOKEN_DECIMALS];
-    if (!decimals) {
+    const upperSymbol = tokenSymbol.toUpperCase();
+    
+    if (!(upperSymbol in TOKEN_DECIMALS)) {
         throw new Error(`Unknown token symbol: ${tokenSymbol}`);
     }
-    return decimals;
+    
+    return TOKEN_DECIMALS[upperSymbol as keyof typeof TOKEN_DECIMALS];
 }
 
-// Helper function to check if token exists on network
+// Helper function to check if token exists on network (optimized)
 export function isTokenSupported(tokenSymbol: string, network: NetworkEnum): boolean {
-    try {
-        getTokenAddress(tokenSymbol, network);
-        return true;
-    } catch {
+    if (!(network in TOKEN_ADDRESSES)) {
         return false;
     }
+    
+    const networkTokens = TOKEN_ADDRESSES[network as SupportedNetwork];
+    const upperSymbol = tokenSymbol.toUpperCase();
+    
+    return upperSymbol in networkTokens;
 }
 
 // Helper function to get all supported tokens for a network
 export function getSupportedTokens(network: NetworkEnum): string[] {
-    const networkTokens = TOKEN_ADDRESSES[network];
-    if (!networkTokens) {
+    if (!(network in TOKEN_ADDRESSES)) {
         return [];
     }
+    
+    const networkTokens = TOKEN_ADDRESSES[network as SupportedNetwork];
     return Object.keys(networkTokens);
 }
 
 // Helper function to get all supported networks
 export function getSupportedNetworks(): NetworkEnum[] {
     return Object.keys(NETWORK_CONFIG).map(Number) as NetworkEnum[];
+}
+
+// Helper function to validate Ethereum address format
+export function isValidAddress(address: string): boolean {
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
+
+// Helper function to get network info
+export function getNetworkInfo(network: NetworkEnum) {
+    if (!(network in NETWORK_CONFIG)) {
+        throw new Error(`Network ${network} not supported`);
+    }
+    
+    return NETWORK_CONFIG[network as SupportedNetwork];
 } 
