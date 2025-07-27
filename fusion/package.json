@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/eth-to-usdt-swap.ts",
+    "start": "ts-node src/swap.ts",
     "build": "tsc",
-    "dev": "ts-node --watch src/eth-to-usdt-swap.ts",
+    "dev": "ts-node --watch src/swap.ts",
+    "swap": "ts-node src/swap.ts",
+    "check": "ts-node src/check_fusion.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
