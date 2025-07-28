@@ -83,15 +83,26 @@ async function listCurrentAllowances(provider: JsonRpcProvider, walletAddress: s
     }
 }
 
-async function updateAllowanceTo50USD(wallet: Wallet, tokenInfo: TokenInfo) {
-    console.log(`\n=== UPDATING ${tokenInfo.symbol} ALLOWANCE TO $50 ===`);
+async function updateAllowanceTo1MillionUSD(wallet: Wallet, tokenInfo: TokenInfo) {
+    const currentAllowance = parseFloat(tokenInfo.allowance);
+    const requiredAllowance = 1000000.0; // 1 million USD
+    
+    if (currentAllowance >= requiredAllowance) {
+        console.log(`\n=== ${tokenInfo.symbol} ALLOWANCE ALREADY SUFFICIENT ===`);
+        console.log(`Current allowance: ${currentAllowance.toLocaleString()} ${tokenInfo.symbol}`);
+        console.log(`Required allowance: ${requiredAllowance.toLocaleString()} ${tokenInfo.symbol}`);
+        console.log(`✅ No update needed for ${tokenInfo.symbol}`);
+        return;
+    }
+    
+    console.log(`\n=== UPDATING ${tokenInfo.symbol} ALLOWANCE TO $1,000,000 ===`);
     
     const contract = new Contract(tokenInfo.address, ERC20_ABI, wallet);
     
-    // Approve $50 worth (assuming 1:1 USD ratio for stablecoins)
-    const amountToApprove = parseUnits('50', tokenInfo.decimals);
+    // Approve $1,000,000 worth (assuming 1:1 USD ratio for stablecoins)
+    const amountToApprove = parseUnits('1000000', tokenInfo.decimals);
     
-    console.log(`Approving ${formatUnits(amountToApprove, tokenInfo.decimals)} ${tokenInfo.symbol} for 1inch router...`);
+    console.log(`Approving ${formatUnits(amountToApprove, tokenInfo.decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} ${tokenInfo.symbol} for 1inch router...`);
     
     try {
         const approveTx = await contract.approve(ROUTER_ADDRESS, amountToApprove);
@@ -125,9 +136,9 @@ async function checkAndUpdateAllowances() {
         // Step 1: List current allowances
         const { usdtInfo, usdcInfo } = await listCurrentAllowances(provider, wallet.address);
         
-        // Step 2: Update allowances to $50
-        await updateAllowanceTo50USD(wallet, usdtInfo);
-        await updateAllowanceTo50USD(wallet, usdcInfo);
+        // Step 2: Update allowances to $1,000,000
+        await updateAllowanceTo1MillionUSD(wallet, usdtInfo);
+        await updateAllowanceTo1MillionUSD(wallet, usdcInfo);
         
         // Step 3: List allowances again to verify
         console.log('\n=== VERIFYING UPDATED ALLOWANCES ===');
