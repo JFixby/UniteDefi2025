@@ -116,6 +116,10 @@ async function updateAllowanceTo1MillionUSD(wallet: Wallet, tokenInfo: TokenInfo
         console.log(`Transaction hash: ${receipt.hash}`);
         console.log(`Gas used: ${receipt.gasUsed.toString()}`);
         
+        // Verify the allowance was actually updated
+        const newAllowance = await contract.allowance(wallet.address, ROUTER_ADDRESS);
+        console.log(`New allowance: ${formatUnits(newAllowance, tokenInfo.decimals)} ${tokenInfo.symbol}`);
+        
     } catch (error) {
         console.error(`Error approving ${tokenInfo.symbol}:`, error);
         throw error;
@@ -140,7 +144,7 @@ async function checkAndUpdateAllowances() {
         await updateAllowanceTo1MillionUSD(wallet, usdtInfo);
         await updateAllowanceTo1MillionUSD(wallet, usdcInfo);
         
-        // Step 3: List allowances again to verify
+        // Step 3: List allowances again to verify (re-fetch current data)
         console.log('\n=== VERIFYING UPDATED ALLOWANCES ===');
         await listCurrentAllowances(provider, wallet.address);
         
