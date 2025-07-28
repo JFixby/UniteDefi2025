@@ -27,7 +27,9 @@ def check_token_balance(wallet_address, token_symbol, network):
             balance = get_balance(token_address, network, wallet_address)
         
         if balance is not None:
-            print(f"✅ {token_symbol}: {balance:.6f}")
+            # Display contract address for ERC-20 tokens, "Native" for native tokens
+            contract_display = token_address if token_address != "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" else "Native"
+            print(f"✅ {token_symbol}: {balance:.6f} | Contract: {contract_display}")
             return balance
         else:
             print(f"❌ Failed to get {token_symbol} balance on {network}")
