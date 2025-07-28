@@ -39,12 +39,10 @@ interface TokenBalance {
 }
 
 async function getTokenBalance(contract: Contract, walletAddress: string): Promise<TokenBalance> {
-    const [balance, symbol, name, decimals] = await Promise.all([
-        contract.balanceOf(walletAddress),
-        contract.symbol(),
-        contract.name(),
-        contract.decimals()
-    ]);
+    const balance = await contract.balanceOf(walletAddress);
+    const symbol = await contract.symbol();
+    const name = await contract.name();
+    const decimals = await contract.decimals();
     
     return {
         address: contract.target as string,
@@ -85,14 +83,12 @@ async function checkWalletBalances() {
         console.log('\n🪙 Token Balances:');
         console.log('='.repeat(60));
         
-        // Get all token balances
-        const [usdtBalance, usdcBalance, wmaticBalance, bnlBalance, wethBalance] = await Promise.all([
-            getTokenBalance(usdtContract, wallet.address),
-            getTokenBalance(usdcContract, wallet.address),
-            getTokenBalance(wmaticContract, wallet.address),
-            getTokenBalance(bnlContract, wallet.address),
-            getTokenBalance(wethContract, wallet.address)
-        ]);
+        // Get all token balances sequentially to avoid batch size issues
+        const usdtBalance = await getTokenBalance(usdtContract, wallet.address);
+        const usdcBalance = await getTokenBalance(usdcContract, wallet.address);
+        const wmaticBalance = await getTokenBalance(wmaticContract, wallet.address);
+        const bnlBalance = await getTokenBalance(bnlContract, wallet.address);
+        const wethBalance = await getTokenBalance(wethContract, wallet.address);
         
         // Display token balances
         const tokens = [usdtBalance, usdcBalance, wmaticBalance, bnlBalance, wethBalance];
