@@ -6,7 +6,7 @@ import {
     Web3Like,
 } from "@1inch/fusion-sdk";
 import { computeAddress, formatUnits, JsonRpcProvider } from "ethers";
-import { getTokenAddress, getTokenDecimals, NETWORK_CONFIG } from './tokens.js';
+import { getTokenAddress, getTokenDecimals, NETWORK_CONFIG } from './tokens';
 import { spawn } from 'child_process';
 import * as path from 'path';
 
@@ -179,7 +179,7 @@ export function validateConfig(privateKey: string, nodeUrl: string, apiToken: st
 // Function to read secrets from SECRETS.py
 export async function readSecretsFromPython(): Promise<Record<string, string>> {
     return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python3', ['read_secrets.py'], { cwd: path.join(__dirname, '..') });
+        const pythonProcess = spawn('python3', ['fusion/read_secrets.py'], { cwd: path.join(__dirname, '../..') });
         let output = '';
         let error = '';
 
