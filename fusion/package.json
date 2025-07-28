@@ -12,6 +12,7 @@
     "allowance": "ts-node src/check_allowance.ts",
     "balance": "ts-node src/check_balance.ts",
     "example": "ts-node src/example-usage.ts",
+    "crosschain": "ts-node src/check_crosschain.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
