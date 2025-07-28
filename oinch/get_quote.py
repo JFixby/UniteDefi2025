@@ -22,7 +22,7 @@ def get_quote(from_token_address, to_token_address, amount_wei, the_1inch_api_ke
     Args:
         from_token_address (str): The address of the token to swap from
         to_token_address (str): The address of the token to swap to
-        amount_wei (int): The amount to swap in wei
+        amount_wei (int): The am"ount to swap in wei
         the_1inch_api_key (str): The 1inch API key for authentication
         network (str): The network to use (default: 'polygon'). Can be a network name or chain ID.
                       Supported networks: ethereum, polygon, bsc, arbitrum, optimism, etc.
