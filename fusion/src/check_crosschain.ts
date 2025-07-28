@@ -22,7 +22,7 @@ const source = 'fusion-example'
 
 // Token addresses
 const USDT_ETHEREUM = '0xdAC17F958D2ee523a2206206994597C13D831ec7' // USDT on Ethereum
-const USDC_POLYGON = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' // USDC on Polygon
+const USDC_POLYGON = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' // USDC on Polygon (official Circle)
 
 // Limit Order Protocol address (Router V6)
 const LIMIT_ORDER_PROTOCOL = '0x111111125421ca6dc452d289314280a0f8842a65'
@@ -105,12 +105,37 @@ async function main(): Promise<void> {
         
         // Approve for Limit Order Protocol
         console.log(`   Approving for Limit Order Protocol: ${LIMIT_ORDER_PROTOCOL}`)
-        await approveTokens(USDT_ETHEREUM, LIMIT_ORDER_PROTOCOL, largeAllowanceAmount, wallet)
+        const limitOrderApproval = await approveTokens(USDT_ETHEREUM, LIMIT_ORDER_PROTOCOL, largeAllowanceAmount, wallet)
+        if (!limitOrderApproval) {
+            console.error('❌ Limit Order Protocol approval failed. Cannot proceed.')
+            process.exit(1)
+        }
         
         // Approve for Escrow Factory (required for cross-chain swaps)
         const escrowFactoryAddress = '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
         console.log(`   Approving for Escrow Factory: ${escrowFactoryAddress}`)
-        await approveTokens(USDT_ETHEREUM, escrowFactoryAddress, largeAllowanceAmount, wallet)
+        const escrowApproval = await approveTokens(USDT_ETHEREUM, escrowFactoryAddress, largeAllowanceAmount, wallet)
+        if (!escrowApproval) {
+            console.error('❌ Escrow Factory approval failed. Cannot proceed.')
+            process.exit(1)
+        }
+
+        // Verify allowances before proceeding
+        console.log('\n🔍 Verifying allowances...')
+        const { checkTokenAllowance } = await import('./helpers/token-helpers')
+        
+        const limitOrderAllowance = await checkTokenAllowance(USDT_ETHEREUM, walletAddress, LIMIT_ORDER_PROTOCOL, ethersProvider)
+        const escrowAllowance = await checkTokenAllowance(USDT_ETHEREUM, walletAddress, escrowFactoryAddress, ethersProvider)
+        
+        console.log(`   Limit Order Protocol Allowance: ${limitOrderAllowance.formatted} USDT`)
+        console.log(`   Escrow Factory Allowance: ${escrowAllowance.formatted} USDT`)
+        
+        if (BigInt(limitOrderAllowance.allowance) < BigInt(AMOUNT_USDT) || BigInt(escrowAllowance.allowance) < BigInt(AMOUNT_USDT)) {
+            console.error('❌ Insufficient allowance after approval. Cannot proceed.')
+            process.exit(1)
+        }
+        
+        console.log('✅ All allowances verified successfully')
 
 
 

@@ -10,6 +10,7 @@
     "swap": "ts-node src/swap.ts",
     "check": "ts-node src/check_fusion.ts",
     "allowance": "ts-node src/check_allowance.ts",
+    "ethereum-allowance": "ts-node src/check_ethereum_allowance.ts",
     "balance": "ts-node src/check_balance.ts",
     "example": "ts-node src/example-usage.ts",
     "crosschain": "ts-node src/check_crosschain.ts",

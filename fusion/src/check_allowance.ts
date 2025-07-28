@@ -139,6 +139,84 @@ async function logNetworkAndContractInfo(provider: JsonRpcProvider, walletAddres
     console.log(`Wallet: ${config.blockExplorer}/address/${walletAddress}`)
 }
 
+// Function to check for contract restrictions
+async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, tokenName: string, network: NetworkName) {
+    const provider = wallet.provider as JsonRpcProvider
+    
+    console.log(`\n🔍 ${tokenName} Contract Restriction Check:`)
+    console.log(`   Contract: ${tokenAddress}`)
+    
+    try {
+        // Check if contract exists and is accessible
+        const code = await provider.getCode(tokenAddress)
+        if (code === '0x') {
+            console.log(`   ❌ Contract does not exist at ${tokenAddress}`)
+            return
+        }
+        console.log(`   ✅ Contract exists and is accessible`)
+        
+        // Check if wallet is blacklisted (for USDT)
+        if (tokenName === 'USDT') {
+            try {
+                // USDT blacklist check - try to call isBlacklisted function
+                const blacklistData = '0x' + '000000000000000000000000' + wallet.address.slice(2)
+                const blacklistCall = await provider.call({
+                    to: tokenAddress,
+                    data: '0x' + '0000000000000000000000000000000000000000000000000000000000000000' // Placeholder for isBlacklisted
+                })
+                console.log(`   🔍 Blacklist check attempted`)
+            } catch (error: any) {
+                console.log(`   ℹ️ Blacklist function not available or failed`)
+            }
+        }
+        
+        // Check current allowance in detail
+        const contracts = CONTRACT_ADDRESSES[network]
+        const allowanceData = '0xdd62ed3e' + '000000000000000000000000' + wallet.address.slice(2) + '000000000000000000000000' + contracts.router.slice(2)
+        
+        try {
+            const allowanceResult = await provider.call({
+                to: tokenAddress,
+                data: allowanceData
+            })
+            const currentAllowance = BigInt(allowanceResult)
+            console.log(`   📊 Current Allowance: ${currentAllowance.toString()}`)
+            
+            // Check if allowance is already very high
+            if (currentAllowance > BigInt(10) ** BigInt(20)) {
+                console.log(`   ⚠️ Allowance is already extremely high (${currentAllowance.toString()})`)
+                console.log(`   💡 This might be why new approvals are rejected`)
+            }
+        } catch (error: any) {
+            console.log(`   ❌ Could not check current allowance: ${error.message}`)
+        }
+        
+        // Try to estimate gas for approval
+        const approvalData = '0x095ea7b3' + '000000000000000000000000' + contracts.router.slice(2) + '0000000000000000000000000000000000000000000000000000000000000000'
+        
+        try {
+            const gasEstimate = await provider.estimateGas({
+                from: wallet.address,
+                to: tokenAddress,
+                data: approvalData
+            })
+            console.log(`   ⛽ Gas estimate for approval: ${gasEstimate.toString()}`)
+            console.log(`   ✅ Gas estimation successful - contract should accept approval`)
+        } catch (error: any) {
+            console.log(`   ❌ Gas estimation failed: ${error.message}`)
+            console.log(`   🔍 This indicates a contract restriction or insufficient conditions`)
+            
+            // Check if it's a "require(false)" error
+            if (error.message.includes('require(false)')) {
+                console.log(`   🚫 Contract has a hard restriction preventing this approval`)
+            }
+        }
+        
+    } catch (error: any) {
+        console.log(`   ❌ Error checking contract restrictions: ${error.message}`)
+    }
+}
+
 // Function to check token status using helper functions for a specific network
 async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName: string, network: NetworkName) {
     const contracts = CONTRACT_ADDRESSES[network]
@@ -178,6 +256,10 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
                 wallet.provider as JsonRpcProvider
             )
             console.log(`   ✅ New Allowance: ${formatUnits(finalStatus.allowance, finalStatus.decimals)} ${status.symbol}`)
+        } else {
+            // If approval failed, check for contract restrictions
+            console.log(`   ❌ Approval failed - checking for contract restrictions...`)
+            await checkContractRestrictions(wallet, tokenAddress, tokenName, network)
         }
     } else {
         console.log(`   ✅ Allowance is already 1M+ ${status.symbol} (no update needed)`)
