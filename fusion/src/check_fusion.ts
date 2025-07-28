@@ -5,26 +5,76 @@ import {
     PrivateKeyProviderConnector, 
     Web3Like 
 } from "@1inch/fusion-sdk";
-import { computeAddress, formatUnits, JsonRpcProvider, parseUnits, Contract } from "ethers";
+import { computeAddress, formatUnits, JsonRpcProvider, parseUnits } from "ethers";
 import * as dotenv from 'dotenv';
+import { 
+    checkTokenBalance, 
+    checkTokenAllowance, 
+    checkWalletStatus, 
+    checkNativeBalance 
+} from './helpers/token-helpers';
 
 // Load environment variables
 dotenv.config();
 
 // Configuration from environment variables
 const PRIVATE_KEY = process.env.PRIVATE_KEY ? `0x${process.env.PRIVATE_KEY}` : 'YOUR_PRIVATE_KEY'
-const NODE_URL = process.env.POLYGON_RPC_URL || 'YOUR_WEB3_NODE_URL'
 const DEV_PORTAL_API_TOKEN = process.env.DEV_PORTAL_API_TOKEN || 'YOUR_DEV_PORTAL_API_TOKEN'
 
-// Example token addresses (USDT and USDC on Polygon)
-const USDT_ADDRESS = '0xc2132d05d31c914a87c6611c10748aeb04b58e8f' // USDT on Polygon
-const USDC_ADDRESS = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' // USDC on Polygon
+// Network configurations
+const NETWORKS = {
+    POLYGON: {
+        name: 'Polygon',
+        chainId: 137,
+        rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
+        networkEnum: NetworkEnum.POLYGON,
+        tokens: {
+            USDT: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+            USDC: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
+        },
+        router: '0x111111125421ca6dc452d289314280a0f8842a65'
+    },
+    ETHEREUM: {
+        name: 'Ethereum Mainnet',
+        chainId: 1,
+        rpcUrl: process.env.ETHEREUM_RPC_URL || 'https://eth.llamarpc.com',
+        networkEnum: NetworkEnum.ETHEREUM,
+        tokens: {
+            USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+            USDC: '0xa0b86a33e6441b8c4c8c0b8c4c8c0b8c4c8c0b8c'
+        },
+        router: '0x111111125421ca6dc452d289314280a0f8842a65'
+    },
+    POLYGON_TESTNET: {
+        name: 'Polygon Mumbai Testnet',
+        chainId: 80001,
+        rpcUrl: process.env.POLYGON_TESTNET_RPC_URL || 'https://rpc-mumbai.maticvigil.com',
+        networkEnum: NetworkEnum.POLYGON, // Using Polygon enum for testnet
+        tokens: {
+            USDT: '0xa02f6adc7926efeebd5d6af4cf418684dd0d1a86',
+            USDC: '0xe6b8a5cf854791412c1f6efc7caf629f5df1c747'
+        },
+        router: '0x111111125421ca6dc452d289314280a0f8842a65'
+    },
+    ETHEREUM_TESTNET: {
+        name: 'Ethereum Sepolia Testnet',
+        chainId: 11155111,
+        rpcUrl: process.env.ETHEREUM_TESTNET_RPC_URL || 'https://rpc.sepolia.org',
+        networkEnum: NetworkEnum.ETHEREUM, // Using Ethereum enum for testnet
+        tokens: {
+            USDT: '0x7169d38820dfd117c3b1b8b8b8b8b8b8b8b8b8b8',
+            USDC: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238'
+        },
+        router: '0x111111125421ca6dc452d289314280a0f8842a65'
+    }
+}
 
-        // 1inch Router addresses on Polygon (for allowance checking)
-        const ONEINCH_ROUTER_ADDRESS = '0x111111125421ca6dc452d289314280a0f8842a65'
+// Default network (can be changed via environment variable)
+const DEFAULT_NETWORK = process.env.DEFAULT_NETWORK || 'POLYGON'
+const currentNetwork = NETWORKS[DEFAULT_NETWORK as keyof typeof NETWORKS] || NETWORKS.POLYGON
 
 // Setup ethers provider
-const ethersRpcProvider = new JsonRpcProvider(NODE_URL)
+const ethersRpcProvider = new JsonRpcProvider(currentNetwork.rpcUrl)
 
 // Create Web3-like interface for the connector
 const ethersProviderConnector: Web3Like = {
@@ -45,78 +95,13 @@ const connector = new PrivateKeyProviderConnector(
 // Initialize Fusion SDK
 const sdk = new FusionSDK({
     url: 'https://api.1inch.dev/fusion',
-    network: NetworkEnum.POLYGON, // Using Polygon network
+    network: currentNetwork.networkEnum,
     blockchainProvider: connector,
     authKey: DEV_PORTAL_API_TOKEN
 })
 
-// ERC20 ABI for balance and allowance checks
-const ERC20_ABI = [
-    'function balanceOf(address owner) view returns (uint256)',
-    'function allowance(address owner, address spender) view returns (uint256)',
-    'function decimals() view returns (uint8)',
-    'function symbol() view returns (string)'
-]
-
-// Function to check token balance
-async function checkTokenBalance(tokenAddress: string, walletAddress: string): Promise<{ balance: string, formatted: string, decimals: number, symbol: string }> {
-    try {
-        const tokenContract = new Contract(tokenAddress, ERC20_ABI, ethersRpcProvider)
-        
-        const [balance, decimals, symbol] = await Promise.all([
-            tokenContract.balanceOf(walletAddress),
-            tokenContract.decimals(),
-            tokenContract.symbol()
-        ])
-        
-        const formattedBalance = formatUnits(balance, decimals)
-        
-        return {
-            balance: balance.toString(),
-            formatted: formattedBalance,
-            decimals,
-            symbol
-        }
-    } catch (error) {
-        console.error(`Error checking balance for token ${tokenAddress}:`, error)
-        return {
-            balance: '0',
-            formatted: '0',
-            decimals: 18,
-            symbol: 'UNKNOWN'
-        }
-    }
-}
-
-// Function to check token allowance
-async function checkTokenAllowance(tokenAddress: string, walletAddress: string, spenderAddress: string): Promise<{ allowance: string, formatted: string, decimals: number }> {
-    try {
-        const tokenContract = new Contract(tokenAddress, ERC20_ABI, ethersRpcProvider)
-        
-        const [allowance, decimals] = await Promise.all([
-            tokenContract.allowance(walletAddress, spenderAddress),
-            tokenContract.decimals()
-        ])
-        
-        const formattedAllowance = formatUnits(allowance, decimals)
-        
-        return {
-            allowance: allowance.toString(),
-            formatted: formattedAllowance,
-            decimals
-        }
-    } catch (error) {
-        console.error(`Error checking allowance for token ${tokenAddress}:`, error)
-        return {
-            allowance: '0',
-            formatted: '0',
-            decimals: 18
-        }
-    }
-}
-
-// Function to check if wallet has sufficient balance and allowance
-async function checkWalletStatus(walletAddress: string, tokenAddress: string, requiredAmount: string): Promise<{
+// Helper function to check wallet status using the imported helpers
+async function checkWalletStatusForSwap(walletAddress: string, tokenAddress: string, requiredAmount: string, routerAddress: string): Promise<{
     hasBalance: boolean,
     hasAllowance: boolean,
     balance: string,
@@ -124,267 +109,294 @@ async function checkWalletStatus(walletAddress: string, tokenAddress: string, re
     required: string,
     symbol: string
 }> {
-    console.log(`\n🔍 Checking wallet status for token: ${tokenAddress}`)
-    console.log(`📋 Token Symbol: ${tokenAddress === USDT_ADDRESS ? 'USDT' : tokenAddress === USDC_ADDRESS ? 'USDC' : 'Unknown'}`)
-    
-    const balanceInfo = await checkTokenBalance(tokenAddress, walletAddress)
-    const routerAllowanceInfo = await checkTokenAllowance(tokenAddress, walletAddress, ONEINCH_ROUTER_ADDRESS)
-    
-    const hasBalance = BigInt(balanceInfo.balance) >= BigInt(requiredAmount)
-    const hasRouterAllowance = BigInt(routerAllowanceInfo.allowance) >= BigInt(requiredAmount)
-    const hasAllowance = hasRouterAllowance
-    
-    console.log(`\n💰 BALANCE CHECK:`)
-    console.log(`   Raw Balance: ${balanceInfo.balance} (${balanceInfo.decimals} decimals)`)
-    console.log(`   Formatted Balance: ${balanceInfo.formatted} ${balanceInfo.symbol}`)
-    console.log(`   Required Amount: ${formatUnits(requiredAmount, balanceInfo.decimals)} ${balanceInfo.symbol}`)
-    console.log(`   Status: ${hasBalance ? '✅ Sufficient' : '❌ Insufficient'}`)
-    
-    console.log(`\n🔐 ALLOWANCE CHECK:`)
-    console.log(`   Router (${ONEINCH_ROUTER_ADDRESS}):`)
-    console.log(`     Raw Allowance: ${routerAllowanceInfo.allowance} (${routerAllowanceInfo.decimals} decimals)`)
-    console.log(`     Formatted Allowance: ${routerAllowanceInfo.formatted} ${balanceInfo.symbol}`)
-    console.log(`     Status: ${hasRouterAllowance ? '✅ Sufficient' : '❌ Insufficient'}`)
-    
-    console.log(`\n📊 SUMMARY:`)
-    console.log(`   Has sufficient balance: ${hasBalance ? '✅ Yes' : '❌ No'}`)
-    console.log(`   Has sufficient allowance: ${hasAllowance ? '✅ Yes' : '❌ No'}`)
-    console.log(`   Can proceed with swap: ${hasBalance && hasAllowance ? '✅ Yes' : '❌ No'}`)
-    
-    if (!hasAllowance) {
-        console.log(`\n💡 APPROVAL NEEDED:`)
-        console.log(`   You need to approve the router to spend your ${balanceInfo.symbol}:`)
-        console.log(`   - Router: ${ONEINCH_ROUTER_ADDRESS}`)
-    }
+    const walletStatus = await checkWalletStatus(walletAddress, tokenAddress, requiredAmount, routerAddress, ethersRpcProvider)
     
     return {
-        hasBalance,
-        hasAllowance,
-        balance: balanceInfo.balance,
-        allowance: routerAllowanceInfo.allowance,
+        hasBalance: walletStatus.hasBalance,
+        hasAllowance: walletStatus.hasAllowance,
+        balance: walletStatus.balance,
+        allowance: walletStatus.allowance,
         required: requiredAmount,
-        symbol: balanceInfo.symbol
+        symbol: walletStatus.symbol
     }
 }
 
-async function main() {
+// Function to perform a single swap
+async function performSwap(
+    fromTokenAddress: string,
+    toTokenAddress: string,
+    amount: string,
+    walletAddress: string,
+    routerAddress: string,
+    swapNumber: number
+): Promise<{ success: boolean, receivedAmount?: string, orderHash?: string }> {
+    // Determine token symbols for display
+    const { USDT: usdtAddress, USDC: usdcAddress } = currentNetwork.tokens
+    const fromSymbol = fromTokenAddress === usdtAddress ? 'USDT' : 'USDC'
+    const toSymbol = toTokenAddress === usdcAddress ? 'USDC' : 'USDT'
+    
+    console.log(`\n🔄 SWAP ${swapNumber}: ${formatUnits(amount, 6)} ${fromSymbol} → ${toSymbol}`)
+    console.log(`   From: ${fromTokenAddress} (${fromSymbol})`)
+    console.log(`   To: ${toTokenAddress} (${toSymbol})`)
+    console.log(`   Amount: ${formatUnits(amount, 6)} ${fromSymbol}`)
+    
+    // Check wallet status before swap
+    const walletStatus = await checkWalletStatusForSwap(walletAddress, fromTokenAddress, amount, routerAddress)
+    
+    if (!walletStatus.hasBalance) {
+        console.log(`\n❌ Swap ${swapNumber} failed: Insufficient ${walletStatus.symbol} balance`)
+        return { success: false }
+    }
+    
+    if (!walletStatus.hasAllowance) {
+        console.log(`\n⚠️  Swap ${swapNumber}: Insufficient allowance. You need to approve the router.`)
+        console.log('💡 Continuing with quote and order creation for demonstration...')
+    }
+    
     try {
-        console.log('🚀 Starting 1inch Fusion SDK Example on Polygon Network...')
-        console.log('📍 Network: Polygon (Chain ID: 137)')
-        console.log('🔗 RPC URL:', NODE_URL)
-        console.log('🔄 1inch Router Address:', ONEINCH_ROUTER_ADDRESS)
-        
-        const walletAddress = computeAddress(PRIVATE_KEY)
-        console.log('👛 Wallet Address:', walletAddress)
-        
-        // Check wallet balance and allowance before proceeding
-        const swapAmount = '1440000' // 1.44 USDT (6 decimals)
-        const walletStatus = await checkWalletStatus(walletAddress, USDT_ADDRESS, swapAmount)
-        
-        if (!walletStatus.hasBalance) {
-            console.log('\n❌ Insufficient USDT balance. Cannot proceed with swap.')
-            console.log('💡 To test with real tokens, you need to:')
-            console.log('   1. Have USDT tokens in your wallet')
-            console.log('   2. Approve the 1inch router to spend your USDT')
-            console.log('   3. Ensure you have enough MATIC for gas fees')
-            return
-        }
-        
-        if (!walletStatus.hasAllowance) {
-            console.log('\n⚠️  Insufficient allowance. You need to approve the 1inch router.')
-            console.log('💡 To approve, you would need to call the approve() function on the USDT contract.')
-            console.log('   This requires a separate transaction with gas fees.')
-            console.log('   Continuing with quote and order creation for demonstration...')
-        }
-        
-        // Example 1: Get a quote for swapping USDT to USDC
-        console.log('\n📊 Getting quote for USDT -> USDC swap...')
+        // Get quote
+        console.log(`\n📊 Getting quote for swap ${swapNumber}...`)
         const quoteParams = {
-            fromTokenAddress: USDT_ADDRESS, // USDT
-            toTokenAddress: USDC_ADDRESS,   // USDC
-            amount: '1440000', // 1.44 USDT (6 decimals)
-            walletAddress: walletAddress,
+            fromTokenAddress,
+            toTokenAddress,
+            amount,
+            walletAddress,
             source: 'fusion-sdk-example'
         }
 
         const quote = await sdk.getQuote(quoteParams)
-        
-        console.log('Quote received:')
+        console.log(`Quote received for swap ${swapNumber}:`)
         console.log('- Recommended preset:', quote.recommendedPreset)
-        console.log('- Available presets:', Object.keys(quote.presets))
         
         const recommendedPreset = quote.presets[quote.recommendedPreset]
         if (recommendedPreset) {
-            console.log('- Auction start amount:', formatUnits(recommendedPreset.auctionStartAmount, 6), 'USDC')
-            console.log('- Auction end amount:', formatUnits(recommendedPreset.auctionEndAmount, 6), 'USDC')
+            console.log('- Expected USDC amount:', formatUnits(recommendedPreset.auctionStartAmount, 6), 'USDC')
             console.log('- Auction duration:', recommendedPreset.auctionDuration, 'seconds')
         }
 
-        // Example 2: Create an order (but don't submit it)
-        console.log('\n📝 Creating order...')
+        // Create order
+        console.log(`\n📝 Creating order for swap ${swapNumber}...`)
         const orderParams = {
-            fromTokenAddress: USDT_ADDRESS,
-            toTokenAddress: USDC_ADDRESS,
-            amount: '1440000', // 1.44 USDT
-            walletAddress: walletAddress,
+            fromTokenAddress,
+            toTokenAddress,
+            amount,
+            walletAddress,
             source: 'fusion-sdk-example'
         }
 
         const preparedOrder = await sdk.createOrder(orderParams)
-        console.log('Order created successfully!')
+        console.log(`Order created for swap ${swapNumber}:`)
         console.log('- Quote ID:', preparedOrder.quoteId)
         console.log('- Order hash:', preparedOrder.order.getOrderHash(1))
 
-        // Example 3: Submit the order
-        console.log('\n📤 Submitting order...')
-        console.log('📋 Order Details:')
-        console.log(`   From Token: ${USDT_ADDRESS} (USDT)`)
-        console.log(`   To Token: ${USDC_ADDRESS} (USDC)`)
-        console.log(`   Amount: ${formatUnits('1440000', 6)} USDT`)
-        console.log(`   Wallet: ${walletAddress}`)
-        console.log(`   Quote ID: ${preparedOrder.quoteId}`)
-        console.log(`   Order Hash: ${preparedOrder.order.getOrderHash(1)}`)
-        
-        // Double-check balance and allowance right before submission
-        console.log('\n🔍 Final Balance/Allowance Check (before submission):')
-        const finalBalanceCheck = await checkTokenBalance(USDT_ADDRESS, walletAddress)
-        const finalRouterAllowance = await checkTokenAllowance(USDT_ADDRESS, walletAddress, ONEINCH_ROUTER_ADDRESS)
-        
-        console.log(`   Current Balance: ${finalBalanceCheck.formatted} ${finalBalanceCheck.symbol}`)
-        console.log(`   Router Allowance: ${finalRouterAllowance.formatted} ${finalBalanceCheck.symbol}`)
+        // Submit order
+        console.log(`\n📤 Submitting order for swap ${swapNumber}...`)
         
         // Check MATIC balance for gas fees
         const maticBalance = await ethersRpcProvider.getBalance(walletAddress)
         console.log(`   MATIC Balance: ${formatUnits(maticBalance, 18)} MATIC`)
         
-        const hasEnoughMatic = maticBalance > parseUnits('0.01', 18) // At least 0.01 MATIC
+        const hasEnoughMatic = maticBalance > parseUnits('0.01', 18)
         console.log(`   Has enough MATIC for gas: ${hasEnoughMatic ? '✅ Yes' : '❌ No'}`)
         
-        let orderInfo: any = undefined
-        try {
-            orderInfo = await sdk.submitOrder(preparedOrder.order, preparedOrder.quoteId)
-            console.log('✅ Order submitted successfully!')
-            console.log('- Order hash:', orderInfo.orderHash)
-        } catch (error: any) {
-            console.log('\n❌ ORDER SUBMISSION FAILED')
-            console.log('🔍 Error Analysis:')
-            
-            // Extract error details
-            const errorMessage = error.message || 'Unknown error'
-            const errorDescription = error.response?.data?.description || 'No description available'
-            const errorCode = error.response?.data?.errorCode || 'No error code'
-            const errorStatus = error.response?.status || 'No status code'
-            
-            console.log(`   Error Message: ${errorMessage}`)
-            console.log(`   Error Description: ${errorDescription}`)
-            console.log(`   Error Code: ${errorCode}`)
-            console.log(`   HTTP Status: ${errorStatus}`)
-            
-            // Network and API details
-            console.log('\n🌐 NETWORK & API DETAILS:')
-            console.log(`   Network: Polygon (Chain ID: 137)`)
-            console.log(`   RPC URL: ${NODE_URL}`)
-            console.log(`   API Endpoint: ${error.config?.url || 'Unknown'}`)
-            console.log(`   API Method: ${error.config?.method || 'Unknown'}`)
-            console.log(`   API Headers: ${JSON.stringify(error.config?.headers, null, 2)}`)
-            console.log(`   Request Data Size: ${error.config?.data?.length || 'Unknown'} bytes`)
-            
-            // Check if it's a balance/allowance issue
-            if (errorMessage.includes('NotEnoughBalanceOrAllowance') || errorDescription.includes('NotEnoughBalanceOrAllowance')) {
-                console.log('\n💰 BALANCE/ALLOWANCE ANALYSIS:')
-                console.log(`   Current USDT Balance: ${walletStatus.balance} (${formatUnits(walletStatus.balance, 6)} USDT)`)
-                console.log(`   Required Amount: ${walletStatus.required} (${formatUnits(walletStatus.required, 6)} USDT)`)
-                console.log(`   Router Allowance: ${walletStatus.allowance} (${formatUnits(walletStatus.allowance, 6)} USDT)`)
-                console.log(`   Has Sufficient Balance: ${walletStatus.hasBalance ? '✅ Yes' : '❌ No'}`)
-                console.log(`   Has Sufficient Allowance: ${walletStatus.hasAllowance ? '✅ Yes' : '❌ No'}`)
-                
-                if (!walletStatus.hasBalance) {
-                    console.log('\n💡 SOLUTION: Insufficient USDT balance')
-                    console.log('   You need to add USDT tokens to your wallet')
-                    console.log(`   Required: ${formatUnits(walletStatus.required, 6)} USDT`)
-                    console.log(`   Current: ${formatUnits(walletStatus.balance, 6)} USDT`)
-                }
-                
-                if (!walletStatus.hasAllowance) {
-                    console.log('\n💡 SOLUTION: Insufficient allowance')
-                    console.log('   You need to approve the 1inch router to spend your USDT')
-                    console.log(`   Router Address: ${ONEINCH_ROUTER_ADDRESS}`)
-                    console.log(`   Required Allowance: ${formatUnits(walletStatus.required, 6)} USDT`)
-                }
-            }
-            
-            // Check for other common errors
-            if (errorMessage.includes('gas') || errorDescription.includes('gas')) {
-                console.log('\n⛽ GAS FEE ISSUE:')
-                console.log('   You may not have enough MATIC for gas fees')
-                console.log('   Check your MATIC balance on Polygon network')
-            }
-            
-            if (errorMessage.includes('network') || errorDescription.includes('network')) {
-                console.log('\n🌐 NETWORK ISSUE:')
-                console.log('   There might be a network connectivity issue')
-                console.log(`   Current RPC URL: ${NODE_URL}`)
-            }
-            
-            console.log('\n📋 Full Error Object:')
-            console.log(JSON.stringify(error, null, 2))
-            
-            console.log('\n🔄 Continuing with other examples...')
+        if (!hasEnoughMatic) {
+            console.log(`\n❌ Swap ${swapNumber} failed: Insufficient MATIC for gas fees`)
+            return { success: false }
         }
+        
+        const orderInfo = await sdk.submitOrder(preparedOrder.order, preparedOrder.quoteId)
+        console.log(`✅ Swap ${swapNumber} order submitted successfully!`)
+        console.log('- Order hash:', orderInfo.orderHash)
 
-        // Example 4: Track order status (only if order was submitted successfully)
-        if (typeof orderInfo !== 'undefined') {
-            console.log('\n⏳ Tracking order status...')
-            const start = Date.now()
+        // Track order status
+        console.log(`\n⏳ Tracking order status for swap ${swapNumber}...`)
+        const start = Date.now()
 
-            while (true) {
-                try {
-                    const data = await sdk.getOrderStatus(orderInfo.orderHash)
-                    console.log(`Status: ${data.status}`)
+        while (true) {
+            try {
+                const data = await sdk.getOrderStatus(orderInfo.orderHash)
+                console.log(`Swap ${swapNumber} Status: ${data.status}`)
 
-                    if (data.status === OrderStatus.Filled) {
-                        console.log('✅ Order filled successfully!')
-                        console.log('Fills:', data.fills)
-                        break
-                    }
-
-                    if (data.status === OrderStatus.Expired) {
-                        console.log('❌ Order expired')
-                        break
+                if (data.status === OrderStatus.Filled) {
+                    console.log(`✅ Swap ${swapNumber} filled successfully!`)
+                    console.log('Fills:', data.fills)
+                    
+                    // Calculate received amount from fills
+                    let totalReceived = BigInt(0)
+                    if (data.fills && data.fills.length > 0) {
+                        totalReceived = data.fills.reduce((sum: bigint, fill: any) => {
+                            return sum + BigInt(fill.filledAuctionTakerAmount || fill.toTokenAmount || '0')
+                        }, BigInt(0))
                     }
                     
-                    if (data.status === OrderStatus.Cancelled) {
-                        console.log('❌ Order cancelled')
-                        break
+                    const executionTime = (Date.now() - start) / 1000
+                    console.log(`Swap ${swapNumber} executed in ${executionTime} seconds`)
+                    console.log(`Received: ${formatUnits(totalReceived.toString(), 6)} USDC`)
+                    
+                    return { 
+                        success: true, 
+                        receivedAmount: totalReceived.toString(),
+                        orderHash: orderInfo.orderHash
                     }
-
-                    // Wait 2 seconds before checking again
-                    await new Promise(resolve => setTimeout(resolve, 2000))
-                } catch (e) {
-                    console.log('Error checking order status:', e)
-                    await new Promise(resolve => setTimeout(resolve, 2000))
                 }
+
+                if (data.status === OrderStatus.Expired) {
+                    console.log(`❌ Swap ${swapNumber} expired`)
+                    return { success: false }
+                }
+                
+                if (data.status === OrderStatus.Cancelled) {
+                    console.log(`❌ Swap ${swapNumber} cancelled`)
+                    return { success: false }
+                }
+
+                // Wait 2 seconds before checking again
+                await new Promise(resolve => setTimeout(resolve, 2000))
+            } catch (e) {
+                console.log(`Error checking swap ${swapNumber} status:`, e)
+                await new Promise(resolve => setTimeout(resolve, 2000))
             }
-
-            const executionTime = (Date.now() - start) / 1000
-            console.log(`Order executed in ${executionTime} seconds`)
-        } else {
-            console.log('\n⏳ Skipping order status tracking (order not submitted)')
         }
+        
+    } catch (error: any) {
+        console.log(`\n❌ SWAP ${swapNumber} FAILED`)
+        console.log('🔍 Error Analysis:')
+        
+        const errorMessage = error.message || 'Unknown error'
+        const errorDescription = error.response?.data?.description || 'No description available'
+        
+        console.log(`   Error Message: ${errorMessage}`)
+        console.log(`   Error Description: ${errorDescription}`)
+        
+        return { success: false }
+    }
+}
 
-        // Example 5: Get active orders
-        console.log('\n📋 Getting active orders...')
-        const activeOrders = await sdk.getActiveOrders({ page: 1, limit: 5 })
-        console.log(`Found ${activeOrders.items.length} active orders`)
-
-        // Example 6: Get orders by maker
-        console.log('\n👤 Getting orders by maker...')
-        const makerOrders = await sdk.getOrdersByMaker({
-            address: walletAddress,
-            page: 1,
-            limit: 5
-        })
-        console.log(`Found ${makerOrders.items.length} orders for this wallet`)
+async function main() {
+    try {
+        console.log('🚀 Starting 1inch Fusion SDK Example with Two Subsequent Swaps...')
+        console.log(`📍 Network: ${currentNetwork.name} (Chain ID: ${currentNetwork.chainId})`)
+        console.log(`🔗 RPC URL: ${currentNetwork.rpcUrl}`)
+        console.log(`🔄 1inch Router Address: ${currentNetwork.router}`)
+        
+        const walletAddress = computeAddress(PRIVATE_KEY)
+        console.log('👛 Wallet Address:', walletAddress)
+        
+        // Swap configuration
+        const firstSwapAmount = '1560000' // 1.56 USDT (6 decimals)
+        const { USDT: usdtAddress, USDC: usdcAddress } = currentNetwork.tokens
+        
+        console.log('\n📋 SWAP PLAN:')
+        console.log(`   1. ${formatUnits(firstSwapAmount, 6)} USDT → USDC`)
+        console.log(`   2. Resulting USDC → USDT (if first swap succeeds)`)
+        
+        // Print initial balance for verification
+        console.log('\n💰 INITIAL BALANCE:')
+        const initialUsdtBalance = await checkTokenBalance(usdtAddress, walletAddress, ethersRpcProvider)
+        const initialUsdcBalance = await checkTokenBalance(usdcAddress, walletAddress, ethersRpcProvider)
+        const initialMaticBalance = await ethersRpcProvider.getBalance(walletAddress)
+        
+        console.log(`   USDT Balance: ${initialUsdtBalance.formatted} USDT (${usdtAddress})`)
+        console.log(`   USDC Balance: ${initialUsdcBalance.formatted} USDC (${usdcAddress})`)
+        console.log(`   MATIC Balance: ${formatUnits(initialMaticBalance, 18)} MATIC (Native Token)`)
+        
+        // Perform first swap: USDT → USDC
+        console.log('\n' + '='.repeat(60))
+        console.log('🔄 EXECUTING SWAP 1: USDT → USDC')
+        console.log('='.repeat(60))
+        
+        const firstSwapResult = await performSwap(
+            usdtAddress,
+            usdcAddress,
+            firstSwapAmount,
+            walletAddress,
+            currentNetwork.router,
+            1
+        )
+        
+        if (!firstSwapResult.success) {
+            console.log('\n❌ First swap failed. Cannot proceed with second swap.')
+            return
+        }
+        
+        // Print balance after first swap for verification
+        console.log('\n💰 BALANCE AFTER SWAP 1:')
+        const afterFirstSwapUsdtBalance = await checkTokenBalance(usdtAddress, walletAddress, ethersRpcProvider)
+        const afterFirstSwapUsdcBalance = await checkTokenBalance(usdcAddress, walletAddress, ethersRpcProvider)
+        const afterFirstSwapMaticBalance = await ethersRpcProvider.getBalance(walletAddress)
+        
+        console.log(`   USDT Balance: ${afterFirstSwapUsdtBalance.formatted} USDT (${usdtAddress})`)
+        console.log(`   USDC Balance: ${afterFirstSwapUsdcBalance.formatted} USDC (${usdcAddress})`)
+        console.log(`   MATIC Balance: ${formatUnits(afterFirstSwapMaticBalance, 18)} MATIC (Native Token)`)
+        
+        // Wait a bit before second swap
+        console.log('\n⏳ Waiting 5 seconds before second swap...')
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        
+        // Perform second swap: USDC → USDT (using received amount)
+        console.log('\n' + '='.repeat(60))
+        console.log('🔄 EXECUTING SWAP 2: USDC → USDT')
+        console.log('='.repeat(60))
+        
+        // Use the received amount from first swap (with some buffer for fees)
+        const receivedAmount = firstSwapResult.receivedAmount || '0'
+        const secondSwapAmount = BigInt(receivedAmount) * BigInt(95) / BigInt(100) // Use 95% of received amount
+        
+        console.log(`📊 Second swap amount: ${formatUnits(secondSwapAmount.toString(), 6)} USDC`)
+        
+        const secondSwapResult = await performSwap(
+            usdcAddress,
+            usdtAddress,
+            secondSwapAmount.toString(),
+            walletAddress,
+            currentNetwork.router,
+            2
+        )
+        
+        // Summary
+        console.log('\n' + '='.repeat(60))
+        console.log('📊 SWAP SUMMARY')
+        console.log('='.repeat(60))
+        console.log(`Swap 1 (USDT → USDC): ${firstSwapResult.success ? '✅ Success' : '❌ Failed'}`)
+        if (firstSwapResult.success) {
+            console.log(`   Sent: ${formatUnits(firstSwapAmount, 6)} USDT`)
+            console.log(`   Received: ${formatUnits(receivedAmount, 6)} USDC`)
+            console.log(`   Order Hash: ${firstSwapResult.orderHash}`)
+        }
+        
+        console.log(`Swap 2 (USDC → USDT): ${secondSwapResult.success ? '✅ Success' : '❌ Failed'}`)
+        if (secondSwapResult.success) {
+            console.log(`   Sent: ${formatUnits(secondSwapAmount.toString(), 6)} USDC`)
+            console.log(`   Order Hash: ${secondSwapResult.orderHash}`)
+        }
+        
+        // Print balance after second swap for verification
+        console.log('\n💰 BALANCE AFTER SWAP 2:')
+        const afterSecondSwapUsdtBalance = await checkTokenBalance(usdtAddress, walletAddress, ethersRpcProvider)
+        const afterSecondSwapUsdcBalance = await checkTokenBalance(usdcAddress, walletAddress, ethersRpcProvider)
+        const afterSecondSwapMaticBalance = await ethersRpcProvider.getBalance(walletAddress)
+        
+        console.log(`   USDT Balance: ${afterSecondSwapUsdtBalance.formatted} USDT (${usdtAddress})`)
+        console.log(`   USDC Balance: ${afterSecondSwapUsdcBalance.formatted} USDC (${usdcAddress})`)
+        console.log(`   MATIC Balance: ${formatUnits(afterSecondSwapMaticBalance, 18)} MATIC (Native Token)`)
+        
+        // Final balance check
+        console.log('\n💰 FINAL BALANCE CHECK:')
+        const finalUsdtBalance = await checkTokenBalance(usdtAddress, walletAddress, ethersRpcProvider)
+        const finalUsdcBalance = await checkTokenBalance(usdcAddress, walletAddress, ethersRpcProvider)
+        
+        console.log(`   Final USDT Balance: ${finalUsdtBalance.formatted} USDT (${usdtAddress})`)
+        console.log(`   Final USDC Balance: ${finalUsdcBalance.formatted} USDC (${usdcAddress})`)
+        
+        // Balance change summary
+        console.log('\n📈 BALANCE CHANGE SUMMARY:')
+        const usdtChange = BigInt(finalUsdtBalance.balance) - BigInt(initialUsdtBalance.balance)
+        const usdcChange = BigInt(finalUsdcBalance.balance) - BigInt(initialUsdcBalance.balance)
+        const maticChange = afterSecondSwapMaticBalance - initialMaticBalance
+        
+        console.log(`   USDT Change: ${formatUnits(usdtChange.toString(), 6)} USDT (${usdtChange >= 0 ? '+' : ''}${formatUnits(usdtChange.toString(), 6)})`)
+        console.log(`   USDC Change: ${formatUnits(usdcChange.toString(), 6)} USDC (${usdcChange >= 0 ? '+' : ''}${formatUnits(usdcChange.toString(), 6)})`)
+        console.log(`   MATIC Change: ${formatUnits(maticChange.toString(), 18)} MATIC (${maticChange >= 0 ? '+' : ''}${formatUnits(maticChange.toString(), 18)})`)
 
     } catch (error) {
         console.error('❌ Error:', error)
@@ -395,10 +407,12 @@ async function main() {
 async function getCustomQuote() {
     console.log('\n🎛️ Getting quote with custom preset...')
     
+    const { USDT: usdtAddress, USDC: usdcAddress } = currentNetwork.tokens
+    
     const quoteParams = {
-        fromTokenAddress: USDT_ADDRESS,
-        toTokenAddress: USDC_ADDRESS,
-        amount: '1440000', // 1.44 USDT
+        fromTokenAddress: usdtAddress,
+        toTokenAddress: usdcAddress,
+        amount: '1560000', // 1.56 USDT
         walletAddress: computeAddress(PRIVATE_KEY),
         source: 'fusion-sdk-example'
     }
@@ -406,12 +420,12 @@ async function getCustomQuote() {
     const customPresetBody = {
         customPreset: {
             auctionDuration: 180, // 3 minutes
-            auctionStartAmount: '1440000', // 1.44 USDC
-            auctionEndAmount: '720000', // 0.72 USDC
+            auctionStartAmount: '1560000', // 1.56 USDC
+            auctionEndAmount: '780000', // 0.78 USDC
             // Custom non-linear curve
             points: [
-                { toTokenAmount: '1296000', delay: 20 }, // 1.296 USDC at 20s
-                { toTokenAmount: '1008000', delay: 40 }  // 1.008 USDC at 40s
+                { toTokenAmount: '1404000', delay: 20 }, // 1.404 USDC at 20s
+                { toTokenAmount: '1092000', delay: 40 }  // 1.092 USDC at 40s
             ]
         }
     }
@@ -428,10 +442,12 @@ async function getCustomQuote() {
 async function placeOrderWithFees() {
     console.log('\n💰 Placing order with fees...')
     
+    const { USDT: usdtAddress, USDC: usdcAddress } = currentNetwork.tokens
+    
     const orderParams = {
-        fromTokenAddress: USDT_ADDRESS,
-        toTokenAddress: USDC_ADDRESS,
-        amount: '1440000', // 1.44 USDT
+        fromTokenAddress: usdtAddress,
+        toTokenAddress: usdcAddress,
+        amount: '1560000', // 1.56 USDT
         walletAddress: computeAddress(PRIVATE_KEY),
         fee: {
             takingFeeBps: 100, // 1% fee (100 basis points)
