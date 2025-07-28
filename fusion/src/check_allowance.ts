@@ -152,10 +152,35 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
         wallet.provider as JsonRpcProvider
     )
     
-    // If no allowance, approve tokens using the helper
-    if (!status.hasAllowance) {
-        console.log(`\n🔄 Approving ${tokenName} on ${NETWORK_CONFIG[network].name}...`)
-        await checkAndApproveTokens(wallet, tokenAddress, tokenName, contracts.router)
+    // Define 1M tokens in the token's decimals
+    const oneMillionTokens = BigInt(10) ** BigInt(status.decimals) * BigInt(1000000)
+    const currentAllowance = BigInt(status.allowance)
+    
+    console.log(`\n🔍 ${tokenName} Allowance Check:`)
+    console.log(`   Current Allowance: ${status.allowance} (${formatUnits(status.allowance, status.decimals)} ${status.symbol})`)
+    console.log(`   Target Allowance: 1,000,000 ${status.symbol}`)
+    
+    // Check if current allowance is less than 1M tokens
+    if (currentAllowance < oneMillionTokens) {
+        console.log(`   ⚡ Current allowance is less than 1M ${status.symbol}`)
+        console.log(`   🔄 Updating allowance to 1M ${status.symbol}...`)
+        
+        const approved = await approveTokens(tokenAddress, contracts.router, oneMillionTokens.toString(), wallet)
+        
+        if (approved) {
+            // Check again after approval
+            console.log(`   🔄 Re-checking allowance...`)
+            const finalStatus = await checkWalletStatus(
+                wallet.address,
+                tokenAddress,
+                '0',
+                contracts.router,
+                wallet.provider as JsonRpcProvider
+            )
+            console.log(`   ✅ New Allowance: ${formatUnits(finalStatus.allowance, finalStatus.decimals)} ${status.symbol}`)
+        }
+    } else {
+        console.log(`   ✅ Allowance is already 1M+ ${status.symbol} (no update needed)`)
     }
     
     return status
