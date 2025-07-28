@@ -190,9 +190,6 @@ export async function checkAndApproveTokens(
     const walletAddress = wallet.address
     const provider = wallet.provider as JsonRpcProvider
     
-    // Add delay before checking each token
-    await delay(1000);
-    
     // Initial check
     console.log(`\n🔍 ${tokenName}:`)
     const initialCheck = await checkAllowance(walletAddress, tokenAddress, routerAddress, provider, tokenName)
