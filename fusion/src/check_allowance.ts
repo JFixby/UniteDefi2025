@@ -61,14 +61,8 @@ async function main() {
         // Check and approve USDT
         await checkAndApproveTokensWrapper(wallet, USDT_ADDRESS, 'USDT')
         
-        // Add delay between token checks
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
         // Check and approve USDC
         await checkAndApproveTokensWrapper(wallet, USDC_ADDRESS, 'USDC')
-        
-        // Add delay before checking MATIC
-        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Check MATIC balance
         console.log(`\n🔍 MATIC:`)
