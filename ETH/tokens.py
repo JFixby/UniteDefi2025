@@ -9,8 +9,8 @@ NETWORK_TOKENS = {
         "WMATIC": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",  # Wrapped MATIC
         
         # Major stablecoins
-        "USDC": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",  # USDC on Polygon (official Circle address)
-        "USDC_1": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",  # 1inch naming convention
+        "USDC": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",  # USDC on Polygon (bridged USDC)
+        "USDC_1": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",  # USDC on Polygon (official Circle address)
         "USDT": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",  # USDT on Polygon
         "DAI": "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",  # DAI on Polygon
         
