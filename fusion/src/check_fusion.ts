@@ -21,8 +21,7 @@ const USDT_ADDRESS = '0xc2132d05d31c914a87c6611c10748aeb04b58e8f' // USDT on Pol
 const USDC_ADDRESS = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' // USDC on Polygon
 
         // 1inch Router addresses on Polygon (for allowance checking)
-        const ONEINCH_ROUTER_ADDRESS = '0x1111111254eeb25477b68fb85ed929f73a960582'
-        const ONEINCH_FUSION_SETTLEMENT = '0xcb8308fcb7bc2f84ed1bea2c016991d34de5cc77' // Fusion settlement contract
+        const ONEINCH_ROUTER_ADDRESS = '0x111111125421ca6dc452d289314280a0f8842a65'
 
 // Setup ethers provider
 const ethersRpcProvider = new JsonRpcProvider(NODE_URL)
@@ -130,12 +129,10 @@ async function checkWalletStatus(walletAddress: string, tokenAddress: string, re
     
     const balanceInfo = await checkTokenBalance(tokenAddress, walletAddress)
     const routerAllowanceInfo = await checkTokenAllowance(tokenAddress, walletAddress, ONEINCH_ROUTER_ADDRESS)
-    const fusionAllowanceInfo = await checkTokenAllowance(tokenAddress, walletAddress, ONEINCH_FUSION_SETTLEMENT)
     
     const hasBalance = BigInt(balanceInfo.balance) >= BigInt(requiredAmount)
     const hasRouterAllowance = BigInt(routerAllowanceInfo.allowance) >= BigInt(requiredAmount)
-    const hasFusionAllowance = BigInt(fusionAllowanceInfo.allowance) >= BigInt(requiredAmount)
-    const hasAllowance = hasRouterAllowance || hasFusionAllowance
+    const hasAllowance = hasRouterAllowance
     
     console.log(`\n💰 BALANCE CHECK:`)
     console.log(`   Raw Balance: ${balanceInfo.balance} (${balanceInfo.decimals} decimals)`)
@@ -149,11 +146,6 @@ async function checkWalletStatus(walletAddress: string, tokenAddress: string, re
     console.log(`     Formatted Allowance: ${routerAllowanceInfo.formatted} ${balanceInfo.symbol}`)
     console.log(`     Status: ${hasRouterAllowance ? '✅ Sufficient' : '❌ Insufficient'}`)
     
-    console.log(`   Fusion Settlement (${ONEINCH_FUSION_SETTLEMENT}):`)
-    console.log(`     Raw Allowance: ${fusionAllowanceInfo.allowance} (${fusionAllowanceInfo.decimals} decimals)`)
-    console.log(`     Formatted Allowance: ${fusionAllowanceInfo.formatted} ${balanceInfo.symbol}`)
-    console.log(`     Status: ${hasFusionAllowance ? '✅ Sufficient' : '❌ Insufficient'}`)
-    
     console.log(`\n📊 SUMMARY:`)
     console.log(`   Has sufficient balance: ${hasBalance ? '✅ Yes' : '❌ No'}`)
     console.log(`   Has sufficient allowance: ${hasAllowance ? '✅ Yes' : '❌ No'}`)
@@ -161,16 +153,15 @@ async function checkWalletStatus(walletAddress: string, tokenAddress: string, re
     
     if (!hasAllowance) {
         console.log(`\n💡 APPROVAL NEEDED:`)
-        console.log(`   You need to approve one of these contracts to spend your ${balanceInfo.symbol}:`)
+        console.log(`   You need to approve the router to spend your ${balanceInfo.symbol}:`)
         console.log(`   - Router: ${ONEINCH_ROUTER_ADDRESS}`)
-        console.log(`   - Fusion Settlement: ${ONEINCH_FUSION_SETTLEMENT}`)
     }
     
     return {
         hasBalance,
         hasAllowance,
         balance: balanceInfo.balance,
-        allowance: hasRouterAllowance ? routerAllowanceInfo.allowance : fusionAllowanceInfo.allowance,
+        allowance: routerAllowanceInfo.allowance,
         required: requiredAmount,
         symbol: balanceInfo.symbol
     }
@@ -182,7 +173,6 @@ async function main() {
         console.log('📍 Network: Polygon (Chain ID: 137)')
         console.log('🔗 RPC URL:', NODE_URL)
         console.log('🔄 1inch Router Address:', ONEINCH_ROUTER_ADDRESS)
-        console.log('🏗️ Fusion Settlement Address:', ONEINCH_FUSION_SETTLEMENT)
         
         const walletAddress = computeAddress(PRIVATE_KEY)
         console.log('👛 Wallet Address:', walletAddress)
@@ -259,11 +249,9 @@ async function main() {
         console.log('\n🔍 Final Balance/Allowance Check (before submission):')
         const finalBalanceCheck = await checkTokenBalance(USDT_ADDRESS, walletAddress)
         const finalRouterAllowance = await checkTokenAllowance(USDT_ADDRESS, walletAddress, ONEINCH_ROUTER_ADDRESS)
-        const finalFusionAllowance = await checkTokenAllowance(USDT_ADDRESS, walletAddress, ONEINCH_FUSION_SETTLEMENT)
         
         console.log(`   Current Balance: ${finalBalanceCheck.formatted} ${finalBalanceCheck.symbol}`)
         console.log(`   Router Allowance: ${finalRouterAllowance.formatted} ${finalBalanceCheck.symbol}`)
-        console.log(`   Fusion Allowance: ${finalFusionAllowance.formatted} ${finalBalanceCheck.symbol}`)
         
         // Check MATIC balance for gas fees
         const maticBalance = await ethersRpcProvider.getBalance(walletAddress)
