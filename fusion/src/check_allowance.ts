@@ -1,5 +1,12 @@
-import { JsonRpcProvider, formatUnits, Contract, getAddress, Wallet } from "ethers";
+import { JsonRpcProvider, formatUnits, Wallet } from "ethers";
 import * as dotenv from 'dotenv';
+import { 
+    checkTokenBalance, 
+    checkTokenAllowance, 
+    checkAllowance, 
+    checkAndApproveTokens, 
+    approveTokens 
+} from './helpers/token-helpers';
 
 // Load environment variables
 dotenv.config();
@@ -17,139 +24,20 @@ const USDC_ADDRESS = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' // USDC on Pol
 // Setup ethers provider
 const ethersRpcProvider = new JsonRpcProvider(NODE_URL)
 
-// ERC20 ABI for balance, allowance checks and approvals
-const ERC20_ABI = [
-    'function balanceOf(address owner) view returns (uint256)',
-    'function allowance(address owner, address spender) view returns (uint256)',
-    'function decimals() view returns (uint8)',
-    'function symbol() view returns (string)',
-    'function approve(address spender, uint256 amount) returns (bool)'
-]
-
-// Function to check token balance
-async function checkTokenBalance(tokenAddress: string, walletAddress: string): Promise<{ balance: string, formatted: string, decimals: number, symbol: string }> {
-    try {
-        const tokenContract = new Contract(tokenAddress, ERC20_ABI, ethersRpcProvider)
-        
-        const [balance, decimals, symbol] = await Promise.all([
-            tokenContract.balanceOf(walletAddress),
-            tokenContract.decimals(),
-            tokenContract.symbol()
-        ])
-        
-        const formattedBalance = formatUnits(balance, decimals)
-        
-        return {
-            balance: balance.toString(),
-            formatted: formattedBalance,
-            decimals,
-            symbol
-        }
-    } catch (error) {
-        console.error(`Error checking balance for token ${tokenAddress}:`, error)
-        return {
-            balance: '0',
-            formatted: '0',
-            decimals: 18,
-            symbol: 'UNKNOWN'
-        }
-    }
+// Wrapper function to check allowance using the imported helpers
+async function checkAllowanceWrapper(walletAddress: string, tokenAddress: string, spenderAddress: string, tokenName?: string): Promise<{ balance: string, allowance: string, symbol: string, decimals: number, needsApproval: boolean }> {
+    return await checkAllowance(walletAddress, tokenAddress, spenderAddress, ethersRpcProvider, tokenName)
 }
 
-// Function to check token allowance
-async function checkTokenAllowance(tokenAddress: string, walletAddress: string, spenderAddress: string): Promise<{ allowance: string, formatted: string, decimals: number }> {
-    try {
-        const tokenContract = new Contract(tokenAddress, ERC20_ABI, ethersRpcProvider)
-        
-        const [allowance, decimals] = await Promise.all([
-            tokenContract.allowance(walletAddress, spenderAddress),
-            tokenContract.decimals()
-        ])
-        
-        const formattedAllowance = formatUnits(allowance, decimals)
-        
-        return {
-            allowance: allowance.toString(),
-            formatted: formattedAllowance,
-            decimals
-        }
-    } catch (error) {
-        console.error(`Error checking allowance for token ${tokenAddress}:`, error)
-        return {
-            allowance: '0',
-            formatted: '0',
-            decimals: 18
-        }
-    }
-}
-
-// Function to approve tokens
-async function approveTokens(tokenAddress: string, spenderAddress: string, amount: string, wallet: Wallet): Promise<boolean> {
-    try {
-        const tokenContract = new Contract(tokenAddress, ERC20_ABI, wallet)
-        console.log(`🔄 Approving ${amount} tokens...`)
-        
-        const tx = await tokenContract.approve(spenderAddress, amount)
-        console.log(`📝 Transaction hash: ${tx.hash}`)
-        
-        const receipt = await tx.wait()
-        console.log(`✅ Approval confirmed in block ${receipt.blockNumber}`)
-        
-        return true
-    } catch (error) {
-        console.error(`❌ Approval failed:`, error)
-        return false
-    }
-}
-
-// Function to check allowance for a specific wallet and token
-async function checkAllowance(walletAddress: string, tokenAddress: string, spenderAddress: string, tokenName?: string): Promise<{ balance: string, allowance: string, symbol: string, decimals: number, needsApproval: boolean }> {
-    const balanceInfo = await checkTokenBalance(tokenAddress, walletAddress)
-    const allowanceInfo = await checkTokenAllowance(tokenAddress, walletAddress, spenderAddress)
-    
-    const hasAllowance = BigInt(allowanceInfo.allowance) > BigInt(0)
-    
-    return {
-        balance: balanceInfo.formatted,
-        allowance: allowanceInfo.formatted,
-        symbol: balanceInfo.symbol,
-        decimals: balanceInfo.decimals,
-        needsApproval: !hasAllowance
-    }
-}
-
-// Function to check and approve tokens
-async function checkAndApproveTokens(wallet: Wallet, tokenAddress: string, tokenName: string): Promise<void> {
-    const walletAddress = wallet.address
-    
-    // Initial check
-    console.log(`\n🔍 ${tokenName}:`)
-    const initialCheck = await checkAllowance(walletAddress, tokenAddress, ONEINCH_ROUTER_ADDRESS, tokenName)
-    console.log(`   Balance: ${initialCheck.balance} ${initialCheck.symbol}`)
-    console.log(`   Allowance: ${initialCheck.allowance} ${initialCheck.symbol} ${initialCheck.needsApproval ? '❌' : '✅'}`)
-    
-    // If approval needed, approve 1M tokens (regardless of balance)
-    if (initialCheck.needsApproval) {
-        const approvalAmount = BigInt(10) ** BigInt(initialCheck.decimals) * BigInt(1000000) // 1M tokens
-        console.log(`   ⚡ Approving 1M ${initialCheck.symbol}...`)
-        
-        const approved = await approveTokens(tokenAddress, ONEINCH_ROUTER_ADDRESS, approvalAmount.toString(), wallet)
-        
-        if (approved) {
-            // Check again after approval
-            console.log(`   🔄 Re-checking allowance...`)
-            const finalCheck = await checkAllowance(walletAddress, tokenAddress, ONEINCH_ROUTER_ADDRESS, tokenName)
-            console.log(`   ✅ New Allowance: ${finalCheck.allowance} ${initialCheck.symbol}`)
-        }
-    } else {
-        console.log(`   ✅ Already approved`)
-    }
+// Wrapper function to check and approve tokens using the imported helpers
+async function checkAndApproveTokensWrapper(wallet: Wallet, tokenAddress: string, tokenName: string): Promise<void> {
+    return await checkAndApproveTokens(wallet, tokenAddress, tokenName, ONEINCH_ROUTER_ADDRESS)
 }
 
 // Function to check allowance for custom token and spender
 async function checkCustomAllowance(walletAddress: string, tokenAddress: string, spenderAddress: string, tokenName?: string): Promise<void> {
     console.log(`\n🎯 Custom Allowance Check`)
-    await checkAllowance(walletAddress, tokenAddress, spenderAddress, tokenName)
+    await checkAllowance(walletAddress, tokenAddress, spenderAddress, ethersRpcProvider, tokenName)
 }
 
 // Main function
@@ -171,15 +59,21 @@ async function main() {
         console.log(`🔄 Router: ${ONEINCH_ROUTER_ADDRESS}`)
         
         // Check and approve USDT
-        await checkAndApproveTokens(wallet, USDT_ADDRESS, 'USDT')
+        await checkAndApproveTokensWrapper(wallet, USDT_ADDRESS, 'USDT')
+        
+        // Add delay between token checks
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Check and approve USDC
-        await checkAndApproveTokens(wallet, USDC_ADDRESS, 'USDC')
+        await checkAndApproveTokensWrapper(wallet, USDC_ADDRESS, 'USDC')
+        
+        // Add delay before checking MATIC
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Check MATIC balance
         console.log(`\n🔍 MATIC:`)
         const maticBalance = await ethersRpcProvider.getBalance(wallet.address)
-        console.log(`   Balance: ${formatUnits(maticBalance, 18)} MATIC`)
+        console.log(`   Balance: ${formatUnits(maticBalance, 18)} MATIC (Native Token)`)
         
     } catch (error) {
         console.error('❌ Error:', error)
@@ -188,8 +82,8 @@ async function main() {
 
 // Export functions for use in other modules
 export { 
-    checkAllowance, 
-    checkAndApproveTokens,
+    checkAllowanceWrapper as checkAllowance, 
+    checkAndApproveTokensWrapper as checkAndApproveTokens,
     checkTokenBalance,
     checkTokenAllowance,
     approveTokens

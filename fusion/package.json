@@ -11,6 +11,7 @@
     "check": "ts-node src/check_fusion.ts",
     "allowance": "ts-node src/check_allowance.ts",
     "balance": "ts-node src/check_balance.ts",
+    "example": "ts-node src/example-usage.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
