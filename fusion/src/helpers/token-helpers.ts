@@ -18,9 +18,6 @@ export async function checkTokenBalance(
     try {
         const tokenContract = new Contract(tokenAddress, ERC20_ABI, provider)
         
-        // Add delay before making requests
-        await delay(500);
-        
         const [balance, decimals, symbol] = await Promise.all([
             tokenContract.balanceOf(walletAddress),
             tokenContract.decimals(),
@@ -37,8 +34,6 @@ export async function checkTokenBalance(
         }
     } catch (error) {
         console.error(`Error checking balance for token ${tokenAddress}:`, error)
-        // Add delay after error before retrying
-        await delay(1000);
         return {
             balance: '0',
             formatted: '0',
@@ -58,9 +53,6 @@ export async function checkTokenAllowance(
     try {
         const tokenContract = new Contract(tokenAddress, ERC20_ABI, provider)
         
-        // Add delay before making requests
-        await delay(500);
-        
         const [allowance, decimals] = await Promise.all([
             tokenContract.allowance(walletAddress, spenderAddress),
             tokenContract.decimals()
@@ -75,8 +67,6 @@ export async function checkTokenAllowance(
         }
     } catch (error) {
         console.error(`Error checking allowance for token ${tokenAddress}:`, error)
-        // Add delay after error before retrying
-        await delay(1000);
         return {
             allowance: '0',
             formatted: '0',
