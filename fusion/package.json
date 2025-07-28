@@ -9,6 +9,7 @@
     "dev": "ts-node --watch src/swap.ts",
     "swap": "ts-node src/swap.ts",
     "check": "ts-node src/check_fusion.ts",
+    "allowance": "ts-node src/check_allowance.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
