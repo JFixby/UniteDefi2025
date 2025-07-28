@@ -10,6 +10,7 @@ import {
 import { randomBytes } from "crypto";
 import { computeAddress, formatUnits, JsonRpcProvider, parseUnits } from "ethers";
 import * as dotenv from 'dotenv';
+import { checkWalletStatus } from './helpers/token-helpers';
 
 // Load environment variables
 dotenv.config();
@@ -120,23 +121,94 @@ async function approveTokens(tokenAddress: string, spenderAddress: string, amoun
     try {
         const tokenAbi = [
             'function approve(address spender, uint256 amount) returns (bool)',
-            'function decimals() view returns (uint8)'
+            'function decimals() view returns (uint8)',
+            'function allowance(address owner, address spender) view returns (uint256)',
+            'function balanceOf(address owner) view returns (uint256)',
+            'function symbol() view returns (string)'
         ];
         
         // Create a wallet instance for signing transactions
         const { Wallet } = await import('ethers');
         const wallet = new Wallet(PRIVATE_KEY, ethereumProvider);
         const tokenContract = new (await import('ethers')).Contract(tokenAddress, tokenAbi, wallet);
-        const decimals = await tokenContract.decimals();
+        
+        // Get token details
+        const [decimals, symbol, balance, currentAllowance] = await Promise.all([
+            tokenContract.decimals(),
+            tokenContract.symbol(),
+            tokenContract.balanceOf(wallet.address),
+            tokenContract.allowance(wallet.address, spenderAddress)
+        ]);
+        
         const parsedAmount = parseUnits(amount, decimals);
         
+        console.log(`📝 Token Approval Details:`);
+        console.log(`   Token: ${symbol} (${tokenAddress})`);
+        console.log(`   Spender: ${spenderAddress}`);
+        console.log(`   Current Balance: ${formatUnits(balance, decimals)} ${symbol}`);
+        console.log(`   Current Allowance: ${formatUnits(currentAllowance, decimals)} ${symbol}`);
+        console.log(`   Requested Approval: ${formatUnits(parsedAmount, decimals)} ${symbol}`);
+        console.log(`   Raw Amount: ${parsedAmount.toString()}`);
+        console.log(`   🔍 DEBUG: Balance check - Balance: ${balance.toString()}, ParsedAmount: ${parsedAmount.toString()}`);
+        console.log(`   🔍 DEBUG: Balance comparison - ${balance.toString()} < ${parsedAmount.toString()} = ${balance < parsedAmount}`);
+        
+        // For token approvals, we don't need to check balance - approval is just permission to spend
+        // The actual spending happens later during the swap
+        console.log(`   💡 Note: Token approval is just giving permission to spend, not actually spending tokens`);
+        console.log(`   💡 The actual token transfer will happen during the swap execution`);
+        
         console.log(`📝 Approving ${amount} tokens...`);
+        
+        // Try to estimate gas first to get more detailed error
+        try {
+            const gasEstimate = await tokenContract.approve.estimateGas(spenderAddress, parsedAmount);
+            console.log(`   Gas estimate: ${gasEstimate.toString()}`);
+        } catch (estimateError: any) {
+            console.error(`❌ Gas estimation failed:`);
+            console.error(`   Error: ${estimateError.message}`);
+            console.error(`   Code: ${estimateError.code}`);
+            console.error(`   Data: ${estimateError.data}`);
+            
+            // Try to decode the error if it has data
+            if (estimateError.data && estimateError.data !== '0x') {
+                try {
+                    const errorAbi = ['error ApprovalFailed(string reason)'];
+                    const errorInterface = new (await import('ethers')).Interface(errorAbi);
+                    const decodedError = errorInterface.parseError(estimateError.data);
+                    if (decodedError) {
+                        console.error(`   Decoded Error: ${decodedError.args[0]}`);
+                    }
+                } catch (decodeError) {
+                    console.error(`   Could not decode error data: ${estimateError.data}`);
+                }
+            }
+            return false;
+        }
+        
         const tx = await tokenContract.approve(spenderAddress, parsedAmount);
         await tx.wait();
         console.log(`✅ Approval successful: ${tx.hash}`);
         return true;
-    } catch (error) {
-        console.error('❌ Approval failed:', error);
+    } catch (error: any) {
+        console.error('❌ Approval failed:');
+        console.error(`   Error: ${error.message}`);
+        console.error(`   Code: ${error.code}`);
+        console.error(`   Data: ${error.data}`);
+        console.error(`   Transaction:`, error.transaction);
+        
+        // Try to decode the error if it has data
+        if (error.data && error.data !== '0x') {
+            try {
+                const errorAbi = ['error ApprovalFailed(string reason)'];
+                const errorInterface = new (await import('ethers')).Interface(errorAbi);
+                                    const decodedError = errorInterface.parseError(error.data);
+                    if (decodedError) {
+                        console.error(`   Decoded Error: ${decodedError.args[0]}`);
+                    }
+            } catch (decodeError) {
+                console.error(`   Could not decode error data: ${error.data}`);
+            }
+        }
         return false;
     }
 }
@@ -150,19 +222,23 @@ async function performCrossChainSwap(): Promise<void> {
         console.log('👛 Wallet Address:', walletAddress);
         
         // Swap configuration
-        const swapAmount = '1000000'; // 1 USDT (6 decimals)
+        const swapAmount = '10000000'; // 10 USDT (6 decimals) - increased amount to meet minimum requirements
         const sourceTokenAddress = ETHEREUM.tokens.USDT;
         const destTokenAddress = POLYGON.tokens.USDC;
         
         console.log(`\n📋 Swap Plan: ${formatUnits(swapAmount, 6)} USDT (Ethereum) → USDC (Polygon)`);
         
-        // Check initial balances
-        console.log('\n💰 INITIAL BALANCES:');
+        // Check initial balances and allowance
+        console.log('\n💰 INITIAL BALANCES & ALLOWANCE:');
         console.log('='.repeat(50));
         const initialEthUsdt = await checkTokenBalance(sourceTokenAddress, walletAddress, ethereumProvider);
         const initialPolygonUsdc = await checkTokenBalance(destTokenAddress, walletAddress, polygonProvider);
         const initialEthBalance = await ethereumProvider.getBalance(walletAddress);
         const initialPolygonBalance = await polygonProvider.getBalance(walletAddress);
+        
+        // Check allowance using the proper helper function
+        const routerAddress = '0x111111125421ca6dc452d289314280a0f8842a65'; // 1inch router
+        const walletStatus = await checkWalletStatus(walletAddress, sourceTokenAddress, swapAmount, routerAddress, ethereumProvider);
         
         console.log(`📊 Ethereum Network:`);
         console.log(`   USDT: ${initialEthUsdt.formatted} USDT`);
@@ -182,16 +258,41 @@ async function performCrossChainSwap(): Promise<void> {
             throw new Error('❌ Insufficient ETH for gas fees');
         }
         
-        // Check allowance
-        const routerAddress = '0x111111125421ca6dc452d289314280a0f8842a65'; // 1inch router
-        const allowance = await checkAllowance(sourceTokenAddress, walletAddress, routerAddress, ethereumProvider);
+        // Check if allowance is below 1M USDT (1,000,000 * 10^6 = 1,000,000,000,000 wei)
+        const oneMillionUsdt = '1000000000000'; // 1M USDT in wei (6 decimals)
+        const currentAllowance = BigInt(walletStatus.allowance);
+        const oneMillionAllowance = BigInt(oneMillionUsdt);
         
-        if (BigInt(allowance.allowance) < BigInt(swapAmount)) {
-            console.log(`\n⚠️  Insufficient allowance. Current: ${allowance.formatted}, Need: ${formatUnits(swapAmount, 6)}`);
-            const approved = await approveTokens(sourceTokenAddress, routerAddress, formatUnits(swapAmount, 6));
-            if (!approved) {
-                throw new Error('❌ Token approval failed');
+        if (currentAllowance < oneMillionAllowance) {
+            console.log(`\n⚠️  Allowance below 1M USDT. Current: ${walletStatus.allowance}, Need: 1,000,000 USDT`);
+            console.log('💡 Approving 1M USDT for the router...');
+            
+            // Create a wallet instance for signing transactions
+            const { Wallet } = await import('ethers');
+            const wallet = new Wallet(PRIVATE_KEY, ethereumProvider);
+            
+            // Approve 1M USDT (1,000,000 * 10^6 = 1,000,000,000,000 wei)
+            const maxApproval = '1000000000000'; // 1M USDT in wei (6 decimals)
+            console.log(`🔍 DEBUG: About to approve maxApproval amount: ${maxApproval}`);
+            console.log(`🔍 DEBUG: This is 1,000,000 USDT (1M USDT in wei with 6 decimals)`);
+            console.log(`🔍 DEBUG: This should be sufficient for the swap and reasonable for the balance`);
+            const approved = await approveTokens(sourceTokenAddress, routerAddress, maxApproval);
+            
+            if (approved) {
+                console.log('✅ Approval successful! Re-checking allowance...');
+                const newWalletStatus = await checkWalletStatus(walletAddress, sourceTokenAddress, swapAmount, routerAddress, ethereumProvider);
+                if (newWalletStatus.hasAllowance) {
+                    console.log('✅ Now have sufficient allowance to proceed with swap');
+                } else {
+                    console.log('❌ Still insufficient allowance after approval');
+                    return;
+                }
+            } else {
+                console.log('❌ Approval failed. Cannot proceed with swap.');
+                return;
             }
+        } else {
+            console.log(`\n✅ Sufficient allowance: ${walletStatus.allowance} USDT (above 1M threshold)`);
         }
         
         // Get cross-chain quote
