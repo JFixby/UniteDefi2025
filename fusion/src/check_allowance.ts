@@ -17,12 +17,13 @@ const USDC_ADDRESS = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' // USDC on Pol
 // Setup ethers provider
 const ethersRpcProvider = new JsonRpcProvider(NODE_URL)
 
-// ERC20 ABI for balance and allowance checks
+// ERC20 ABI for balance, allowance checks and approvals
 const ERC20_ABI = [
     'function balanceOf(address owner) view returns (uint256)',
     'function allowance(address owner, address spender) view returns (uint256)',
     'function decimals() view returns (uint8)',
-    'function symbol() view returns (string)'
+    'function symbol() view returns (string)',
+    'function approve(address spender, uint256 amount) returns (bool)'
 ]
 
 // Function to check token balance
@@ -82,53 +83,66 @@ async function checkTokenAllowance(tokenAddress: string, walletAddress: string, 
     }
 }
 
-// Function to check allowance for a specific wallet and token
-async function checkAllowance(walletAddress: string, tokenAddress: string, spenderAddress: string, tokenName?: string): Promise<void> {
-    console.log(`\n🔍 Checking allowance for ${tokenName || 'token'}: ${tokenAddress}`)
-    console.log(`👛 Wallet: ${walletAddress}`)
-    console.log(`🔐 Spender: ${spenderAddress}`)
-    
-    const balanceInfo = await checkTokenBalance(tokenAddress, walletAddress)
-    const allowanceInfo = await checkTokenAllowance(tokenAddress, walletAddress, spenderAddress)
-    
-    console.log(`\n💰 BALANCE:`)
-    console.log(`   Raw: ${balanceInfo.balance} (${balanceInfo.decimals} decimals)`)
-    console.log(`   Formatted: ${balanceInfo.formatted} ${balanceInfo.symbol}`)
-    
-    console.log(`\n🔐 ALLOWANCE:`)
-    console.log(`   Raw: ${allowanceInfo.allowance} (${allowanceInfo.decimals} decimals)`)
-    console.log(`   Formatted: ${allowanceInfo.formatted} ${balanceInfo.symbol}`)
-    
-    const hasAllowance = BigInt(allowanceInfo.allowance) > BigInt(0)
-    console.log(`   Status: ${hasAllowance ? '✅ Approved' : '❌ Not Approved'}`)
-    
-    if (hasAllowance) {
-        const allowanceRatio = (BigInt(allowanceInfo.allowance) * BigInt(100)) / BigInt(balanceInfo.balance)
-        console.log(`   Allowance Ratio: ${allowanceRatio}% of balance`)
+// Function to approve tokens
+async function approveTokens(tokenAddress: string, spenderAddress: string, amount: string, wallet: Wallet): Promise<boolean> {
+    try {
+        const tokenContract = new Contract(tokenAddress, ERC20_ABI, wallet)
+        console.log(`🔄 Approving ${amount} tokens...`)
+        
+        const tx = await tokenContract.approve(spenderAddress, amount)
+        console.log(`📝 Transaction hash: ${tx.hash}`)
+        
+        const receipt = await tx.wait()
+        console.log(`✅ Approval confirmed in block ${receipt.blockNumber}`)
+        
+        return true
+    } catch (error) {
+        console.error(`❌ Approval failed:`, error)
+        return false
     }
 }
 
-// Function to check multiple tokens for a wallet
-async function checkMultipleTokens(walletAddress: string): Promise<void> {
-    console.log('🚀 Starting allowance check for multiple tokens...')
-    console.log('📍 Network: Polygon (Chain ID: 137)')
-    console.log('🔗 RPC URL:', NODE_URL)
-    console.log('🔄 1inch Router Address:', ONEINCH_ROUTER_ADDRESS)
-    console.log('👛 Wallet Address:', walletAddress)
+// Function to check allowance for a specific wallet and token
+async function checkAllowance(walletAddress: string, tokenAddress: string, spenderAddress: string, tokenName?: string): Promise<{ balance: string, allowance: string, symbol: string, decimals: number, needsApproval: boolean }> {
+    const balanceInfo = await checkTokenBalance(tokenAddress, walletAddress)
+    const allowanceInfo = await checkTokenAllowance(tokenAddress, walletAddress, spenderAddress)
     
-    // Check USDT allowance
-    await checkAllowance(walletAddress, USDT_ADDRESS, ONEINCH_ROUTER_ADDRESS, 'USDT')
+    const hasAllowance = BigInt(allowanceInfo.allowance) > BigInt(0)
     
-    // Check USDC allowance
-    await checkAllowance(walletAddress, USDC_ADDRESS, ONEINCH_ROUTER_ADDRESS, 'USDC')
+    return {
+        balance: balanceInfo.formatted,
+        allowance: allowanceInfo.formatted,
+        symbol: balanceInfo.symbol,
+        decimals: balanceInfo.decimals,
+        needsApproval: !hasAllowance
+    }
+}
+
+// Function to check and approve tokens
+async function checkAndApproveTokens(wallet: Wallet, tokenAddress: string, tokenName: string): Promise<void> {
+    const walletAddress = wallet.address
     
-    // Check MATIC balance (native token)
-    console.log(`\n🔍 Checking MATIC balance...`)
-    try {
-        const maticBalance = await ethersRpcProvider.getBalance(walletAddress)
-        console.log(`   MATIC Balance: ${formatUnits(maticBalance, 18)} MATIC`)
-    } catch (error) {
-        console.error('Error checking MATIC balance:', error)
+    // Initial check
+    console.log(`\n🔍 ${tokenName}:`)
+    const initialCheck = await checkAllowance(walletAddress, tokenAddress, ONEINCH_ROUTER_ADDRESS, tokenName)
+    console.log(`   Balance: ${initialCheck.balance} ${initialCheck.symbol}`)
+    console.log(`   Allowance: ${initialCheck.allowance} ${initialCheck.symbol} ${initialCheck.needsApproval ? '❌' : '✅'}`)
+    
+    // If approval needed, approve 1M tokens (regardless of balance)
+    if (initialCheck.needsApproval) {
+        const approvalAmount = BigInt(10) ** BigInt(initialCheck.decimals) * BigInt(1000000) // 1M tokens
+        console.log(`   ⚡ Approving 1M ${initialCheck.symbol}...`)
+        
+        const approved = await approveTokens(tokenAddress, ONEINCH_ROUTER_ADDRESS, approvalAmount.toString(), wallet)
+        
+        if (approved) {
+            // Check again after approval
+            console.log(`   🔄 Re-checking allowance...`)
+            const finalCheck = await checkAllowance(walletAddress, tokenAddress, ONEINCH_ROUTER_ADDRESS, tokenName)
+            console.log(`   ✅ New Allowance: ${finalCheck.allowance} ${initialCheck.symbol}`)
+        }
+    } else {
+        console.log(`   ✅ Already approved`)
     }
 }
 
@@ -141,33 +155,31 @@ async function checkCustomAllowance(walletAddress: string, tokenAddress: string,
 // Main function
 async function main() {
     try {
-        // Get wallet address from environment variables
-        let walletAddress: string;
+        let wallet: Wallet;
         
         if (process.env.PRIVATE_KEY) {
-            // Derive wallet address from private key
-            const wallet = new Wallet(process.env.PRIVATE_KEY);
-            walletAddress = wallet.address;
+            wallet = new Wallet(process.env.PRIVATE_KEY, ethersRpcProvider);
             console.log('🔑 Wallet address derived from PRIVATE_KEY');
         } else {
-            // No private key provided
             throw new Error('❌ No PRIVATE_KEY found in .env file. Please provide your wallet private key.');
         }
         
-        console.log('🔍 1inch Token Allowance Checker')
-        console.log('================================')
+        console.log('🔍 1inch Token Allowance Checker & Approver')
+        console.log('==========================================')
+        console.log(`👛 Wallet: ${wallet.address}`)
+        console.log(`📍 Network: Polygon`)
+        console.log(`🔄 Router: ${ONEINCH_ROUTER_ADDRESS}`)
         
-        // Check multiple tokens for the wallet
-        await checkMultipleTokens(walletAddress)
+        // Check and approve USDT
+        await checkAndApproveTokens(wallet, USDT_ADDRESS, 'USDT')
         
-        // Example of checking custom allowance
-        console.log('\n' + '='.repeat(50))
-        console.log('🎯 Custom Allowance Examples')
-        console.log('='.repeat(50))
+        // Check and approve USDC
+        await checkAndApproveTokens(wallet, USDC_ADDRESS, 'USDC')
         
-        // Example: Check USDT allowance for a different spender
-        const customSpender = '0xcb8308fcb7bc2f84ed1bea2c016991d34de5cc77' // Example spender
-        await checkCustomAllowance(walletAddress, USDT_ADDRESS, customSpender, 'USDT (Custom Spender)')
+        // Check MATIC balance
+        console.log(`\n🔍 MATIC:`)
+        const maticBalance = await ethersRpcProvider.getBalance(wallet.address)
+        console.log(`   Balance: ${formatUnits(maticBalance, 18)} MATIC`)
         
     } catch (error) {
         console.error('❌ Error:', error)
@@ -177,10 +189,10 @@ async function main() {
 // Export functions for use in other modules
 export { 
     checkAllowance, 
-    checkMultipleTokens, 
-    checkCustomAllowance,
+    checkAndApproveTokens,
     checkTokenBalance,
-    checkTokenAllowance
+    checkTokenAllowance,
+    approveTokens
 }
 
 // Run the main function if this file is executed directly
