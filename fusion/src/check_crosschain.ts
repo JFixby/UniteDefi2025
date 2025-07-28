@@ -32,11 +32,27 @@ async function sleep(ms: number): Promise<void> {
 
 async function main(): Promise<void> {
     try {
+        // Check environment variables
+        if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY === '0x' || process.env.PRIVATE_KEY === 'your_private_key_here') {
+            console.error('❌ PRIVATE_KEY environment variable is not set or invalid')
+            console.error('   Please set your private key in the .env file or environment')
+            console.error('   Example: PRIVATE_KEY=1234567890abcdef...')
+            process.exit(1)
+        }
+
+        if (!process.env.INCH_AUTH_KEY || process.env.INCH_AUTH_KEY === 'auth-key' || process.env.INCH_AUTH_KEY === 'your_1inch_api_token_here') {
+            console.error('❌ INCH_AUTH_KEY environment variable is not set or invalid')
+            console.error('   Please get your API key from https://portal.1inch.dev/')
+            console.error('   Example: INCH_AUTH_KEY=your_api_key_here')
+            process.exit(1)
+        }
+
         console.log('🚀 Starting cross-chain swap: USDT (Ethereum) → USDC (Polygon)')
         console.log(`💰 Amount: 1.33 USDT`)
         
         // Initialize Web3 and get wallet address
-        const web3 = new (require('web3'))(rpc)
+        const { Web3 } = require('web3')
+        const web3 = new Web3(rpc)
         const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address
         console.log(`👛 Wallet: ${walletAddress}`)
 
