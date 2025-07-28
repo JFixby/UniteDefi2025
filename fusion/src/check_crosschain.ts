@@ -123,7 +123,10 @@ async function approveTokens(tokenAddress: string, spenderAddress: string, amoun
             'function decimals() view returns (uint8)'
         ];
         
-        const tokenContract = new (await import('ethers')).Contract(tokenAddress, tokenAbi, ethereumProvider);
+        // Create a wallet instance for signing transactions
+        const { Wallet } = await import('ethers');
+        const wallet = new Wallet(PRIVATE_KEY, ethereumProvider);
+        const tokenContract = new (await import('ethers')).Contract(tokenAddress, tokenAbi, wallet);
         const decimals = await tokenContract.decimals();
         const parsedAmount = parseUnits(amount, decimals);
         
@@ -175,7 +178,7 @@ async function performCrossChainSwap(): Promise<void> {
         }
         
         // Check ETH balance for gas
-        if (initialEthBalance < parseUnits('0.01', 18)) {
+        if (initialEthBalance < parseUnits('0.005', 18)) {
             throw new Error('❌ Insufficient ETH for gas fees');
         }
         
