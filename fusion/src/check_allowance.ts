@@ -142,9 +142,13 @@ async function logNetworkAndContractInfo(provider: JsonRpcProvider, walletAddres
 // Function to check for contract restrictions
 async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, tokenName: string, network: NetworkName) {
     const provider = wallet.provider as JsonRpcProvider
+    const contracts = CONTRACT_ADDRESSES[network]
     
     console.log(`\n🔍 ${tokenName} Contract Restriction Check:`)
     console.log(`   Contract: ${tokenAddress}`)
+    console.log(`   Network: ${network}`)
+    console.log(`   Wallet: ${wallet.address}`)
+    console.log(`   Router: ${contracts.router}`)
     
     try {
         // Check if contract exists and is accessible
@@ -154,25 +158,39 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
             return
         }
         console.log(`   ✅ Contract exists and is accessible`)
+        console.log(`   📄 Contract bytecode length: ${code.length} characters`)
         
         // Check if wallet is blacklisted (for USDT)
         if (tokenName === 'USDT') {
+            console.log(`\n🔍 USDT-SPECIFIC CHECKS:`)
             try {
-                // USDT blacklist check - try to call isBlacklisted function
-                const blacklistData = '0x' + '000000000000000000000000' + wallet.address.slice(2)
-                const blacklistCall = await provider.call({
-                    to: tokenAddress,
-                    data: '0x' + '0000000000000000000000000000000000000000000000000000000000000000' // Placeholder for isBlacklisted
-                })
-                console.log(`   🔍 Blacklist check attempted`)
+                // Try different USDT blacklist function signatures
+                const blacklistSignatures = [
+                    '0x8f283970', // isBlacklisted(address)
+                    '0x8f283970000000000000000000000000' + wallet.address.slice(2), // isBlacklisted with wallet address
+                    '0x0000000000000000000000000000000000000000000000000000000000000000' // Placeholder
+                ]
+                
+                for (let i = 0; i < blacklistSignatures.length; i++) {
+                    try {
+                        const blacklistCall = await provider.call({
+                            to: tokenAddress,
+                            data: blacklistSignatures[i]
+                        })
+                        console.log(`   🔍 Blacklist check ${i + 1} result: ${blacklistCall}`)
+                    } catch (error: any) {
+                        console.log(`   ℹ️ Blacklist check ${i + 1} failed: ${error.message}`)
+                    }
+                }
             } catch (error: any) {
-                console.log(`   ℹ️ Blacklist function not available or failed`)
+                console.log(`   ℹ️ Blacklist function not available or failed: ${error.message}`)
             }
         }
         
         // Check current allowance in detail
-        const contracts = CONTRACT_ADDRESSES[network]
+        console.log(`\n📊 ALLOWANCE ANALYSIS:`)
         const allowanceData = '0xdd62ed3e' + '000000000000000000000000' + wallet.address.slice(2) + '000000000000000000000000' + contracts.router.slice(2)
+        console.log(`   Allowance call data: ${allowanceData}`)
         
         try {
             const allowanceResult = await provider.call({
@@ -181,6 +199,7 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
             })
             const currentAllowance = BigInt(allowanceResult)
             console.log(`   📊 Current Allowance: ${currentAllowance.toString()}`)
+            console.log(`   📊 Current Allowance (hex): ${allowanceResult}`)
             
             // Check if allowance is already very high
             if (currentAllowance > BigInt(10) ** BigInt(20)) {
@@ -189,31 +208,72 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
             }
         } catch (error: any) {
             console.log(`   ❌ Could not check current allowance: ${error.message}`)
+            console.log(`   ❌ Error details: ${JSON.stringify(error, null, 2)}`)
         }
         
-        // Try to estimate gas for approval
-        const approvalData = '0x095ea7b3' + '000000000000000000000000' + contracts.router.slice(2) + '0000000000000000000000000000000000000000000000000000000000000000'
+        // Try to estimate gas for approval with different amounts
+        console.log(`\n⛽ GAS ESTIMATION TESTS:`)
+        const testAmounts = [
+            '1000000000', // 1000 USDT (6 decimals)
+            '1000000000000', // 1M USDT (6 decimals)
+            '1000000000000000000000000' // 1M USDT (18 decimals)
+        ]
         
-        try {
-            const gasEstimate = await provider.estimateGas({
-                from: wallet.address,
-                to: tokenAddress,
-                data: approvalData
-            })
-            console.log(`   ⛽ Gas estimate for approval: ${gasEstimate.toString()}`)
-            console.log(`   ✅ Gas estimation successful - contract should accept approval`)
-        } catch (error: any) {
-            console.log(`   ❌ Gas estimation failed: ${error.message}`)
-            console.log(`   🔍 This indicates a contract restriction or insufficient conditions`)
+        for (let i = 0; i < testAmounts.length; i++) {
+            const amount = testAmounts[i]
+            const approvalData = '0x095ea7b3' + '000000000000000000000000' + contracts.router.slice(2) + '0000000000000000000000000000000000000000000000000000000000000000'.slice(0, -amount.length) + amount
             
-            // Check if it's a "require(false)" error
-            if (error.message.includes('require(false)')) {
-                console.log(`   🚫 Contract has a hard restriction preventing this approval`)
+            console.log(`\n   Test ${i + 1}: Approval amount ${amount} (${parseInt(amount) / Math.pow(10, 6)} USDT)`)
+            console.log(`   Approval call data: ${approvalData}`)
+            
+            try {
+                const gasEstimate = await provider.estimateGas({
+                    from: wallet.address,
+                    to: tokenAddress,
+                    data: approvalData
+                })
+                console.log(`   ✅ Gas estimate: ${gasEstimate.toString()}`)
+            } catch (error: any) {
+                console.log(`   ❌ Gas estimation failed: ${error.message}`)
+                console.log(`   ❌ Error code: ${error.code}`)
+                console.log(`   ❌ Error reason: ${error.reason}`)
+                console.log(`   ❌ Transaction data: ${JSON.stringify(error.transaction, null, 2)}`)
+                
+                // Check if it's a "require(false)" error
+                if (error.message.includes('require(false)')) {
+                    console.log(`   🚫 Contract has a hard restriction preventing this approval`)
+                    console.log(`   🚫 This typically indicates the wallet is blacklisted or has restrictions`)
+                }
+                
+                // Check for other common error patterns
+                if (error.message.includes('insufficient funds')) {
+                    console.log(`   💰 Insufficient funds for gas estimation`)
+                }
+                if (error.message.includes('nonce')) {
+                    console.log(`   🔢 Nonce-related error`)
+                }
             }
+        }
+        
+        // Additional contract state checks
+        console.log(`\n🔍 CONTRACT STATE CHECKS:`)
+        try {
+            const balance = await provider.getBalance(wallet.address)
+            console.log(`   Wallet ETH balance: ${formatUnits(balance, 18)} ETH`)
+            
+            const nonce = await provider.getTransactionCount(wallet.address, 'pending')
+            console.log(`   Wallet nonce: ${nonce}`)
+            
+            const networkInfo = await provider.getNetwork()
+            console.log(`   Network chainId: ${networkInfo.chainId}`)
+            
+        } catch (error: any) {
+            console.log(`   ❌ Error checking contract state: ${error.message}`)
         }
         
     } catch (error: any) {
         console.log(`   ❌ Error checking contract restrictions: ${error.message}`)
+        console.log(`   ❌ Full error: ${JSON.stringify(error, null, 2)}`)
     }
 }
 
@@ -234,16 +294,28 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
     const oneMillionTokens = BigInt(10) ** BigInt(status.decimals) * BigInt(1000000)
     const currentAllowance = BigInt(status.allowance)
     
+    // For USDT, use 1000 USD instead of 1M
+    let targetAmount: bigint
+    let targetDescription: string
+    
+    if (tokenName === 'USDT') {
+        targetAmount = BigInt(10) ** BigInt(status.decimals) * BigInt(1000) // 1000 USD
+        targetDescription = `1,000 ${status.symbol}`
+    } else {
+        targetAmount = oneMillionTokens
+        targetDescription = `1,000,000 ${status.symbol}`
+    }
+    
     console.log(`\n🔍 ${tokenName} Allowance Check:`)
     console.log(`   Current Allowance: ${status.allowance} (${formatUnits(status.allowance, status.decimals)} ${status.symbol})`)
-    console.log(`   Target Allowance: 1,000,000 ${status.symbol}`)
+    console.log(`   Target Allowance: ${targetDescription}`)
     
-    // Check if current allowance is less than 1M tokens
-    if (currentAllowance < oneMillionTokens) {
-        console.log(`   ⚡ Current allowance is less than 1M ${status.symbol}`)
-        console.log(`   🔄 Updating allowance to 1M ${status.symbol}...`)
+    // Check if current allowance is less than target amount
+    if (currentAllowance < targetAmount) {
+        console.log(`   ⚡ Current allowance is less than ${targetDescription}`)
+        console.log(`   🔄 Updating allowance to ${targetDescription}...`)
         
-        const approved = await approveTokens(tokenAddress, contracts.router, oneMillionTokens.toString(), wallet)
+        const approved = await approveTokens(tokenAddress, contracts.router, targetAmount.toString(), wallet)
         
         if (approved) {
             // Check again after approval
@@ -262,7 +334,7 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
             await checkContractRestrictions(wallet, tokenAddress, tokenName, network)
         }
     } else {
-        console.log(`   ✅ Allowance is already 1M+ ${status.symbol} (no update needed)`)
+        console.log(`   ✅ Allowance is already ${targetDescription}+ (no update needed)`)
     }
     
     return status

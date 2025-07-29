@@ -21,14 +21,14 @@ const authKey = process.env.DEV_PORTAL_API_TOKEN || process.env.INCH_AUTH_KEY ||
 const source = 'fusion-example'
 
 // Token addresses
-const USDT_ETHEREUM = '0xdAC17F958D2ee523a2206206994597C13D831ec7' // USDT on Ethereum
-const USDC_POLYGON = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' // USDC on Polygon (official Circle)
+const USDC_ETHEREUM = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' // USDC on Ethereum
+const USDT_POLYGON = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' // USDT on Polygon
 
 // Limit Order Protocol address (Router V6)
 const LIMIT_ORDER_PROTOCOL = '0x111111125421ca6dc452d289314280a0f8842a65'
 
-// Amount: 10 USDT (6 decimals) - increased to meet minimum requirements
-const AMOUNT_USDT = '10000000' // 10 * 10^6
+// Amount: 10 USDC (6 decimals) - increased to meet minimum requirements
+const AMOUNT_USDC = '10000000' // 10 * 10^6
 
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -51,8 +51,8 @@ async function main(): Promise<void> {
             process.exit(1)
         }
 
-        console.log('🚀 Starting cross-chain swap: USDT (Ethereum) → USDC (Polygon)')
-        console.log(`💰 Amount: ${parseInt(AMOUNT_USDT) / 1000000} USDT`)
+        console.log('🚀 Starting cross-chain swap: USDC (Ethereum) → USDT (Polygon)')
+        console.log(`💰 Amount: ${parseInt(AMOUNT_USDC) / 1000000} USDC`)
         
         // Initialize Web3 and get wallet address
         const { Web3 } = require('web3')
@@ -71,8 +71,8 @@ async function main(): Promise<void> {
         
         // Display token addresses
         console.log('\n🪙 Token Addresses:')
-        console.log(`   USDT (Ethereum): ${USDT_ETHEREUM}`)
-        console.log(`   USDC (Polygon): ${USDC_POLYGON}`)
+        console.log(`   USDC (Ethereum): ${USDC_ETHEREUM}`)
+        console.log(`   USDT (Polygon): ${USDT_POLYGON}`)
         
         // Display contract addresses
         console.log('\n📜 Contract Addresses:')
@@ -80,8 +80,8 @@ async function main(): Promise<void> {
         
         // Display amount details
         console.log('\n💰 Amount Details:')
-        console.log(`   Raw Amount: ${AMOUNT_USDT} (6 decimals)`)
-        console.log(`   Human Readable: ${parseInt(AMOUNT_USDT) / 1000000} USDT`)
+        console.log(`   Raw Amount: ${AMOUNT_USDC} (6 decimals)`)
+        console.log(`   Human Readable: ${parseInt(AMOUNT_USDC) / 1000000} USDC`)
 
         // Initialize SDK first
         const sdk = new SDK({
@@ -91,21 +91,21 @@ async function main(): Promise<void> {
         })
         console.log('✅ SDK initialized')
 
-        // Check and approve USDT allowance
-        console.log('\n🔍 Checking USDT allowance...')
+        // Check and approve USDC allowance
+        console.log('\n🔍 Checking USDC allowance...')
         const ethersProvider = new ethers.JsonRpcProvider(rpc)
         const wallet = new ethers.Wallet(privateKeyWithPrefix, ethersProvider)
         
-        // Approve USDT for both Limit Order Protocol and Escrow Factory
-        const largeAllowanceAmount = '1000000000' // 1000 USDT (6 decimals)
-        console.log(`   Approving ${parseInt(largeAllowanceAmount) / 1000000} USDT allowance...`)
+        // Approve USDC for both Limit Order Protocol and Escrow Factory
+        const largeAllowanceAmount = '1000000000' // 1000 USDC (6 decimals)
+        console.log(`   Approving ${parseInt(largeAllowanceAmount) / 1000000} USDC allowance...`)
         
         // Check current allowance first
         const { approveTokens } = await import('./helpers/token-helpers')
         
         // Approve for Limit Order Protocol
         console.log(`   Approving for Limit Order Protocol: ${LIMIT_ORDER_PROTOCOL}`)
-        const limitOrderApproval = await approveTokens(USDT_ETHEREUM, LIMIT_ORDER_PROTOCOL, largeAllowanceAmount, wallet)
+        const limitOrderApproval = await approveTokens(USDC_ETHEREUM, LIMIT_ORDER_PROTOCOL, largeAllowanceAmount, wallet)
         if (!limitOrderApproval) {
             console.error('❌ Limit Order Protocol approval failed. Cannot proceed.')
             process.exit(1)
@@ -114,7 +114,7 @@ async function main(): Promise<void> {
         // Approve for Escrow Factory (required for cross-chain swaps)
         const escrowFactoryAddress = '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
         console.log(`   Approving for Escrow Factory: ${escrowFactoryAddress}`)
-        const escrowApproval = await approveTokens(USDT_ETHEREUM, escrowFactoryAddress, largeAllowanceAmount, wallet)
+        const escrowApproval = await approveTokens(USDC_ETHEREUM, escrowFactoryAddress, largeAllowanceAmount, wallet)
         if (!escrowApproval) {
             console.error('❌ Escrow Factory approval failed. Cannot proceed.')
             process.exit(1)
@@ -124,13 +124,13 @@ async function main(): Promise<void> {
         console.log('\n🔍 Verifying allowances...')
         const { checkTokenAllowance } = await import('./helpers/token-helpers')
         
-        const limitOrderAllowance = await checkTokenAllowance(USDT_ETHEREUM, walletAddress, LIMIT_ORDER_PROTOCOL, ethersProvider)
-        const escrowAllowance = await checkTokenAllowance(USDT_ETHEREUM, walletAddress, escrowFactoryAddress, ethersProvider)
+        const limitOrderAllowance = await checkTokenAllowance(USDC_ETHEREUM, walletAddress, LIMIT_ORDER_PROTOCOL, ethersProvider)
+        const escrowAllowance = await checkTokenAllowance(USDC_ETHEREUM, walletAddress, escrowFactoryAddress, ethersProvider)
         
-        console.log(`   Limit Order Protocol Allowance: ${limitOrderAllowance.formatted} USDT`)
-        console.log(`   Escrow Factory Allowance: ${escrowAllowance.formatted} USDT`)
+        console.log(`   Limit Order Protocol Allowance: ${limitOrderAllowance.formatted} USDC`)
+        console.log(`   Escrow Factory Allowance: ${escrowAllowance.formatted} USDC`)
         
-        if (BigInt(limitOrderAllowance.allowance) < BigInt(AMOUNT_USDT) || BigInt(escrowAllowance.allowance) < BigInt(AMOUNT_USDT)) {
+        if (BigInt(limitOrderAllowance.allowance) < BigInt(AMOUNT_USDC) || BigInt(escrowAllowance.allowance) < BigInt(AMOUNT_USDC)) {
             console.error('❌ Insufficient allowance after approval. Cannot proceed.')
             process.exit(1)
         }
@@ -144,12 +144,12 @@ async function main(): Promise<void> {
         let quote
         try {
             quote = await sdk.getQuote({
-                amount: AMOUNT_USDT,
+                amount: AMOUNT_USDC,
                 srcChainId: NetworkEnum.ETHEREUM,
                 dstChainId: NetworkEnum.POLYGON,
                 enableEstimate: true,
-                srcTokenAddress: USDT_ETHEREUM,
-                dstTokenAddress: USDC_POLYGON,
+                srcTokenAddress: USDC_ETHEREUM,
+                dstTokenAddress: USDT_POLYGON,
                 walletAddress
             })
             console.log('✅ Quote retrieved successfully')
@@ -165,10 +165,10 @@ async function main(): Promise<void> {
         }
 
         console.log(`📈 Quote received:`)
-        console.log(`   Source Token: ${USDT_ETHEREUM} (USDT)`)
-        console.log(`   Destination Token: ${USDC_POLYGON} (USDC)`)
-        console.log(`   Input Amount: ${quote.srcTokenAmount} USDT`)
-        console.log(`   Expected Output: ${quote.dstTokenAmount} USDC`)
+        console.log(`   Source Token: ${USDC_ETHEREUM} (USDC)`)
+        console.log(`   Destination Token: ${USDT_POLYGON} (USDT)`)
+        console.log(`   Input Amount: ${quote.srcTokenAmount} USDC`)
+        console.log(`   Expected Output: ${quote.dstTokenAmount} USDT`)
         console.log(`   Available Presets: ${Object.keys(quote.presets).join(', ')}`)
         console.log(`   Quote ID: ${quote.quoteId}`)
         console.log(`   Source Chain: ${quote.srcChainId}`)
@@ -302,7 +302,7 @@ async function main(): Promise<void> {
 
         if (finalStatus.status === OrderStatus.Executed) {
             console.log('\n🎉 Swap completed successfully!')
-            console.log(`💰 You received USDC on Polygon`)
+            console.log(`💰 You received USDT on Polygon`)
         } else {
             console.log('\n❌ Swap did not complete successfully')
             console.log(`📊 Final status: ${finalStatus.status}`)
