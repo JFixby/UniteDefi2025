@@ -24,11 +24,24 @@ function isRateLimitError(error: any): boolean {
            error?.value?.some?.((v: any) => v?.code === -32005 && v?.message === 'Too Many Requests');
 }
 
+function isNetworkError(error: any): boolean {
+    return error?.code === 'NETWORK_ERROR' || 
+           error?.code === 'TIMEOUT' ||
+           error?.message?.includes('network') ||
+           error?.message?.includes('timeout') ||
+           error?.message?.includes('connection');
+}
+
+function shouldRetry(error: any): boolean {
+    return isRateLimitError(error) || isNetworkError(error);
+}
+
 async function retryWithBackoff<T>(
     operation: () => Promise<T>,
-    maxRetries: number = 5,
-    baseDelay: number = 1000,
-    maxDelay: number = 30000
+    maxRetries: number = 8,
+    baseDelay: number = 2000,
+    maxDelay: number = 60000,
+    operationName: string = 'Operation'
 ): Promise<T> {
     let lastError: any;
     
@@ -38,20 +51,33 @@ async function retryWithBackoff<T>(
         } catch (error: any) {
             lastError = error;
             
-            // If it's not a rate limit error or we've exhausted retries, throw
-            if (!isRateLimitError(error) || attempt === maxRetries) {
+            // If it's not a retryable error or we've exhausted retries, throw
+            if (!shouldRetry(error) || attempt === maxRetries) {
                 throw error;
             }
             
-            // Calculate delay with exponential backoff
-            const delayMs = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
-            console.log(`   ⏳ Rate limited, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+            // Calculate delay with exponential backoff and jitter
+            const exponentialDelay = baseDelay * Math.pow(2, attempt);
+            const jitter = Math.random() * 1000; // Add up to 1 second of random jitter
+            const delayMs = Math.min(exponentialDelay + jitter, maxDelay);
+            
+            const errorType = isRateLimitError(error) ? 'Rate limited' : 'Network error';
+            console.log(`   ⏳ ${errorType}, retrying ${operationName} in ${Math.round(delayMs)}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
             
             await delay(delayMs);
         }
     }
     
     throw lastError;
+}
+
+// Enhanced retry wrapper for provider calls
+async function retryProviderCall<T>(
+    provider: JsonRpcProvider,
+    operation: () => Promise<T>,
+    operationName: string = 'Provider call'
+): Promise<T> {
+    return retryWithBackoff(operation, 8, 2000, 60000, operationName);
 }
 
 // Configuration from environment variables
@@ -126,9 +152,9 @@ function getProvider(network: NetworkName): JsonRpcProvider {
 // Function to get network information using helper functions
 async function getNetworkInfo(provider: JsonRpcProvider) {
     try {
-        const network = await retryWithBackoff(() => provider.getNetwork())
-        const blockNumber = await retryWithBackoff(() => provider.getBlockNumber())
-        const gasPrice = await retryWithBackoff(() => provider.getFeeData())
+        const network = await retryProviderCall(provider, () => provider.getNetwork(), 'getNetwork')
+        const blockNumber = await retryProviderCall(provider, () => provider.getBlockNumber(), 'getBlockNumber')
+        const gasPrice = await retryProviderCall(provider, () => provider.getFeeData(), 'getFeeData')
         
         return {
             chainId: network.chainId,
@@ -183,9 +209,9 @@ async function logNetworkAndContractInfo(provider: JsonRpcProvider, walletAddres
     console.log('\n🔍 CONTRACT VERIFICATION:')
     try {
         // Check if contracts exist
-        const routerCode = await retryWithBackoff(() => provider.getCode(contracts.router))
-        const usdtCode = await retryWithBackoff(() => provider.getCode(contracts.usdt))
-        const usdcCode = await retryWithBackoff(() => provider.getCode(contracts.usdc))
+        const routerCode = await retryProviderCall(provider, () => provider.getCode(contracts.router), 'getRouterCode')
+        const usdtCode = await retryProviderCall(provider, () => provider.getCode(contracts.usdt), 'getUSDTCode')
+        const usdcCode = await retryProviderCall(provider, () => provider.getCode(contracts.usdc), 'getUSDCCode')
         
         console.log(`   Router Contract: ${routerCode !== '0x' ? '✅ Exists' : '❌ Not Found'} (${routerCode.length} bytes)`)
         console.log(`   USDT Contract: ${usdtCode !== '0x' ? '✅ Exists' : '❌ Not Found'} (${usdtCode.length} bytes)`)
@@ -193,20 +219,20 @@ async function logNetworkAndContractInfo(provider: JsonRpcProvider, walletAddres
         
         // Try to get basic contract info
         try {
-            const usdtSymbol = await retryWithBackoff(() => provider.call({
+            const usdtSymbol = await retryProviderCall(provider, () => provider.call({
                 to: contracts.usdt,
                 data: '0x95d89b41' // symbol()
-            }))
+            }), 'getUSDTSymbol')
             console.log(`   USDT Symbol: ${usdtSymbol}`)
         } catch (error) {
             console.log(`   USDT Symbol: ❌ Could not fetch`)
         }
         
         try {
-            const usdcSymbol = await retryWithBackoff(() => provider.call({
+            const usdcSymbol = await retryProviderCall(provider, () => provider.call({
                 to: contracts.usdc,
                 data: '0x95d89b41' // symbol()
-            }))
+            }), 'getUSDCSymbol')
             console.log(`   USDC Symbol: ${usdcSymbol}`)
         } catch (error) {
             console.log(`   USDC Symbol: ❌ Could not fetch`)
@@ -230,7 +256,7 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
     
     try {
         // Check if contract exists and is accessible
-        const code = await retryWithBackoff(() => provider.getCode(tokenAddress))
+        const code = await retryProviderCall(provider, () => provider.getCode(tokenAddress), `getCode for ${tokenAddress}`)
         if (code === '0x') {
             console.log(`   ❌ Contract does not exist at ${tokenAddress}`)
             return
@@ -243,28 +269,28 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
         console.log(`\n📋 CONTRACT DETAILS:`)
         try {
             // Try to get contract name and symbol
-            const nameCall = await retryWithBackoff(() => provider.call({
+            const nameCall = await retryProviderCall(provider, () => provider.call({
                 to: tokenAddress,
                 data: '0x06fdde03' // name()
-            }))
+            }), `getName for ${tokenAddress}`)
             console.log(`   📝 Contract name call result: ${nameCall}`)
             
-            const symbolCall = await retryWithBackoff(() => provider.call({
+            const symbolCall = await retryProviderCall(provider, () => provider.call({
                 to: tokenAddress,
                 data: '0x95d89b41' // symbol()
-            }))
+            }), `getSymbol for ${tokenAddress}`)
             console.log(`   📝 Contract symbol call result: ${symbolCall}`)
             
-            const decimalsCall = await retryWithBackoff(() => provider.call({
+            const decimalsCall = await retryProviderCall(provider, () => provider.call({
                 to: tokenAddress,
                 data: '0x313ce567' // decimals()
-            }))
+            }), `getDecimals for ${tokenAddress}`)
             console.log(`   📝 Contract decimals call result: ${decimalsCall}`)
             
-            const totalSupplyCall = await retryWithBackoff(() => provider.call({
+            const totalSupplyCall = await retryProviderCall(provider, () => provider.call({
                 to: tokenAddress,
                 data: '0x18160ddd' // totalSupply()
-            }))
+            }), `getTotalSupply for ${tokenAddress}`)
             console.log(`   📝 Contract total supply call result: ${totalSupplyCall}`)
             
         } catch (error: any) {
@@ -284,10 +310,10 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
                 
                 for (let i = 0; i < blacklistSignatures.length; i++) {
                     try {
-                        const blacklistCall = await retryWithBackoff(() => provider.call({
+                        const blacklistCall = await retryProviderCall(provider, () => provider.call({
                             to: tokenAddress,
                             data: blacklistSignatures[i]
-                        }))
+                        }), `blacklist check ${i + 1} for ${tokenAddress}`)
                         console.log(`   🔍 Blacklist check ${i + 1} result: ${blacklistCall}`)
                     } catch (error: any) {
                         console.log(`   ℹ️ Blacklist check ${i + 1} failed: ${error.message}`)
@@ -305,10 +331,10 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
         console.log(`   Allowance function: allowance(${wallet.address}, ${contracts.router})`)
         
         try {
-            const allowanceResult = await retryWithBackoff(() => provider.call({
+            const allowanceResult = await retryProviderCall(provider, () => provider.call({
                 to: tokenAddress,
                 data: allowanceData
-            }))
+            }), `allowance check for ${tokenAddress}`)
             const currentAllowance = BigInt(allowanceResult)
             console.log(`   📊 Current Allowance: ${currentAllowance.toString()}`)
             console.log(`   📊 Current Allowance (hex): ${allowanceResult}`)
@@ -328,22 +354,22 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
         // Additional contract state checks
         console.log(`\n🔍 CONTRACT STATE CHECKS:`)
         try {
-            const balance = await retryWithBackoff(() => provider.getBalance(wallet.address))
+            const balance = await retryProviderCall(provider, () => provider.getBalance(wallet.address), 'getWalletBalance')
             console.log(`   Wallet ETH balance: ${formatUnits(balance, 18)} ETH`)
             
-            const nonce = await retryWithBackoff(() => provider.getTransactionCount(wallet.address, 'pending'))
+            const nonce = await retryProviderCall(provider, () => provider.getTransactionCount(wallet.address, 'pending'), 'getWalletNonce')
             console.log(`   Wallet nonce: ${nonce}`)
             
-            const networkInfo = await retryWithBackoff(() => provider.getNetwork())
+            const networkInfo = await retryProviderCall(provider, () => provider.getNetwork(), 'getNetworkInfo')
             console.log(`   Network chainId: ${networkInfo.chainId}`)
             
             // Check wallet's token balance
             const balanceData = '0x70a08231' + '000000000000000000000000' + wallet.address.slice(2)
             try {
-                const tokenBalanceResult = await retryWithBackoff(() => provider.call({
+                const tokenBalanceResult = await retryProviderCall(provider, () => provider.call({
                     to: tokenAddress,
                     data: balanceData
-                }))
+                }), `getTokenBalance for ${tokenAddress}`)
                 const tokenBalance = BigInt(tokenBalanceResult)
                 console.log(`   💰 Wallet token balance: ${tokenBalance.toString()}`)
             } catch (error: any) {
@@ -496,7 +522,7 @@ async function getNetworkStatus(provider: JsonRpcProvider, network: NetworkName)
     const config = NETWORK_CONFIG[network]
     console.log(`\n📊 ${config.name.toUpperCase()} NETWORK STATUS:`)
     try {
-        const latestBlock = await retryWithBackoff(() => provider.getBlock('latest'))
+        const latestBlock = await retryProviderCall(provider, () => provider.getBlock('latest'), 'getLatestBlock')
         if (latestBlock) {
             console.log(`   Latest Block: ${latestBlock.number}`)
             console.log(`   Block Timestamp: ${new Date(Number(latestBlock.timestamp) * 1000).toISOString()}`)

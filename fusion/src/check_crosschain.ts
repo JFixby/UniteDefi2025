@@ -8,7 +8,7 @@ import {
 } from '@1inch/cross-chain-sdk'
 import { ethers } from 'ethers'
 import { randomBytes } from 'node:crypto'
-import { checkAndApproveTokens } from './helpers/token-helpers'
+
 import * as dotenv from 'dotenv'
 
 // Load environment variables
@@ -27,8 +27,8 @@ const USDT_POLYGON = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' // USDT on Pol
 // Limit Order Protocol address (Router V6)
 const LIMIT_ORDER_PROTOCOL = '0x111111125421ca6dc452d289314280a0f8842a65'
 
-// Amount: 1.33 USDC (6 decimals)
-const AMOUNT_USDC = '1330000' // 1.33 * 10^6
+// Amount: 10 USDC (6 decimals) - increased to meet minimum requirements
+const AMOUNT_USDC = '10000000' // 10 * 10^6
 
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -74,10 +74,7 @@ async function main(): Promise<void> {
         console.log(`   USDC (Ethereum): ${USDC_ETHEREUM}`)
         console.log(`   USDT (Polygon): ${USDT_POLYGON}`)
         
-        // Display contract addresses
-        console.log('\n📜 Contract Addresses:')
-        console.log(`   Limit Order Protocol (Router V6): ${LIMIT_ORDER_PROTOCOL}`)
-        console.log(`   Router Contract: ${LIMIT_ORDER_PROTOCOL}`)
+
         
         // Display amount details
         console.log('\n💰 Amount Details:')
@@ -92,51 +89,7 @@ async function main(): Promise<void> {
         })
         console.log('✅ SDK initialized')
 
-        // Check and approve USDC allowance
-        console.log('\n🔍 Checking USDC allowance...')
-        const ethersProvider = new ethers.JsonRpcProvider(rpc)
-        const wallet = new ethers.Wallet(privateKeyWithPrefix, ethersProvider)
-        
-        // Approve USDC for both Limit Order Protocol and Escrow Factory
-        const largeAllowanceAmount = '1000000000000' // 1M USDC (6 decimals)
-        console.log(`   Approving ${parseInt(largeAllowanceAmount) / 1000000} USDC allowance...`)
-        
-        // Check current allowance first
-        const { approveTokens } = await import('./helpers/token-helpers')
-        
-        // Approve for Limit Order Protocol
-        console.log(`   Approving for Limit Order Protocol: ${LIMIT_ORDER_PROTOCOL}`)
-        const limitOrderApproval = await approveTokens(USDC_ETHEREUM, LIMIT_ORDER_PROTOCOL, largeAllowanceAmount, wallet)
-        if (!limitOrderApproval) {
-            console.error('❌ Limit Order Protocol approval failed. Cannot proceed.')
-            process.exit(1)
-        }
-        
-        // Approve for Escrow Factory (required for cross-chain swaps)
-        const escrowFactoryAddress = '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
-        console.log(`   Approving for Escrow Factory: ${escrowFactoryAddress}`)
-        const escrowApproval = await approveTokens(USDC_ETHEREUM, escrowFactoryAddress, largeAllowanceAmount, wallet)
-        if (!escrowApproval) {
-            console.error('❌ Escrow Factory approval failed. Cannot proceed.')
-            process.exit(1)
-        }
 
-        // Verify allowances before proceeding
-        console.log('\n🔍 Verifying allowances...')
-        const { checkTokenAllowance } = await import('./helpers/token-helpers')
-        
-        const limitOrderAllowance = await checkTokenAllowance(USDC_ETHEREUM, walletAddress, LIMIT_ORDER_PROTOCOL, ethersProvider)
-        const escrowAllowance = await checkTokenAllowance(USDC_ETHEREUM, walletAddress, escrowFactoryAddress, ethersProvider)
-        
-        console.log(`   Limit Order Protocol Allowance: ${limitOrderAllowance.formatted} USDC`)
-        console.log(`   Escrow Factory Allowance: ${escrowAllowance.formatted} USDC`)
-        
-        if (BigInt(limitOrderAllowance.allowance) < BigInt(AMOUNT_USDC) || BigInt(escrowAllowance.allowance) < BigInt(AMOUNT_USDC)) {
-            console.error('❌ Insufficient allowance after approval. Cannot proceed.')
-            process.exit(1)
-        }
-        
-        console.log('✅ All allowances verified successfully')
 
 
 

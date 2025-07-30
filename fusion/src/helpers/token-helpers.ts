@@ -1,5 +1,62 @@
 import { JsonRpcProvider, formatUnits, Contract, Wallet } from "ethers";
 
+// Utility functions for retry logic
+async function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(error: any): boolean {
+    return error?.code === 'BAD_DATA' && 
+           error?.value?.some?.((v: any) => v?.code === -32005 && v?.message === 'Too Many Requests');
+}
+
+function isNetworkError(error: any): boolean {
+    return error?.code === 'NETWORK_ERROR' || 
+           error?.code === 'TIMEOUT' ||
+           error?.message?.includes('network') ||
+           error?.message?.includes('timeout') ||
+           error?.message?.includes('connection');
+}
+
+function shouldRetry(error: any): boolean {
+    return isRateLimitError(error) || isNetworkError(error);
+}
+
+async function retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 6,
+    baseDelay: number = 1500,
+    maxDelay: number = 45000,
+    operationName: string = 'Operation'
+): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            lastError = error;
+            
+            // If it's not a retryable error or we've exhausted retries, throw
+            if (!shouldRetry(error) || attempt === maxRetries) {
+                throw error;
+            }
+            
+            // Calculate delay with exponential backoff and jitter
+            const exponentialDelay = baseDelay * Math.pow(2, attempt);
+            const jitter = Math.random() * 1000; // Add up to 1 second of random jitter
+            const delayMs = Math.min(exponentialDelay + jitter, maxDelay);
+            
+            const errorType = isRateLimitError(error) ? 'Rate limited' : 'Network error';
+            console.log(`   ⏳ ${errorType}, retrying ${operationName} in ${Math.round(delayMs)}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+            
+            await delay(delayMs);
+        }
+    }
+    
+    throw lastError;
+}
+
 // ERC20 ABI for balance, allowance checks and approvals
 export const ERC20_ABI = [
     'function balanceOf(address owner) view returns (uint256)',
@@ -18,11 +75,13 @@ export async function checkTokenBalance(
     try {
         const tokenContract = new Contract(tokenAddress, ERC20_ABI, provider)
         
-        const [balance, decimals, symbol] = await Promise.all([
-            tokenContract.balanceOf(walletAddress),
-            tokenContract.decimals(),
-            tokenContract.symbol()
-        ])
+        const [balance, decimals, symbol] = await retryWithBackoff(async () => {
+            return Promise.all([
+                tokenContract.balanceOf(walletAddress),
+                tokenContract.decimals(),
+                tokenContract.symbol()
+            ])
+        }, 6, 1500, 45000, `balance check for ${tokenAddress}`)
         
         const formattedBalance = formatUnits(balance, decimals)
         
@@ -53,10 +112,12 @@ export async function checkTokenAllowance(
     try {
         const tokenContract = new Contract(tokenAddress, ERC20_ABI, provider)
         
-        const [allowance, decimals] = await Promise.all([
-            tokenContract.allowance(walletAddress, spenderAddress),
-            tokenContract.decimals()
-        ])
+        const [allowance, decimals] = await retryWithBackoff(async () => {
+            return Promise.all([
+                tokenContract.allowance(walletAddress, spenderAddress),
+                tokenContract.decimals()
+            ])
+        }, 6, 1500, 45000, `allowance check for ${tokenAddress}`)
         
         const formattedAllowance = formatUnits(allowance, decimals)
         
@@ -86,10 +147,16 @@ export async function approveTokens(
         const tokenContract = new Contract(tokenAddress, ERC20_ABI, wallet)
         console.log(`🔄 Approving ${amount} tokens...`)
         
-        const tx = await tokenContract.approve(spenderAddress, amount)
+        const tx = await retryWithBackoff(async () => {
+            return tokenContract.approve(spenderAddress, amount)
+        }, 6, 1500, 45000, `approval for ${tokenAddress}`)
+        
         console.log(`📝 Transaction hash: ${tx.hash}`)
         
-        const receipt = await tx.wait()
+        const receipt = await retryWithBackoff(async () => {
+            return tx.wait()
+        }, 6, 1500, 45000, `transaction confirmation for ${tx.hash}`)
+        
         console.log(`✅ Approval confirmed in block ${receipt.blockNumber}`)
         
         return true
@@ -221,7 +288,10 @@ export async function checkNativeBalance(
     tokenName: string = 'Native'
 ): Promise<{ balance: string, formatted: string }> {
     try {
-        const balance = await provider.getBalance(walletAddress)
+        const balance = await retryWithBackoff(async () => {
+            return provider.getBalance(walletAddress)
+        }, 6, 1500, 45000, `${tokenName} balance check`)
+        
         const formattedBalance = formatUnits(balance, 18)
         
         return {
@@ -251,10 +321,16 @@ export async function approveUSDTTokens(
         console.log(`   Step 1: Setting allowance to 0...`)
         
         // Step 1: Set allowance to 0
-        const zeroTx = await tokenContract.approve(spenderAddress, '0')
+        const zeroTx = await retryWithBackoff(async () => {
+            return tokenContract.approve(spenderAddress, '0')
+        }, 6, 1500, 45000, `USDT step 1 approval for ${tokenAddress}`)
+        
         console.log(`   📝 Step 1 Transaction hash: ${zeroTx.hash}`)
         
-        const zeroReceipt = await zeroTx.wait()
+        const zeroReceipt = await retryWithBackoff(async () => {
+            return zeroTx.wait()
+        }, 6, 1500, 45000, `USDT step 1 confirmation for ${zeroTx.hash}`)
+        
         console.log(`   ✅ Step 1 confirmed in block ${zeroReceipt.blockNumber}`)
         
         // Wait a moment for the transaction to be processed
@@ -263,10 +339,16 @@ export async function approveUSDTTokens(
         console.log(`   Step 2: Setting allowance to ${amount}...`)
         
         // Step 2: Set allowance to desired amount
-        const amountTx = await tokenContract.approve(spenderAddress, amount)
+        const amountTx = await retryWithBackoff(async () => {
+            return tokenContract.approve(spenderAddress, amount)
+        }, 6, 1500, 45000, `USDT step 2 approval for ${tokenAddress}`)
+        
         console.log(`   📝 Step 2 Transaction hash: ${amountTx.hash}`)
         
-        const amountReceipt = await amountTx.wait()
+        const amountReceipt = await retryWithBackoff(async () => {
+            return amountTx.wait()
+        }, 6, 1500, 45000, `USDT step 2 confirmation for ${amountTx.hash}`)
+        
         console.log(`   ✅ Step 2 confirmed in block ${amountReceipt.blockNumber}`)
         
         console.log(`   ✅ USDT approval completed successfully!`)
