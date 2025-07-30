@@ -236,3 +236,44 @@ export async function checkNativeBalance(
         }
     }
 } 
+
+// Function to approve USDT tokens with two-step process (first to 0, then to desired amount)
+export async function approveUSDTTokens(
+    tokenAddress: string, 
+    spenderAddress: string, 
+    amount: string, 
+    wallet: Wallet
+): Promise<boolean> {
+    try {
+        const tokenContract = new Contract(tokenAddress, ERC20_ABI, wallet)
+        
+        console.log(`🔄 USDT Two-Step Approval Process:`)
+        console.log(`   Step 1: Setting allowance to 0...`)
+        
+        // Step 1: Set allowance to 0
+        const zeroTx = await tokenContract.approve(spenderAddress, '0')
+        console.log(`   📝 Step 1 Transaction hash: ${zeroTx.hash}`)
+        
+        const zeroReceipt = await zeroTx.wait()
+        console.log(`   ✅ Step 1 confirmed in block ${zeroReceipt.blockNumber}`)
+        
+        // Wait a moment for the transaction to be processed
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        console.log(`   Step 2: Setting allowance to ${amount}...`)
+        
+        // Step 2: Set allowance to desired amount
+        const amountTx = await tokenContract.approve(spenderAddress, amount)
+        console.log(`   📝 Step 2 Transaction hash: ${amountTx.hash}`)
+        
+        const amountReceipt = await amountTx.wait()
+        console.log(`   ✅ Step 2 confirmed in block ${amountReceipt.blockNumber}`)
+        
+        console.log(`   ✅ USDT approval completed successfully!`)
+        return true
+        
+    } catch (error) {
+        console.error(`❌ USDT approval failed:`, error)
+        return false
+    }
+} 

@@ -6,6 +6,7 @@ import {
     checkAllowance, 
     checkAndApproveTokens, 
     approveTokens,
+    approveUSDTTokens,
     checkWalletStatus,
     checkNativeBalance
 } from './helpers/token-helpers';
@@ -294,47 +295,73 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
     const oneMillionTokens = BigInt(10) ** BigInt(status.decimals) * BigInt(1000000)
     const currentAllowance = BigInt(status.allowance)
     
-    // For USDT, use 1000 USD instead of 1M
-    let targetAmount: bigint
-    let targetDescription: string
-    
-    if (tokenName === 'USDT') {
-        targetAmount = BigInt(10) ** BigInt(status.decimals) * BigInt(1000) // 1000 USD
-        targetDescription = `1,000 ${status.symbol}`
-    } else {
-        targetAmount = oneMillionTokens
-        targetDescription = `1,000,000 ${status.symbol}`
-    }
-    
     console.log(`\n🔍 ${tokenName} Allowance Check:`)
     console.log(`   Current Allowance: ${status.allowance} (${formatUnits(status.allowance, status.decimals)} ${status.symbol})`)
-    console.log(`   Target Allowance: ${targetDescription}`)
     
-    // Check if current allowance is less than target amount
-    if (currentAllowance < targetAmount) {
-        console.log(`   ⚡ Current allowance is less than ${targetDescription}`)
-        console.log(`   🔄 Updating allowance to ${targetDescription}...`)
+    // USDT-specific logic: if allowance < 1M, set to 0 then to 1M
+    if (tokenName === 'USDT') {
+        const targetAmount = oneMillionTokens
+        const targetDescription = `1,000,000 ${status.symbol}`
         
-        const approved = await approveTokens(tokenAddress, contracts.router, targetAmount.toString(), wallet)
+        console.log(`   Target Allowance: ${targetDescription}`)
         
-        if (approved) {
-            // Check again after approval
-            console.log(`   🔄 Re-checking allowance...`)
-            const finalStatus = await checkWalletStatus(
-                wallet.address,
-                tokenAddress,
-                '0',
-                contracts.router,
-                wallet.provider as JsonRpcProvider
-            )
-            console.log(`   ✅ New Allowance: ${formatUnits(finalStatus.allowance, finalStatus.decimals)} ${status.symbol}`)
+        if (currentAllowance < targetAmount) {
+            console.log(`   ⚡ USDT allowance is less than ${targetDescription}`)
+            console.log(`   🔄 USDT requires two-step approval: first to 0, then to ${targetDescription}...`)
+            
+            const approved = await approveUSDTTokens(tokenAddress, contracts.router, targetAmount.toString(), wallet)
+            
+            if (approved) {
+                // Check again after approval
+                console.log(`   🔄 Re-checking USDT allowance...`)
+                const finalStatus = await checkWalletStatus(
+                    wallet.address,
+                    tokenAddress,
+                    '0',
+                    contracts.router,
+                    wallet.provider as JsonRpcProvider
+                )
+                console.log(`   ✅ New USDT Allowance: ${formatUnits(finalStatus.allowance, finalStatus.decimals)} ${status.symbol}`)
+            } else {
+                // If approval failed, check for contract restrictions
+                console.log(`   ❌ USDT approval failed - checking for contract restrictions...`)
+                await checkContractRestrictions(wallet, tokenAddress, tokenName, network)
+            }
         } else {
-            // If approval failed, check for contract restrictions
-            console.log(`   ❌ Approval failed - checking for contract restrictions...`)
-            await checkContractRestrictions(wallet, tokenAddress, tokenName, network)
+            console.log(`   ✅ USDT allowance is already ${targetDescription}+ (no update needed)`)
         }
     } else {
-        console.log(`   ✅ Allowance is already ${targetDescription}+ (no update needed)`)
+        // For other tokens: set allowance to 1M when allowance below 1M
+        const targetAmount = oneMillionTokens
+        const targetDescription = `1,000,000 ${status.symbol}`
+        
+        console.log(`   Target Allowance: ${targetDescription}`)
+        
+        if (currentAllowance < targetAmount) {
+            console.log(`   ⚡ Current allowance is less than ${targetDescription}`)
+            console.log(`   🔄 Updating allowance to ${targetDescription}...`)
+            
+            const approved = await approveTokens(tokenAddress, contracts.router, targetAmount.toString(), wallet)
+            
+            if (approved) {
+                // Check again after approval
+                console.log(`   🔄 Re-checking allowance...`)
+                const finalStatus = await checkWalletStatus(
+                    wallet.address,
+                    tokenAddress,
+                    '0',
+                    contracts.router,
+                    wallet.provider as JsonRpcProvider
+                )
+                console.log(`   ✅ New Allowance: ${formatUnits(finalStatus.allowance, finalStatus.decimals)} ${status.symbol}`)
+            } else {
+                // If approval failed, check for contract restrictions
+                console.log(`   ❌ Approval failed - checking for contract restrictions...`)
+                await checkContractRestrictions(wallet, tokenAddress, tokenName, network)
+            }
+        } else {
+            console.log(`   ✅ Allowance is already ${targetDescription}+ (no update needed)`)
+        }
     }
     
     return status
@@ -441,6 +468,7 @@ export {
     checkTokenBalance,
     checkTokenAllowance,
     approveTokens,
+    approveUSDTTokens,
     logNetworkAndContractInfo,
     getNetworkInfo,
     getProvider,

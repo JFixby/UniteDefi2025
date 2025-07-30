@@ -27,8 +27,8 @@ const USDT_POLYGON = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' // USDT on Pol
 // Limit Order Protocol address (Router V6)
 const LIMIT_ORDER_PROTOCOL = '0x111111125421ca6dc452d289314280a0f8842a65'
 
-// Amount: 10 USDC (6 decimals) - increased to meet minimum requirements
-const AMOUNT_USDC = '10000000' // 10 * 10^6
+// Amount: 1.33 USDC (6 decimals)
+const AMOUNT_USDC = '1330000' // 1.33 * 10^6
 
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -77,6 +77,7 @@ async function main(): Promise<void> {
         // Display contract addresses
         console.log('\n📜 Contract Addresses:')
         console.log(`   Limit Order Protocol (Router V6): ${LIMIT_ORDER_PROTOCOL}`)
+        console.log(`   Router Contract: ${LIMIT_ORDER_PROTOCOL}`)
         
         // Display amount details
         console.log('\n💰 Amount Details:')
@@ -97,7 +98,7 @@ async function main(): Promise<void> {
         const wallet = new ethers.Wallet(privateKeyWithPrefix, ethersProvider)
         
         // Approve USDC for both Limit Order Protocol and Escrow Factory
-        const largeAllowanceAmount = '1000000000' // 1000 USDC (6 decimals)
+        const largeAllowanceAmount = '1000000000000' // 1M USDC (6 decimals)
         console.log(`   Approving ${parseInt(largeAllowanceAmount) / 1000000} USDC allowance...`)
         
         // Check current allowance first
