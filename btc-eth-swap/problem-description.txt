@@ -1,0 +1,18 @@
+Task for this hackaton:
+
+Extend Fusion+ to Bitcoin 
+Qualification Requirements:
+- Preserve hashlock and timelock functionality for the non-EVM implementation
+- Swap functionality should be bidirectional (swaps should be possible to and from Ethereum)
+- Onchain (mainnet/L2 or testnet) execution of token transfers should be presented during the final demo (EVM testnets will require the deployment of Limit Order Protocol contracts)
+Stretch goals (not hard requirements):
+- UI
+- Enable partial fills
+
+Intro matherials:
+in project root there are folders:
+cross-chain-sdk - that offers code for fusion and fusin plus implementation - use this code as reference
+we have whitepaper.txt with the idea
+we preer to use Polygon network for this demo as the transactions are cheaper there
+in file SECRETS.py you can find private keys you need to run the demo
+
