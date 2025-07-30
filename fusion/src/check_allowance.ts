@@ -14,6 +14,46 @@ import {
 // Load environment variables
 dotenv.config();
 
+// Utility functions for retry logic with exponential backoff
+async function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(error: any): boolean {
+    return error?.code === 'BAD_DATA' && 
+           error?.value?.some?.((v: any) => v?.code === -32005 && v?.message === 'Too Many Requests');
+}
+
+async function retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 5,
+    baseDelay: number = 1000,
+    maxDelay: number = 30000
+): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            lastError = error;
+            
+            // If it's not a rate limit error or we've exhausted retries, throw
+            if (!isRateLimitError(error) || attempt === maxRetries) {
+                throw error;
+            }
+            
+            // Calculate delay with exponential backoff
+            const delayMs = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+            console.log(`   ⏳ Rate limited, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+            
+            await delay(delayMs);
+        }
+    }
+    
+    throw lastError;
+}
+
 // Configuration from environment variables
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-mainnet.infura.io/v3/YOUR_PROJECT_ID'
 const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID'
@@ -86,9 +126,9 @@ function getProvider(network: NetworkName): JsonRpcProvider {
 // Function to get network information using helper functions
 async function getNetworkInfo(provider: JsonRpcProvider) {
     try {
-        const network = await provider.getNetwork()
-        const blockNumber = await provider.getBlockNumber()
-        const gasPrice = await provider.getFeeData()
+        const network = await retryWithBackoff(() => provider.getNetwork())
+        const blockNumber = await retryWithBackoff(() => provider.getBlockNumber())
+        const gasPrice = await retryWithBackoff(() => provider.getFeeData())
         
         return {
             chainId: network.chainId,
@@ -138,6 +178,43 @@ async function logNetworkAndContractInfo(provider: JsonRpcProvider, walletAddres
     console.log(`USDT: ${config.blockExplorer}/address/${contracts.usdt}`)
     console.log(`USDC: ${config.blockExplorer}/address/${contracts.usdc}`)
     console.log(`Wallet: ${config.blockExplorer}/address/${walletAddress}`)
+    
+    // Add contract verification details
+    console.log('\n🔍 CONTRACT VERIFICATION:')
+    try {
+        // Check if contracts exist
+        const routerCode = await retryWithBackoff(() => provider.getCode(contracts.router))
+        const usdtCode = await retryWithBackoff(() => provider.getCode(contracts.usdt))
+        const usdcCode = await retryWithBackoff(() => provider.getCode(contracts.usdc))
+        
+        console.log(`   Router Contract: ${routerCode !== '0x' ? '✅ Exists' : '❌ Not Found'} (${routerCode.length} bytes)`)
+        console.log(`   USDT Contract: ${usdtCode !== '0x' ? '✅ Exists' : '❌ Not Found'} (${usdtCode.length} bytes)`)
+        console.log(`   USDC Contract: ${usdcCode !== '0x' ? '✅ Exists' : '❌ Not Found'} (${usdcCode.length} bytes)`)
+        
+        // Try to get basic contract info
+        try {
+            const usdtSymbol = await retryWithBackoff(() => provider.call({
+                to: contracts.usdt,
+                data: '0x95d89b41' // symbol()
+            }))
+            console.log(`   USDT Symbol: ${usdtSymbol}`)
+        } catch (error) {
+            console.log(`   USDT Symbol: ❌ Could not fetch`)
+        }
+        
+        try {
+            const usdcSymbol = await retryWithBackoff(() => provider.call({
+                to: contracts.usdc,
+                data: '0x95d89b41' // symbol()
+            }))
+            console.log(`   USDC Symbol: ${usdcSymbol}`)
+        } catch (error) {
+            console.log(`   USDC Symbol: ❌ Could not fetch`)
+        }
+        
+    } catch (error) {
+        console.log(`   ❌ Error checking contracts: ${error}`)
+    }
 }
 
 // Function to check for contract restrictions
@@ -153,13 +230,46 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
     
     try {
         // Check if contract exists and is accessible
-        const code = await provider.getCode(tokenAddress)
+        const code = await retryWithBackoff(() => provider.getCode(tokenAddress))
         if (code === '0x') {
             console.log(`   ❌ Contract does not exist at ${tokenAddress}`)
             return
         }
         console.log(`   ✅ Contract exists and is accessible`)
         console.log(`   📄 Contract bytecode length: ${code.length} characters`)
+        console.log(`   📄 Contract bytecode (first 100 chars): ${code.substring(0, 100)}...`)
+        
+        // Get contract details
+        console.log(`\n📋 CONTRACT DETAILS:`)
+        try {
+            // Try to get contract name and symbol
+            const nameCall = await retryWithBackoff(() => provider.call({
+                to: tokenAddress,
+                data: '0x06fdde03' // name()
+            }))
+            console.log(`   📝 Contract name call result: ${nameCall}`)
+            
+            const symbolCall = await retryWithBackoff(() => provider.call({
+                to: tokenAddress,
+                data: '0x95d89b41' // symbol()
+            }))
+            console.log(`   📝 Contract symbol call result: ${symbolCall}`)
+            
+            const decimalsCall = await retryWithBackoff(() => provider.call({
+                to: tokenAddress,
+                data: '0x313ce567' // decimals()
+            }))
+            console.log(`   📝 Contract decimals call result: ${decimalsCall}`)
+            
+            const totalSupplyCall = await retryWithBackoff(() => provider.call({
+                to: tokenAddress,
+                data: '0x18160ddd' // totalSupply()
+            }))
+            console.log(`   📝 Contract total supply call result: ${totalSupplyCall}`)
+            
+        } catch (error: any) {
+            console.log(`   ℹ️ Could not get contract details: ${error.message}`)
+        }
         
         // Check if wallet is blacklisted (for USDT)
         if (tokenName === 'USDT') {
@@ -174,10 +284,10 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
                 
                 for (let i = 0; i < blacklistSignatures.length; i++) {
                     try {
-                        const blacklistCall = await provider.call({
+                        const blacklistCall = await retryWithBackoff(() => provider.call({
                             to: tokenAddress,
                             data: blacklistSignatures[i]
-                        })
+                        }))
                         console.log(`   🔍 Blacklist check ${i + 1} result: ${blacklistCall}`)
                     } catch (error: any) {
                         console.log(`   ℹ️ Blacklist check ${i + 1} failed: ${error.message}`)
@@ -192,12 +302,13 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
         console.log(`\n📊 ALLOWANCE ANALYSIS:`)
         const allowanceData = '0xdd62ed3e' + '000000000000000000000000' + wallet.address.slice(2) + '000000000000000000000000' + contracts.router.slice(2)
         console.log(`   Allowance call data: ${allowanceData}`)
+        console.log(`   Allowance function: allowance(${wallet.address}, ${contracts.router})`)
         
         try {
-            const allowanceResult = await provider.call({
+            const allowanceResult = await retryWithBackoff(() => provider.call({
                 to: tokenAddress,
                 data: allowanceData
-            })
+            }))
             const currentAllowance = BigInt(allowanceResult)
             console.log(`   📊 Current Allowance: ${currentAllowance.toString()}`)
             console.log(`   📊 Current Allowance (hex): ${allowanceResult}`)
@@ -212,61 +323,32 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
             console.log(`   ❌ Error details: ${JSON.stringify(error, null, 2)}`)
         }
         
-        // Try to estimate gas for approval with different amounts
-        console.log(`\n⛽ GAS ESTIMATION TESTS:`)
-        const testAmounts = [
-            '1000000000', // 1000 USDT (6 decimals)
-            '1000000000000', // 1M USDT (6 decimals)
-            '1000000000000000000000000' // 1M USDT (18 decimals)
-        ]
-        
-        for (let i = 0; i < testAmounts.length; i++) {
-            const amount = testAmounts[i]
-            const approvalData = '0x095ea7b3' + '000000000000000000000000' + contracts.router.slice(2) + '0000000000000000000000000000000000000000000000000000000000000000'.slice(0, -amount.length) + amount
-            
-            console.log(`\n   Test ${i + 1}: Approval amount ${amount} (${parseInt(amount) / Math.pow(10, 6)} USDT)`)
-            console.log(`   Approval call data: ${approvalData}`)
-            
-            try {
-                const gasEstimate = await provider.estimateGas({
-                    from: wallet.address,
-                    to: tokenAddress,
-                    data: approvalData
-                })
-                console.log(`   ✅ Gas estimate: ${gasEstimate.toString()}`)
-            } catch (error: any) {
-                console.log(`   ❌ Gas estimation failed: ${error.message}`)
-                console.log(`   ❌ Error code: ${error.code}`)
-                console.log(`   ❌ Error reason: ${error.reason}`)
-                console.log(`   ❌ Transaction data: ${JSON.stringify(error.transaction, null, 2)}`)
-                
-                // Check if it's a "require(false)" error
-                if (error.message.includes('require(false)')) {
-                    console.log(`   🚫 Contract has a hard restriction preventing this approval`)
-                    console.log(`   🚫 This typically indicates the wallet is blacklisted or has restrictions`)
-                }
-                
-                // Check for other common error patterns
-                if (error.message.includes('insufficient funds')) {
-                    console.log(`   💰 Insufficient funds for gas estimation`)
-                }
-                if (error.message.includes('nonce')) {
-                    console.log(`   🔢 Nonce-related error`)
-                }
-            }
-        }
+        // Gas estimation tests removed - not needed for allowance checks
         
         // Additional contract state checks
         console.log(`\n🔍 CONTRACT STATE CHECKS:`)
         try {
-            const balance = await provider.getBalance(wallet.address)
+            const balance = await retryWithBackoff(() => provider.getBalance(wallet.address))
             console.log(`   Wallet ETH balance: ${formatUnits(balance, 18)} ETH`)
             
-            const nonce = await provider.getTransactionCount(wallet.address, 'pending')
+            const nonce = await retryWithBackoff(() => provider.getTransactionCount(wallet.address, 'pending'))
             console.log(`   Wallet nonce: ${nonce}`)
             
-            const networkInfo = await provider.getNetwork()
+            const networkInfo = await retryWithBackoff(() => provider.getNetwork())
             console.log(`   Network chainId: ${networkInfo.chainId}`)
+            
+            // Check wallet's token balance
+            const balanceData = '0x70a08231' + '000000000000000000000000' + wallet.address.slice(2)
+            try {
+                const tokenBalanceResult = await retryWithBackoff(() => provider.call({
+                    to: tokenAddress,
+                    data: balanceData
+                }))
+                const tokenBalance = BigInt(tokenBalanceResult)
+                console.log(`   💰 Wallet token balance: ${tokenBalance.toString()}`)
+            } catch (error: any) {
+                console.log(`   ❌ Could not check token balance: ${error.message}`)
+            }
             
         } catch (error: any) {
             console.log(`   ❌ Error checking contract state: ${error.message}`)
@@ -282,6 +364,12 @@ async function checkContractRestrictions(wallet: Wallet, tokenAddress: string, t
 async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName: string, network: NetworkName) {
     const contracts = CONTRACT_ADDRESSES[network]
     
+    console.log(`\n🔍 ${tokenName} TOKEN ANALYSIS:`)
+    console.log(`   Contract Address: ${tokenAddress}`)
+    console.log(`   Network: ${network}`)
+    console.log(`   Router: ${contracts.router}`)
+    console.log(`   Wallet: ${wallet.address}`)
+    
     // Use the comprehensive checkWalletStatus helper
     const status = await checkWalletStatus(
         wallet.address,
@@ -295,8 +383,11 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
     const oneMillionTokens = BigInt(10) ** BigInt(status.decimals) * BigInt(1000000)
     const currentAllowance = BigInt(status.allowance)
     
-    console.log(`\n🔍 ${tokenName} Allowance Check:`)
+    console.log(`\n📊 ${tokenName} ALLOWANCE STATUS:`)
+    console.log(`   Token Symbol: ${status.symbol}`)
+    console.log(`   Token Decimals: ${status.decimals}`)
     console.log(`   Current Allowance: ${status.allowance} (${formatUnits(status.allowance, status.decimals)} ${status.symbol})`)
+    console.log(`   Current Balance: ${status.balance} (${formatUnits(status.balance, status.decimals)} ${status.symbol})`)
     
     // USDT-specific logic: if allowance < 1M, set to 0 then to 1M
     if (tokenName === 'USDT') {
@@ -304,6 +395,7 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
         const targetDescription = `1,000,000 ${status.symbol}`
         
         console.log(`   Target Allowance: ${targetDescription}`)
+        console.log(`   Target Amount (raw): ${targetAmount.toString()}`)
         
         if (currentAllowance < targetAmount) {
             console.log(`   ⚡ USDT allowance is less than ${targetDescription}`)
@@ -336,6 +428,7 @@ async function checkTokenStatus(wallet: Wallet, tokenAddress: string, tokenName:
         const targetDescription = `1,000,000 ${status.symbol}`
         
         console.log(`   Target Allowance: ${targetDescription}`)
+        console.log(`   Target Amount (raw): ${targetAmount.toString()}`)
         
         if (currentAllowance < targetAmount) {
             console.log(`   ⚡ Current allowance is less than ${targetDescription}`)
@@ -403,7 +496,7 @@ async function getNetworkStatus(provider: JsonRpcProvider, network: NetworkName)
     const config = NETWORK_CONFIG[network]
     console.log(`\n📊 ${config.name.toUpperCase()} NETWORK STATUS:`)
     try {
-        const latestBlock = await provider.getBlock('latest')
+        const latestBlock = await retryWithBackoff(() => provider.getBlock('latest'))
         if (latestBlock) {
             console.log(`   Latest Block: ${latestBlock.number}`)
             console.log(`   Block Timestamp: ${new Date(Number(latestBlock.timestamp) * 1000).toISOString()}`)
