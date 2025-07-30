@@ -41,3 +41,12 @@ how is 1inch used
 what are the benefits of using 1incn
 what are the benefits of using lightning network
 how 1inch benefits form this?
+
+
+alos explain why we use polygon: it is cheaper anf faster, lower transaction costs
+bu then it is easy to swap it to ETH mainnet once all settlements are done
+the idea is similar to how we use LN over BTC L1 - we run chear zero cost transactions and later settle to mainnet using provided tools - this is for hackaton but can easily be imomenented on production
+on LN there is a solution to swap from LN to L1
+on ETH side: polygon code if fully compatible with eth mainnet so it can be execured directlty on mainnet
+but also it can take advantage of using polygon and later swap to mainnet resulting funds
+using 1inch corsschain swap
