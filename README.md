@@ -474,23 +474,6 @@ npm run test:performance
 - 🔄 Institutional features
 - 🔄 Global compliance
 
-## 🤝 Contributing
-
-We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-### Code Standards
-- TypeScript for all new code
-- Comprehensive test coverage
-- Documentation for all public APIs
-- Security best practices
-
 ## 🙏 Acknowledgments
 
 - **1inch Network**: For the Fusion+ protocol foundation
