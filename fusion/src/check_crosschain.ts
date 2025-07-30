@@ -8,19 +8,21 @@ import {
 } from '@1inch/cross-chain-sdk'
 import Web3 from 'web3'
 import { randomBytes } from 'node:crypto'
+import dotenv from 'dotenv'
+import { TOKENS, getTokenInfo, formatTokenAmount } from './tokens'
 
-// Token addresses
-const ETH_USDC = '0xA0b86991c6218b36c1d19d4a2e9Eb0cE3606eB48'
-const POLYGON_USDT = '0xC2132D05D31c914a87C6611C10748AEb04B58E8F'
+// Load environment variables from .env file
+dotenv.config()
 
 // Configuration
-const privateKey = process.env.PRIVATE_KEY || '0x' // Set your private key in environment
-const rpc = process.env.ETH_RPC || 'https://ethereum-rpc.publicnode.com'
-const authKey = process.env.AUTH_KEY || 'auth-key' // Set your 1inch auth key
+const privateKey = process.env.PRIVATE_KEY ? `0x${process.env.PRIVATE_KEY}` : '0x' // Add 0x prefix if not present
+const rpc = process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com'
+const authKey = process.env.DEV_PORTAL_API_TOKEN || 'auth-key' // Set your 1inch auth key
 const source = 'crosschain-swap-example'
 
 // Amount: 1.33 USDC (6 decimals)
 const USDC_AMOUNT = '1330000' // 1.33 * 10^6
+const USDC_AMOUNT_READABLE = '1.33'
 
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -28,7 +30,7 @@ async function sleep(ms: number): Promise<void> {
 
 async function performCrossChainSwap(): Promise<void> {
     try {
-        console.log('🚀 Starting cross-chain swap: 1.33 USDC (Ethereum) → USDT (Polygon)')
+        console.log(`🚀 Starting cross-chain swap: ${USDC_AMOUNT_READABLE} USDC (Ethereum) → USDT (Polygon)`)
         
         // Initialize Web3 and SDK
         const web3 = new Web3(rpc)
@@ -44,21 +46,27 @@ async function performCrossChainSwap(): Promise<void> {
 
         // Get quote
         console.log('📊 Getting quote...')
+        const srcTokenAddress = TOKENS.ETHEREUM.USDC
+        const dstTokenAddress = TOKENS.POLYGON.USDT
+        console.log(`  Source token: ${srcTokenAddress}`)
+        console.log(`  Destination token: ${dstTokenAddress}`)
+        console.log(`  Amount: ${USDC_AMOUNT_READABLE} USDC`)
+        
         const quote = await sdk.getQuote({
             amount: USDC_AMOUNT,
             srcChainId: NetworkEnum.ETHEREUM,
             dstChainId: NetworkEnum.POLYGON,
             enableEstimate: true,
-            srcTokenAddress: ETH_USDC,
-            dstTokenAddress: POLYGON_USDT,
+            srcTokenAddress,
+            dstTokenAddress,
             walletAddress
         })
 
         console.log(`📈 Quote received:`)
-        console.log(`  Source: USDC (Ethereum)`)
-        console.log(`  Destination: USDT (Polygon)`)
-        console.log(`  Input amount: ${USDC_AMOUNT} USDC`)
-        console.log(`  Output amount: ${quote.dstTokenAmount} USDT`)
+        console.log(`  Source: ${srcTokenAddress} (Ethereum)`)
+        console.log(`  Destination: ${dstTokenAddress} (Polygon)`)
+        console.log(`  Input amount: ${quote.srcTokenAmount}`)
+        console.log(`  Output amount: ${quote.dstTokenAmount}`)
 
         // Select preset
         const preset = PresetEnum.fast
