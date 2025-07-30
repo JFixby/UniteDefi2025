@@ -2,6 +2,84 @@
 
 This directory contains a complete implementation of BTC swaps using the Lightning Network with HTLC (Hash Time Locked Contract) functionality. The implementation supports swaps between Alice and Carol nodes.
 
+## 🎭 **The Scenario: Alice and Carol Swap BTC**
+
+### **Characters:**
+- **Alice** - Lightning Network node (port 8081)
+- **Bob** - Intermediary node (port 8082) - acts as routing hub
+- **Carol** - Lightning Network node (port 8083)
+
+### **The Swap Scenario:**
+
+#### **Scenario 1: Alice → Carol Swap**
+```
+Alice wants to send 5000 satoshis to Carol
+```
+
+**What happens:**
+1. **Alice** creates a swap order to send BTC to **Carol**
+2. **Carol** generates an HTLC invoice with a hash lock
+3. **Alice** pays the invoice through the Lightning Network
+4. **Bob** routes the payment between Alice and Carol
+5. **Carol** receives the BTC instantly via Lightning
+
+#### **Scenario 2: Carol → Alice Swap**
+```
+Carol wants to send 3000 satoshis back to Alice
+```
+
+**What happens:**
+1. **Carol** creates a swap order to send BTC to **Alice**
+2. **Alice** generates an HTLC invoice with a hash lock
+3. **Carol** pays the invoice through the Lightning Network
+4. **Bob** routes the payment between Carol and Alice
+5. **Alice** receives the BTC instantly via Lightning
+
+## 🔐 **HTLC (Hash Time Locked Contract) Scenario:**
+
+### **The Security Mechanism:**
+```
+1. Generate Secret: "abc123..." (32 bytes)
+2. Create Hash: SHA256("abc123...") = "def456..."
+3. Alice pays Carol using "def456..." as condition
+4. Only when Alice reveals "abc123..." does Carol get paid
+5. If Alice doesn't reveal secret within time limit, payment expires
+```
+
+### **Why This Matters:**
+- **Atomic**: Either both sides complete or both fail
+- **Trustless**: No need to trust the other party
+- **Time-bound**: Automatic expiry prevents indefinite holds
+- **Cryptographic**: Uses hash functions for security
+
+## 🎯 **Demo Scenario for Hackathon:**
+
+### **What You'll Show:**
+1. **"Alice has 10,000 sats, Carol has 5,000 sats"**
+2. **"Alice wants to send 3,000 sats to Carol"**
+3. **"Create HTLC swap with 30-minute expiry"**
+4. **"Execute the swap through Lightning Network"**
+5. **"Alice now has 7,000 sats, Carol has 8,000 sats"**
+
+### **The Magic:**
+- ✅ **Instant settlement** (Lightning Network)
+- ✅ **No on-chain fees** (channel-based)
+- ✅ **Atomic execution** (HTLC guarantees)
+- ✅ **Bidirectional** (works both ways)
+
+## 🔄 **Integration Scenario with 1inch:**
+
+### **Cross-Chain Scenario:**
+```
+Alice (BTC) ←→ Lightning Network ←→ Polygon ←→ Carol (ETH)
+```
+
+1. **Alice** wants to swap **1 BTC** for **15 ETH**
+2. **Lightning Network** handles BTC side (this script)
+3. **Polygon** handles ETH side (1inch Fusion+)
+4. **Same HTLC secret** used on both chains
+5. **Relayer** coordinates the secret exchange
+
 ## 🏗️ Architecture
 
 The swap system uses the following components:
