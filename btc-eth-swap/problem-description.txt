@@ -31,3 +31,6 @@ take in accout revie by the jury:
 we'd love to see one that builds on this idea, maybe with PSBT so the user doesn't have to explicitly send their bitcoin, resolver settles the EVM side escrows and an actual relayer system which facilitates handing off orders and secrets
 plus there are other HTLC systems build for bitcoin, so it's not like this is an unsolved problem 😁
 https://garden.finance has an HTLC system, we'd just like to see on build on top of 1inch's fusion+ that follows the existing model"
+
+what is advantage of LN here?
+instant swaps on BTC side for (list reasons why it is good, starting from faster arbitrage compare to atomic swap)
