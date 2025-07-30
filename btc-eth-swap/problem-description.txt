@@ -50,3 +50,15 @@ on LN there is a solution to swap from LN to L1
 on ETH side: polygon code if fully compatible with eth mainnet so it can be execured directlty on mainnet
 but also it can take advantage of using polygon and later swap to mainnet resulting funds
 using 1inch corsschain swap
+
+Output document structure:
+1) briefly explain idea to public audience showing the common good that this project will provide
+1.1) problem description for hackaton
+2) expelain the idea/solution in form of executive summary for CTO, short and clear so we understand the general solution
+2.1) explain the solution
+3) then arcitecture
+4) roles stackeholders and participants
+5) main user scenario for the demo
+6) technical details for developers and jury
+6.1) address concerns by 1inch
+7) clarify usage of polygon in details and other ress relevant remaning issues
