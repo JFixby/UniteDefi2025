@@ -1,92 +1,132 @@
 import {
-    HashLock,
+    SDK,
     NetworkEnum,
-    OrderStatus,
     PresetEnum,
+    HashLock,
     PrivateKeyProviderConnector,
-    SDK
+    OrderStatus
 } from '@1inch/cross-chain-sdk'
-import Web3 from 'web3'
+import { ethers } from 'ethers'
 import { randomBytes } from 'node:crypto'
-import dotenv from 'dotenv'
-import { TOKENS, getTokenInfo, formatTokenAmount } from './tokens'
 
-// Load environment variables from .env file
-dotenv.config()
-
-// Configuration
-const privateKey = process.env.PRIVATE_KEY ? `0x${process.env.PRIVATE_KEY}` : '0x' // Add 0x prefix if not present
-const rpc = process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com'
-const authKey = process.env.DEV_PORTAL_API_TOKEN || 'auth-key' // Set your 1inch auth key
-const source = 'crosschain-swap-example'
-
-// Amount: 1.33 USDC (6 decimals)
-const USDC_AMOUNT = '1330000' // 1.33 * 10^6
-const USDC_AMOUNT_READABLE = '1.33'
-
-async function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+// Token addresses from tokens.py
+const TOKENS = {
+    mainnet: {
+        USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    },
+    polygon: {
+        USDT: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
+    }
 }
 
-async function performCrossChainSwap(): Promise<void> {
-    try {
-        console.log(`🚀 Starting cross-chain swap: ${USDC_AMOUNT_READABLE} USDC (Ethereum) → USDT (Polygon)`)
-        
-        // Initialize Web3 and SDK
-        const web3 = new Web3(rpc)
-        const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address
-        
-        console.log(`📱 Wallet address: ${walletAddress}`)
-        
-        const sdk = new SDK({
-            url: 'https://api.1inch.dev/fusion-plus',
-            authKey,
-            blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3 as any)
-        })
+// Simple cross-chain swap: USDC (Ethereum) -> USDT (Polygon)
+async function simpleCrossChainSwap() {
+    console.log('🚀 Starting cross-chain swap: USDC (Ethereum) -> USDT (Polygon)')
+    console.log('=' .repeat(60))
 
-        // Get quote
-        console.log('📊 Getting quote...')
-        const srcTokenAddress = TOKENS.ETHEREUM.USDC
-        const dstTokenAddress = TOKENS.POLYGON.USDT
-        console.log(`  Source token: ${srcTokenAddress}`)
-        console.log(`  Destination token: ${dstTokenAddress}`)
-        console.log(`  Amount: ${USDC_AMOUNT_READABLE} USDC`)
-        
+    // Configuration
+    const privateKey = process.env.PRIVATE_KEY || '0x' // Replace with your private key
+    const rpc = process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com'
+    const authKey = process.env.DEV_PORTAL_API_TOKEN || 'your-auth-key' // Get from 1inch dev portal
+    const source = 'sdk-tutorial'
+
+    console.log('📋 Configuration:')
+    console.log(`   RPC: ${rpc}`)
+    console.log(`   Auth Key: ${authKey.substring(0, 10)}...`)
+    console.log(`   Source: ${source}`)
+
+    // Initialize ethers provider and wallet
+    console.log('\n🔧 Initializing provider and wallet...')
+    const provider = new ethers.JsonRpcProvider(rpc)
+    const wallet = new ethers.Wallet(privateKey, provider)
+    const walletAddress = wallet.address
+    console.log(`   Wallet address: ${walletAddress}`)
+
+    // Create Web3-like adapter for ethers
+    const web3LikeAdapter = {
+        eth: {
+            call: async (transactionConfig: { to?: string; data?: string }) => {
+                return provider.call(transactionConfig)
+            }
+        },
+        extend: () => web3LikeAdapter
+    }
+
+    // Initialize SDK
+    console.log('\n🔧 Initializing 1inch Cross-Chain SDK...')
+    const sdk = new SDK({
+        url: 'https://api.1inch.dev/fusion-plus',
+        authKey,
+        blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3LikeAdapter)
+    })
+    console.log('   SDK initialized successfully')
+
+    // Swap parameters
+    const amount = '1330000' // 1.33 USDC (6 decimals)
+    const srcChainId = NetworkEnum.ETHEREUM
+    const dstChainId = NetworkEnum.POLYGON
+    const srcTokenAddress = TOKENS.mainnet.USDC
+    const dstTokenAddress = TOKENS.polygon.USDT
+
+    console.log('\n📊 Swap Parameters:')
+    console.log(`   Amount: ${amount} (1.33 USDC)`)
+    console.log(`   Source Chain: Ethereum (${srcChainId})`)
+    console.log(`   Destination Chain: Polygon (${dstChainId})`)
+    console.log(`   Source Token: USDC (${srcTokenAddress})`)
+    console.log(`   Destination Token: USDT (${dstTokenAddress})`)
+
+    try {
+        // Step 1: Get quote
+        console.log('\n🔍 Step 1: Getting quote...')
         const quote = await sdk.getQuote({
-            amount: USDC_AMOUNT,
-            srcChainId: NetworkEnum.ETHEREUM,
-            dstChainId: NetworkEnum.POLYGON,
+            amount,
+            srcChainId,
+            dstChainId,
             enableEstimate: true,
             srcTokenAddress,
             dstTokenAddress,
             walletAddress
         })
 
-        console.log(`📈 Quote received:`)
-        console.log(`  Source: ${srcTokenAddress} (Ethereum)`)
-        console.log(`  Destination: ${dstTokenAddress} (Polygon)`)
-        console.log(`  Input amount: ${quote.srcTokenAmount}`)
-        console.log(`  Output amount: ${quote.dstTokenAmount}`)
+        console.log('✅ Quote received:')
+        console.log(`   Quote ID: ${quote.quoteId}`)
+        console.log(`   Source Amount: ${quote.srcTokenAmount}`)
+        console.log(`   Destination Amount: ${quote.dstTokenAmount}`)
+        console.log(`   Recommended Preset: ${quote.recommendedPreset}`)
+        console.log(`   Source Escrow Factory: ${quote.srcEscrowFactory}`)
+        console.log(`   Destination Escrow Factory: ${quote.dstEscrowFactory}`)
 
-        // Select preset
+        // Display presets
+        console.log('\n📋 Available Presets:')
+        Object.entries(quote.presets).forEach(([preset, data]) => {
+            console.log(`   ${preset.toUpperCase()}:`)
+            console.log(`     Auction Duration: ${data.auctionDuration}s`)
+            console.log(`     Initial Rate Bump: ${data.initialRateBump}`)
+            console.log(`     Secrets Count: ${data.secretsCount}`)
+            console.log(`     Cost in DST Token: ${data.costInDstToken}`)
+        })
+
+        // Step 2: Choose preset and generate secrets
+        console.log('\n🔐 Step 2: Generating secrets...')
         const preset = PresetEnum.fast
-        console.log(`⚡ Using preset: ${preset}`)
+        console.log(`   Selected preset: ${preset}`)
 
-        // Generate secrets
-        console.log('🔐 Generating secrets...')
         const secrets = Array.from({
             length: quote.presets[preset].secretsCount
         }).map(() => '0x' + randomBytes(32).toString('hex'))
 
+        console.log(`   Generated ${secrets.length} secrets`)
+
+        // Create hash lock
         const hashLock = secrets.length === 1
             ? HashLock.forSingleFill(secrets[0])
             : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets))
 
         const secretHashes = secrets.map((s) => HashLock.hashSecret(s))
-        console.log(`Generated ${secrets.length} secrets`)
+        console.log(`   Created hash lock with ${secretHashes.length} secret hashes`)
 
-        // Create order
-        console.log('📝 Creating order...')
+        // Step 3: Create order
+        console.log('\n📝 Step 3: Creating order...')
         const { hash, quoteId, order } = await sdk.createOrder(quote, {
             walletAddress,
             hashLock,
@@ -94,81 +134,112 @@ async function performCrossChainSwap(): Promise<void> {
             source,
             secretHashes
         })
-        console.log(`✅ Order created with hash: ${hash}`)
 
-        // Submit order
-        console.log('📤 Submitting order...')
+        console.log('✅ Order created:')
+        console.log(`   Order Hash: ${hash}`)
+        console.log(`   Quote ID: ${quoteId}`)
+        console.log(`   Order Maker: ${order.maker}`)
+        console.log(`   Order Salt: ${order.salt}`)
+
+        // Step 4: Submit order
+        console.log('\n📤 Step 4: Submitting order...')
         const orderInfo = await sdk.submitOrder(
             quote.srcChainId,
             order,
             quoteId,
             secretHashes
         )
-        console.log(`✅ Order submitted`)
 
-        // Monitor and submit secrets
-        console.log('🔄 Monitoring order status and submitting secrets...')
-        let attempts = 0
-        const maxAttempts = 300 // 5 minutes with 1-second intervals
-        
-        while (attempts < maxAttempts) {
-            const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash)
+        console.log('✅ Order submitted:')
+        console.log(`   Order Hash: ${orderInfo.orderHash}`)
+        console.log(`   Signature: ${orderInfo.signature.substring(0, 20)}...`)
+        console.log(`   Quote ID: ${orderInfo.quoteId}`)
 
-            if (secretsToShare.fills.length) {
-                for (const { idx } of secretsToShare.fills) {
-                    await sdk.submitSecret(hash, secrets[idx])
-                    console.log(`🔓 Shared secret ${idx}`)
-                }
-            }
+        // Step 5: Monitor and submit secrets
+        console.log('\n⏳ Step 5: Monitoring order status and submitting secrets...')
+        await monitorAndSubmitSecrets(sdk, hash, secrets)
 
-            // Check order status
-            const { status } = await sdk.getOrderStatus(hash)
-            console.log(`📊 Order status: ${status}`)
-
-            if (status === OrderStatus.Executed) {
-                console.log('🎉 Swap completed successfully!')
-                break
-            } else if (status === OrderStatus.Expired) {
-                console.log('⏰ Order expired')
-                break
-            } else if (status === OrderStatus.Refunded) {
-                console.log('↩️ Order refunded')
-                break
-            }
-
-            attempts++
-            await sleep(1000)
-        }
-
-        if (attempts >= maxAttempts) {
-            console.log('⏰ Timeout reached. Check order status manually.')
-        }
-
-        // Final status check
-        const finalStatus = await sdk.getOrderStatus(hash)
-        console.log('📋 Final order status:', finalStatus)
+        console.log('\n🎉 Cross-chain swap completed successfully!')
+        console.log('=' .repeat(60))
 
     } catch (error) {
-        console.error('❌ Error during cross-chain swap:', error)
+        console.error('\n❌ Error during cross-chain swap:')
+        console.error(error)
         throw error
     }
 }
 
-// Export the function
-export { performCrossChainSwap }
+// Helper function to monitor order status and submit secrets
+async function monitorAndSubmitSecrets(sdk: SDK, orderHash: string, secrets: string[]) {
+    console.log('   Starting monitoring loop...')
+    let iteration = 0
 
-// Run if this file is executed directly
-if (require.main === module) {
-    performCrossChainSwap()
-        .then(() => {
-            console.log('✅ Cross-chain swap script completed')
-            process.exit(0)
+    while (true) {
+        iteration++
+        console.log(`\n   📊 Monitoring iteration ${iteration}:`)
+
+        try {
+            // Check for secrets that need to be submitted
+            const secretsToShare = await sdk.getReadyToAcceptSecretFills(orderHash)
+            console.log(`     Secrets to share: ${secretsToShare.fills.length}`)
+
+            if (secretsToShare.fills.length) {
+                for (const { idx } of secretsToShare.fills) {
+                    console.log(`     📤 Submitting secret for fill ${idx}...`)
+                    await sdk.submitSecret(orderHash, secrets[idx])
+                    console.log(`     ✅ Secret ${idx} submitted successfully`)
+                }
+            }
+
+            // Check order status
+            const { status } = await sdk.getOrderStatus(orderHash)
+            console.log(`     📈 Order status: ${status}`)
+
+            // Break if order is finished
+            if (
+                status === OrderStatus.Executed ||
+                status === OrderStatus.Expired ||
+                status === OrderStatus.Refunded
+            ) {
+                console.log(`     🏁 Order finished with status: ${status}`)
+                break
+            }
+
+            // Wait before next check
+            console.log('     ⏳ Waiting 2 seconds before next check...')
+            await sleep(2000)
+
+        } catch (error) {
+            console.error(`     ❌ Error in monitoring iteration ${iteration}:`, error)
+            await sleep(5000) // Wait longer on error
+        }
+    }
+
+    const finalStatus = await sdk.getOrderStatus(orderHash)
+    console.log('\n   📋 Final order status:')
+    console.log(`     Status: ${finalStatus.status}`)
+    if (finalStatus.fills) {
+        console.log(`     Fills: ${finalStatus.fills.length}`)
+        finalStatus.fills.forEach((fill, index) => {
+            console.log(`       Fill ${index}: ${fill.txHash}`)
         })
-        .catch((error) => {
-            console.error('❌ Cross-chain swap script failed:', error)
-            process.exit(1)
-        })
+    }
 }
 
+// Helper function to sleep
+async function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
+// Export functions for use in other modules
+export {
+    simpleCrossChainSwap,
+    monitorAndSubmitSecrets
+}
 
+// Run example if this file is executed directly
+if (require.main === module) {
+    simpleCrossChainSwap()
+        .then(() => console.log('Simple cross-chain swap completed'))
+        .catch(console.error)
+}
