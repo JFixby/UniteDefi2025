@@ -8,6 +8,10 @@ import {
 } from '@1inch/cross-chain-sdk'
 import { ethers } from 'ethers'
 import { randomBytes } from 'node:crypto'
+import * as dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 // Token addresses from tokens.py
 const TOKENS = {
@@ -62,14 +66,14 @@ async function simpleCrossChainSwap() {
     console.log('   SDK initialized successfully')
 
     // Swap parameters
-    const amount = '1330000' // 1.33 USDC (6 decimals)
+    const amount = '10000000' // 10 USDC (6 decimals) - minimum viable amount
     const srcChainId = NetworkEnum.ETHEREUM
     const dstChainId = NetworkEnum.POLYGON
     const srcTokenAddress = TOKENS.mainnet.USDC
     const dstTokenAddress = TOKENS.polygon.USDT
 
     console.log('\n📊 Swap Parameters:')
-    console.log(`   Amount: ${amount} (1.33 USDC)`)
+    console.log(`   Amount: ${amount} (10 USDC)`)
     console.log(`   Source Chain: Ethereum (${srcChainId})`)
     console.log(`   Destination Chain: Polygon (${dstChainId})`)
     console.log(`   Source Token: USDC (${srcTokenAddress})`)
@@ -78,15 +82,52 @@ async function simpleCrossChainSwap() {
     try {
         // Step 1: Get quote
         console.log('\n🔍 Step 1: Getting quote...')
-        const quote = await sdk.getQuote({
+        console.log('   📋 Quote request parameters:')
+        console.log(`      Amount: ${amount} wei (${parseInt(amount) / 1000000} USDC)`)
+        console.log(`      Source Chain ID: ${srcChainId}`)
+        console.log(`      Destination Chain ID: ${dstChainId}`)
+        console.log(`      Source Token: ${srcTokenAddress}`)
+        console.log(`      Destination Token: ${dstTokenAddress}`)
+        console.log(`      Wallet Address: ${walletAddress}`)
+        console.log(`      Enable Estimate: true`)
+        
+        const quoteRequest = {
             amount,
-            srcChainId,
-            dstChainId,
+            srcChainId: srcChainId as any,
+            dstChainId: dstChainId as any,
             enableEstimate: true,
             srcTokenAddress,
             dstTokenAddress,
             walletAddress
-        })
+        }
+        
+        console.log('   🔄 Sending quote request to 1inch API...')
+        console.log('   🌐 API URL: https://api.1inch.dev/fusion-plus')
+        console.log('   🔑 Auth Key: ' + authKey.substring(0, 10) + '...')
+        
+        let quote
+        try {
+            quote = await sdk.getQuote(quoteRequest)
+            console.log('   ✅ Quote request successful')
+        } catch (quoteError: any) {
+            console.log('   ❌ Quote request failed')
+            console.log('   📊 Error details:')
+            console.log(`      Status: ${quoteError.response?.status || 'Unknown'}`)
+            console.log(`      Message: ${quoteError.response?.data?.description || quoteError.message}`)
+            console.log(`      Error Code: ${quoteError.code || 'Unknown'}`)
+            
+            if (quoteError.response?.data) {
+                console.log('   📋 Full API Response:')
+                console.log(JSON.stringify(quoteError.response.data, null, 2))
+            }
+            
+            if (quoteError.config?.url) {
+                console.log('   🔗 Request URL:')
+                console.log(quoteError.config.url)
+            }
+            
+            throw quoteError
+        }
 
         console.log('✅ Quote received:')
         console.log(`   Quote ID: ${quote.quoteId}`)
@@ -162,9 +203,28 @@ async function simpleCrossChainSwap() {
         console.log('\n🎉 Cross-chain swap completed successfully!')
         console.log('=' .repeat(60))
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('\n❌ Error during cross-chain swap:')
-        console.error(error)
+        console.error('   📊 Error Type:', error.constructor.name)
+        console.error('   📝 Error Message:', error.message)
+        
+        if (error.response) {
+            console.error('   🌐 HTTP Status:', error.response.status)
+            console.error('   📋 Response Data:', JSON.stringify(error.response.data, null, 2))
+        }
+        
+        if (error.config) {
+            console.error('   🔗 Request URL:', error.config.url)
+            console.error('   📤 Request Method:', error.config.method)
+        }
+        
+        if (error.code) {
+            console.error('   🔢 Error Code:', error.code)
+        }
+        
+        console.error('   📍 Stack Trace:')
+        console.error(error.stack)
+        
         throw error
     }
 }
@@ -209,8 +269,14 @@ async function monitorAndSubmitSecrets(sdk: SDK, orderHash: string, secrets: str
             console.log('     ⏳ Waiting 2 seconds before next check...')
             await sleep(2000)
 
-        } catch (error) {
-            console.error(`     ❌ Error in monitoring iteration ${iteration}:`, error)
+        } catch (error: any) {
+            console.error(`     ❌ Error in monitoring iteration ${iteration}:`)
+            console.error(`        📝 Error: ${error.message}`)
+            console.error(`        🔢 Code: ${error.code || 'Unknown'}`)
+            if (error.response) {
+                console.error(`        🌐 Status: ${error.response.status}`)
+                console.error(`        📋 Data: ${JSON.stringify(error.response.data, null, 2)}`)
+            }
             await sleep(5000) // Wait longer on error
         }
     }
