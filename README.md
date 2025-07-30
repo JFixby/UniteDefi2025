@@ -1,395 +1,505 @@
-# ⚡ Lightning Network ↔ Polygon Cross-Chain Swap
+# ⚡ Lightning-Fusion: Bitcoin ↔ Ethereum Cross-Chain Swaps
 
-## 🌟 Project Overview
+> **Extending 1inch Fusion+ Protocol to Support Bitcoin via Lightning Network**
 
-This project extends 1inch Fusion+ to Bitcoin by leveraging the Lightning Network for instant, low-cost Bitcoin transactions while maintaining the security and efficiency of 1inch's proven cross-chain infrastructure. Our solution enables seamless swaps between Bitcoin and Ethereum ecosystems through a novel LN ↔ Polygon bridge.
+A hackathon prototype that enables trustless, atomic swaps between Bitcoin and Ethereum using the Lightning Network as a bridge, built on top of 1inch's proven Fusion+ protocol architecture.
 
-### 🎯 Common Good & Problem Statement
+## 🌟 Public Benefit & Use Case
 
-**The Challenge**: Cross-chain interoperability between Bitcoin and Ethereum remains one of the most significant barriers to DeFi adoption. Traditional atomic swaps are slow, expensive, and require complex user interactions. Centralized bridges introduce security risks and censorship concerns.
+### The Problem
+The cryptocurrency ecosystem is fragmented across multiple blockchains, with Bitcoin and Ethereum representing the two largest networks by market capitalization. Users face significant challenges when trying to move value between these networks:
 
-**Our Solution**: By combining Lightning Network's instant settlement capabilities with 1inch Fusion+'s battle-tested cross-chain infrastructure, we create a bridge that offers:
-- ⚡ **Instant Bitcoin transactions** (Lightning Network)
-- 🔒 **Trustless security** (1inch Fusion+ escrows)
-- 💰 **Ultra-low costs** (Polygon + Lightning)
-- 🎯 **Bidirectional swaps** (BTC ↔ ETH)
+- **Centralized Bridges**: Most existing solutions require trusting centralized intermediaries, introducing counterparty risk and potential censorship
+- **Poor User Experience**: Manual processes, long wait times, and complex multi-step procedures
+- **High Costs**: Expensive gas fees and bridge fees make small transfers uneconomical
+- **Security Risks**: Vulnerable to hacks, rug pulls, and protocol failures
 
-### 1.1 Hackathon Problem Description
+### The Solution
+Lightning-Fusion creates a decentralized, trustless bridge between Bitcoin and Ethereum by:
 
-**Task**: Extend Fusion+ to Bitcoin while preserving hashlock and timelock functionality for non-EVM implementation.
+- **Leveraging Lightning Network**: Fast, low-cost Bitcoin transfers with built-in HTLC support
+- **Extending Fusion+ Protocol**: Utilizing 1inch's battle-tested cross-chain infrastructure
+- **Preserving Atomic Guarantees**: Ensuring either both parties receive their assets or both get refunded
+- **Enabling Bidirectional Swaps**: Seamless BTC ⇄ ETH exchanges in both directions
+
+## 🎯 Hackathon Problem Statement
+
+**Challenge**: Extend the 1inch Fusion+ protocol to support Bitcoin (non-EVM chain) while maintaining the security and efficiency of the existing system.
 
 **Requirements**:
-- ✅ Preserve hashlock and timelock functionality for non-EVM implementation
-- ✅ Bidirectional swap functionality (BTC ↔ ETH)
-- ✅ Onchain execution demonstration (Polygon testnet)
-- 🎯 **Stretch Goals**: UI implementation, partial fills support
+- ✅ Bidirectional swaps (BTC ⇄ ETH)
+- ✅ HTLC-based security on non-EVM chains
+- ✅ Integration with 1inch Limit Order Protocol
+- ✅ Onchain execution demonstration
+- ✅ Preserve Fusion+ architecture principles
 
-## 2. Executive Summary for CTO
+## 🏗️ Executive Summary
 
-### 2.1 Solution Architecture
+Lightning-Fusion extends 1inch Fusion+ to support Bitcoin by using the Lightning Network as a bridge layer. The solution maintains the core Fusion+ architecture while adding Bitcoin compatibility through:
 
-Our solution creates a **three-layer bridge**:
-1. **Bitcoin Mainnet** ↔ **Lightning Network** (instant, zero-cost)
-2. **Lightning Network** ↔ **Polygon** (1inch Fusion+ escrows)
-3. **Polygon** ↔ **Ethereum Mainnet** (1inch cross-chain swap)
+1. **Lightning Network Integration**: Uses Lightning's native HTLC capabilities for Bitcoin transfers
+2. **Polygon Bridge**: Leverages Polygon for cost-effective Ethereum-side operations
+3. **Fusion+ Protocol**: Maintains the Dutch auction mechanism and resolver competition
+4. **Atomic Guarantees**: Preserves the trustless nature of cross-chain swaps
 
-**Key Innovation**: Instead of direct Bitcoin mainnet ↔ Ethereum swaps, we use Lightning Network as an intermediate layer, enabling:
-- **Instant arbitrage** opportunities
-- **Micro-transactions** support
-- **Zero-cost** Bitcoin transactions
-- **Scalable** cross-chain liquidity
+**Swap Path**: `Bitcoin Mainnet ⬄ Lightning Network ⬄ Polygon (1inch) ⬄ Ethereum Mainnet`
 
-**Technical Stack**:
-- **Bitcoin Layer**: Lightning Network (LND nodes)
-- **Bridge Layer**: 1inch Fusion+ escrows on Polygon
-- **Ethereum Layer**: 1inch cross-chain infrastructure
-- **Coordination**: Hashlock-based atomic swaps
+For demo purposes, we focus on: `Lightning Network ⬄ Polygon`
 
-## 3. Architecture
+## 🏛️ System Architecture
+
+### High-Level Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Bitcoin       │    │   Lightning      │    │   Polygon       │
-│   Mainnet       │◄──►│   Network        │◄──►│   (1inch        │
-│                 │    │                  │    │   Fusion+)      │
+│   Mainnet       │◄──►│   Network        │◄──►│   (1inch)       │
+│                 │    │   (HTLC Layer)   │    │                 │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-                       ┌──────────────────┐    ┌─────────────────┐
-                       │   Hashlock       │    │   Ethereum      │
-                       │   Coordination   │    │   Mainnet       │
-                       │   Layer          │    │                 │
-                       └──────────────────┘    └─────────────────┘
+                                                         │
+                                                         ▼
+                                              ┌─────────────────┐
+                                              │   Ethereum      │
+                                              │   Mainnet       │
+                                              │   (Optional)    │
+                                              └─────────────────┘
 ```
 
-### 3.1 Component Breakdown
+### Core Components
 
-**Lightning Network Layer**:
-- LND nodes (Alice & Bob) for instant Bitcoin transactions
-- HTLC-enabled payment channels
-- Zero-cost micro-transactions
+#### 1. **Lightning Network Layer**
+- **HTLC Support**: Native Hash Time Locked Contracts
+- **Fast Settlement**: Sub-second transaction finality
+- **Low Costs**: Minimal fees for Bitcoin transfers
+- **PSBT Integration**: Partially Signed Bitcoin Transactions for abstraction
 
-**1inch Fusion+ Layer**:
-- Escrow contracts on Polygon
-- Hashlock-based atomic swaps
-- Resolver system for order execution
+#### 2. **Polygon Bridge Layer**
+- **Cost Efficiency**: ~99% lower gas costs than Ethereum mainnet
+- **Ethereum Compatibility**: Full EVM compatibility
+- **1inch Integration**: Native support for Fusion+ and Limit Order Protocol
+- **Fast Finality**: ~2 second block times
 
-**Coordination Layer**:
-- Secret management and revelation
-- Timelock enforcement
-- Cross-chain state synchronization
+#### 3. **Fusion+ Protocol Layer**
+- **Dutch Auction**: Competitive pricing through resolver competition
+- **Intent-Based**: User signs intent, resolvers compete to fulfill
+- **Atomic Guarantees**: HTLC-based security across all chains
+- **Partial Fills**: Support for large order splitting
 
-## 4. Roles, Stakeholders & Participants
+### Technical Architecture
 
-### 4.1 Core Participants
-
-**Maker (User)**:
-- Initiates the swap
-- Signs 1inch Fusion+ order
-- Provides source assets (BTC or ETH)
-
-**Resolver (1inch Network)**:
-- Executes cross-chain escrows
-- Manages hashlock coordination
-- Handles secret revelation
-
-**Lightning Network Nodes**:
-- Alice & Bob nodes for instant BTC transactions
-- HTLC payment channel management
-- Zero-cost transaction routing
-
-### 4.2 Supporting Infrastructure
-
-**1inch Network**:
-- Fusion+ protocol infrastructure
-- Cross-chain order management
-- Resolver marketplace
-
-**Polygon Network**:
-- Low-cost EVM execution
-- 1inch contract deployment
-- Fast finality for demo
-
-## 5. Main User Scenario for Demo
-
-### 5.1 Demo Flow: BTC → ETH Swap
-
-**Phase 1: Order Creation**
-```bash
-# User creates 1inch Fusion+ order for BTC → ETH
-# Order specifies: 0.01 BTC → 0.3 ETH
-# Hashlock generated and order submitted to 1inch network
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        User Interface                           │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Lightning-Fusion SDK                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
+│  │   Bitcoin   │  │  Lightning  │  │   Fusion+   │            │
+│  │   Module    │  │   Module    │  │   Module    │            │
+│  └─────────────┘  └─────────────┘  └─────────────┘            │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Cross-Chain Infrastructure                   │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
+│  │   Bitcoin   │  │  Lightning  │  │   Polygon   │            │
+│  │   Network   │  │   Network   │  │   Network   │            │
+│  └─────────────┘  └─────────────┘  └─────────────┘            │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Phase 2: Lightning Network Setup**
-```bash
-# Resolver creates Lightning Network HTLC
-# User funds Lightning channel with 0.01 BTC
-# HTLC locked with same hashlock as 1inch order
+## 👥 Participants & Roles
+
+### 1. **Maker (User)**
+- **Role**: Initiates the cross-chain swap
+- **Responsibilities**:
+  - Signs Fusion+ order with intent
+  - Provides source assets (BTC or ETH)
+  - Receives destination assets
+- **Trust Model**: No trust required - all operations verifiable on-chain
+
+### 2. **Resolver (Professional Trader/Market Maker)**
+- **Role**: Executes the cross-chain swap
+- **Responsibilities**:
+  - Creates escrows on both chains
+  - Manages Lightning Network HTLCs
+  - Executes final settlements
+  - Provides liquidity and competitive pricing
+- **Incentives**: Profit from spread + safety deposit rewards
+
+### 3. **Relayer (1inch Service)**
+- **Role**: Orchestrates the swap process
+- **Responsibilities**:
+  - Distributes orders to resolvers
+  - Manages Dutch auction process
+  - Coordinates secret sharing
+  - Monitors escrow creation
+- **Trust Model**: Verifiable on-chain operations
+
+### 4. **Lightning Node Operator**
+- **Role**: Provides Lightning Network infrastructure
+- **Responsibilities**:
+  - Maintains Lightning node connectivity
+  - Routes HTLC payments
+  - Ensures network reliability
+- **Incentives**: Routing fees
+
+## 🔄 Main Swap Scenario (Demo)
+
+### BTC → ETH Swap Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User (Maker)
+    participant R as Resolver
+    participant L as Lightning Network
+    participant P as Polygon (1inch)
+    participant E as Ethereum
+
+    U->>R: 1. Sign Fusion+ order (BTC→ETH)
+    R->>L: 2. Create Lightning HTLC
+    R->>P: 3. Create Polygon escrow
+    L->>R: 4. HTLC ready
+    P->>R: 5. Escrow ready
+    R->>U: 6. Request secret
+    U->>R: 7. Share secret
+    R->>L: 8. Claim BTC (reveal secret)
+    R->>P: 9. Claim ETH (using secret)
+    P->>U: 10. Transfer ETH to user
 ```
 
-**Phase 3: Polygon Escrow Creation**
-```bash
-# Resolver creates 1inch Fusion+ escrow on Polygon
-# Deposits 0.3 ETH equivalent (USDC) into escrow
-# Same hashlock used for atomic guarantee
+### ETH → BTC Swap Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User (Maker)
+    participant R as Resolver
+    participant P as Polygon (1inch)
+    participant L as Lightning Network
+    participant B as Bitcoin
+
+    U->>R: 1. Sign Fusion+ order (ETH→BTC)
+    R->>P: 2. Create Polygon escrow
+    R->>L: 3. Create Lightning HTLC
+    P->>R: 4. Escrow ready
+    L->>R: 5. HTLC ready
+    R->>U: 6. Request secret
+    U->>R: 7. Share secret
+    R->>P: 8. Claim ETH (reveal secret)
+    R->>L: 9. Claim BTC (using secret)
+    L->>U: 10. Transfer BTC to user
 ```
 
-**Phase 4: Atomic Execution**
-```bash
-# Secret revealed after finality locks expire
-# Resolver claims BTC from Lightning HTLC
-# User claims ETH from Polygon escrow
-# ✅ Atomic swap complete in <30 seconds
-```
+## 🛠️ Technical Implementation Details
 
-### 5.2 Demo Flow: ETH → BTC Swap (Reverse)
+### 1. **Lightning Network Integration**
 
-**Phase 1: Order Creation**
-```bash
-# User creates 1inch Fusion+ order for ETH → BTC
-# Order specifies: 0.3 ETH → 0.01 BTC
-# Hashlock generated and order submitted
-```
-
-**Phase 2: Polygon Escrow Creation**
-```bash
-# Resolver creates 1inch Fusion+ escrow on Polygon
-# User deposits 0.3 ETH into escrow
-# HTLC locked with hashlock
-```
-
-**Phase 3: Lightning Network Setup**
-```bash
-# Resolver creates Lightning Network HTLC
-# Deposits 0.01 BTC into Lightning channel
-# Same hashlock ensures atomic execution
-```
-
-**Phase 4: Atomic Execution**
-```bash
-# Secret revealed after finality locks expire
-# User claims BTC from Lightning HTLC
-# Resolver claims ETH from Polygon escrow
-# ✅ Atomic swap complete in <30 seconds
-```
-
-## 6. Technical Details for Developers & Jury
-
-### 6.1 Addressing 1inch Concerns
-
-**Previous Solution Issues**:
-- ❌ Required user to deploy escrows manually
-- ❌ Complex user interaction flow
-- ❌ No relayer system for order facilitation
-
-**Our Improvements**:
-- ✅ **PSBT Integration**: Users don't explicitly send Bitcoin
-- ✅ **Resolver Automation**: Resolver handles all escrow deployment
-- ✅ **Relayer System**: 1inch network facilitates order handoff
-- ✅ **Secret Management**: Automated secret revelation and coordination
-
-**Key Innovations**:
-1. **Lightning Network Integration**: Instant Bitcoin transactions without mainnet fees
-2. **1inch Fusion+ Compliance**: Follows existing 1inch cadence and patterns
-3. **Automated Coordination**: Resolver handles all cross-chain operations
-4. **Zero User Complexity**: User only signs order, everything else automated
-
-### 6.2 Lightning Network Advantages
-
-**Why Lightning Network?**
-1. **Instant Arbitrage**: Sub-second Bitcoin transactions enable real-time arbitrage
-2. **Zero Transaction Costs**: No Bitcoin mainnet fees for micro-transactions
-3. **Scalability**: Millions of transactions per second capacity
-4. **HTLC Support**: Native Hash Time Locked Contract functionality
-5. **Liquidity Efficiency**: Channel-based liquidity reduces capital requirements
-
-**Comparison with Atomic Swaps**:
-- **Atomic Swaps**: 10+ minutes, high fees, complex UX
-- **Lightning Network**: <1 second, zero fees, simple UX
-
-### 6.3 1inch Integration Benefits
-
-**For Users**:
-- **Best Rates**: Dutch auction mechanism ensures optimal pricing
-- **No Gas Fees**: Intent-based orders eliminate gas costs
-- **Trustless**: No counterparty risk with escrow system
-- **Automated**: Resolver handles all complex operations
-
-**For 1inch Network**:
-- **Bitcoin Ecosystem Access**: Tap into $1T+ Bitcoin market
-- **Lightning Network Liquidity**: Access to LN's growing liquidity pools
-- **Competitive Advantage**: First-mover in Lightning ↔ EVM bridges
-- **Revenue Growth**: New fee streams from Bitcoin transactions
-
-**For Resolvers**:
-- **Arbitrage Opportunities**: Instant cross-chain arbitrage
-- **Fee Revenue**: Safety deposits and execution fees
-- **Liquidity Provision**: Provide cross-chain liquidity
-- **Market Making**: Professional trading opportunities
-
-## 7. Polygon Usage & Technical Implementation
-
-### 7.1 Why Polygon?
-
-**Cost Benefits**:
-- **Transaction Costs**: ~$0.01 vs Ethereum's $10-50
-- **Speed**: 2-second finality vs Ethereum's 12+ seconds
-- **Scalability**: 65,000 TPS vs Ethereum's 15 TPS
-
-**Technical Compatibility**:
-- **EVM Compatibility**: 100% Ethereum bytecode compatibility
-- **1inch Integration**: Full 1inch Fusion+ protocol support
-- **Contract Deployment**: Same contracts work on Ethereum mainnet
-
-### 7.2 Production Migration Path
-
-**Demo Phase (Polygon)**:
-- Low-cost testing and development
-- Fast iteration and debugging
-- Reduced financial risk
-
-**Production Phase (Ethereum Mainnet)**:
-- Same codebase, different network configuration
-- 1inch cross-chain swap to migrate funds
-- Gradual liquidity migration
-
-**Migration Strategy**:
-```bash
-# Demo: BTC ↔ LN ↔ Polygon
-# Production: BTC ↔ LN ↔ Polygon ↔ ETH Mainnet
-# Future: Direct BTC ↔ LN ↔ ETH Mainnet
-```
-
-### 7.3 Technical Implementation Details
-
-**Lightning Network Setup**:
-```bash
-# LND nodes configured with HTLC support
-# Payment channels established between Alice & Bob
-# HTLC scripts for atomic swap coordination
-```
-
-**1inch Fusion+ Integration**:
+#### HTLC Implementation
 ```typescript
-// Create cross-chain order
-const order = await sdk.createOrder(quote, {
-  walletAddress,
-  hashLock,
-  preset: PresetEnum.fast,
-  source: 'lightning-bridge'
-});
-
-// Submit order to 1inch network
-await sdk.submitOrder(quote.srcChainId, order, quoteId, secretHashes);
+// Lightning HTLC structure
+interface LightningHTLC {
+  paymentHash: string;      // SHA-256 hash of secret
+  amount: number;           // Satoshis
+  expiry: number;           // Block height
+  cltvExpiry: number;       // Check Lock Time Verify
+  paymentRequest: string;   // BOLT11 invoice
+}
 ```
 
-**Hashlock Coordination**:
+#### PSBT Integration
 ```typescript
-// Generate secret for atomic swap
-const secret = crypto.randomBytes(32);
-const hashlock = ethers.sha256(secret);
-
-// Use same hashlock across all chains
-// Lightning Network HTLC
-// Polygon 1inch escrow
-// Ethereum mainnet (future)
+// Partially Signed Bitcoin Transaction
+interface PSBT {
+  inputs: HTLCInput[];
+  outputs: HTLCOutput[];
+  signatures: Signature[];
+  finalized: boolean;
+}
 ```
 
-### 7.4 Security Considerations
+### 2. **Fusion+ Protocol Extension**
 
-**Hashlock Security**:
-- SHA-256 cryptographic hashing
-- 32-byte random secret generation
-- Cross-chain secret verification
+#### Cross-Chain Order Structure
+```typescript
+interface CrossChainOrder {
+  // Standard Fusion+ fields
+  maker: string;
+  taker: string;
+  srcToken: string;
+  dstToken: string;
+  srcAmount: string;
+  dstAmount: string;
+  
+  // Bitcoin-specific fields
+  lightningNodeId?: string;
+  bitcoinAddress?: string;
+  htlcExpiry?: number;
+  
+  // HTLC fields
+  hashlock: string;
+  timelock: number;
+}
+```
 
-**Timelock Protection**:
-- Finality locks prevent chain reorganization attacks
-- Cancellation locks ensure fund recovery
-- Resolver-exclusive execution windows
+#### Resolver Interface
+```typescript
+interface BitcoinResolver {
+  // Standard resolver methods
+  createEscrow(order: CrossChainOrder): Promise<EscrowInfo>;
+  executeSwap(order: CrossChainOrder, secret: string): Promise<SwapResult>;
+  
+  // Bitcoin-specific methods
+  createLightningHTLC(order: CrossChainOrder): Promise<LightningHTLC>;
+  claimBitcoin(htlc: LightningHTLC, secret: string): Promise<ClaimResult>;
+}
+```
 
-**Lightning Network Security**:
-- HTLC script verification
-- Channel state monitoring
-- Automatic dispute resolution
+### 3. **Security Mechanisms**
 
-## 🚀 Getting Started
+#### Hash Time Locked Contracts (HTLCs)
+- **Hashlock**: SHA-256 hash ensures atomic execution
+- **Timelock**: Automatic refunds prevent fund loss
+- **Cross-Chain Consistency**: Same secret used across all chains
+
+#### Safety Deposits
+```typescript
+interface SafetyDeposit {
+  amount: string;           // Deposit amount
+  beneficiary: string;      // Who receives the deposit
+  conditions: string[];     // Execution conditions
+}
+```
+
+### 4. **Error Handling & Recovery**
+
+#### Timeout Scenarios
+- **Lightning HTLC Expiry**: Automatic refund to sender
+- **Polygon Escrow Timeout**: Resolver can claim safety deposit
+- **Network Failures**: Graceful degradation with fallback mechanisms
+
+#### Recovery Mechanisms
+```typescript
+interface RecoveryOptions {
+  refundSource: boolean;    // Refund on source chain
+  refundDestination: boolean; // Refund on destination chain
+  claimSafetyDeposit: boolean; // Claim safety deposit
+  manualIntervention: boolean; // Require manual intervention
+}
+```
+
+## 🎯 Addressing Previous Jury Feedback
+
+### 1. **Fusion+ Architecture Alignment**
+- ✅ **Intent-Based Design**: Users sign orders, resolvers compete to fulfill
+- ✅ **Dutch Auction**: Competitive pricing through resolver competition
+- ✅ **No User-Managed Escrows**: Resolvers handle all escrow creation
+- ✅ **Automated Settlement**: No manual monitoring required
+
+### 2. **PSBT Integration**
+- ✅ **Abstracted Bitcoin Flow**: PSBT handles complex Bitcoin transaction details
+- ✅ **Standardized Interface**: Consistent API across all chains
+- ✅ **Error Handling**: Robust PSBT validation and error recovery
+
+### 3. **Relayer Model**
+- ✅ **Centralized Coordination**: 1inch relayer manages secret sharing
+- ✅ **KYC/KYB Resolvers**: Verified, trusted resolver network
+- ✅ **Automated Monitoring**: Relayer tracks escrow creation and finality
+
+### 4. **Existing HTLC Systems**
+- ✅ **Lightning Network**: Leverages existing, battle-tested HTLC infrastructure
+- ✅ **Standards Compliance**: Follows BOLT specifications
+- ✅ **Network Effects**: Benefits from Lightning's growing network
+
+## 🌐 Why Polygon?
+
+### 1. **Cost Efficiency**
+- **Gas Costs**: ~99% lower than Ethereum mainnet
+- **Transaction Fees**: ~$0.01 vs $10+ on mainnet
+- **Demo-Friendly**: Affordable for hackathon demonstrations
+
+### 2. **Performance**
+- **Block Time**: ~2 seconds vs 12 seconds on mainnet
+- **Finality**: Faster transaction confirmation
+- **Throughput**: Higher TPS for better user experience
+
+### 3. **Ethereum Compatibility**
+- **EVM Compatible**: Same smart contracts work on both chains
+- **1inch Integration**: Native support for Fusion+ and Limit Order Protocol
+- **Tooling**: Same development tools and libraries
+
+### 4. **Bridging to Mainnet**
+```typescript
+// Optional mainnet bridging
+interface MainnetBridge {
+  bridgeFromPolygon(amount: string): Promise<string>;
+  bridgeToPolygon(amount: string): Promise<string>;
+  finalityPeriod: number; // ~7 days for Polygon→Ethereum
+}
+```
+
+## 🚀 Scaling to Production
+
+### 1. **Mainnet Deployment**
+- **Bitcoin**: Use mainnet Lightning Network
+- **Ethereum**: Deploy on mainnet with Polygon as L2
+- **Security Audits**: Comprehensive smart contract audits
+- **Insurance**: DeFi insurance coverage for large swaps
+
+### 2. **Performance Optimization**
+- **Lightning Routing**: Optimize payment routing algorithms
+- **Batch Processing**: Group multiple swaps for efficiency
+- **Caching**: Cache frequently used data and quotes
+- **CDN**: Global content delivery for better UX
+
+### 3. **Liquidity Management**
+- **Market Makers**: Incentivize professional market makers
+- **Liquidity Pools**: Automated market making strategies
+- **Cross-Chain Arbitrage**: Capture arbitrage opportunities
+- **Risk Management**: Sophisticated risk models and limits
+
+### 4. **User Experience**
+- **Mobile Apps**: Native iOS and Android applications
+- **Wallet Integration**: MetaMask, WalletConnect, Lightning wallets
+- **One-Click Swaps**: Simplified user interface
+- **Real-Time Updates**: WebSocket connections for live status
+
+## 📊 Demo Implementation
+
+### Testnet Setup
+```bash
+# Lightning Network (Testnet)
+LIGHTNING_NODE_ID=03eec7245d6b7d2ccb30380bfbe2a3648cd7a942653f5aa340edcea1f283686619
+LIGHTNING_RPC_URL=https://testnet-lightning.example.com
+
+# Polygon (Mumbai Testnet)
+POLYGON_RPC_URL=https://polygon-mumbai.infura.io/v3/YOUR_KEY
+POLYGON_CHAIN_ID=80001
+
+# Bitcoin (Testnet)
+BITCOIN_NETWORK=testnet
+BITCOIN_RPC_URL=https://testnet-bitcoin.example.com
+```
+
+### Demo Commands
+```bash
+# Create BTC→ETH swap
+npm run demo:btc-to-eth --amount=0.001 --rate=45000
+
+# Create ETH→BTC swap  
+npm run demo:eth-to-btc --amount=0.1 --rate=0.000022
+
+# Monitor swap status
+npm run demo:status --order-id=order_123
+
+# Execute swap
+npm run demo:execute --order-id=order_123
+```
+
+## 🔧 Development Setup
 
 ### Prerequisites
 ```bash
-# Node.js 16+
+# Node.js 18+
 node --version
 
-# Lightning Network setup
-cd LN && ./setup_polar_macos.sh
+# Lightning Network node
+lightningd --version
 
-# 1inch API key
-# Add to SECRETS.py: YOUR_1INCH_API_KEY = "your_key_here"
+# Bitcoin Core (testnet)
+bitcoind --version
+
+# Hardhat
+npm install -g hardhat
 ```
 
-### Environment Setup
+### Installation
 ```bash
-# Clone repository
-git clone <repository-url>
-cd btc-eth-swap
+git clone https://github.com/your-org/lightning-fusion
+cd lightning-fusion
 
 # Install dependencies
 npm install
 
-# Configure secrets
-cp SECRETS.py.example SECRETS.py
-# Edit SECRETS.py with your keys
+# Setup environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Deploy contracts
+npm run deploy:testnet
+
+# Start development
+npm run dev
 ```
 
-### Running the Demo
+### Testing
 ```bash
-# Start Lightning Network nodes
-cd LN && ./check_balances.sh
+# Run all tests
+npm test
 
-# Create BTC → ETH swap
-npm run demo:btc-to-eth
+# Test specific components
+npm run test:lightning
+npm run test:fusion
+npm run test:integration
 
-# Create ETH → BTC swap  
-npm run demo:eth-to-btc
+# Performance tests
+npm run test:performance
 ```
 
-## 📊 Performance Metrics
+## 📈 Future Roadmap
 
-**Transaction Speed**:
-- Lightning Network: <1 second
-- Polygon: 2 seconds
-- Total Swap Time: <30 seconds
+### Phase 1: MVP (Current)
+- ✅ Basic BTC ⇄ ETH swaps
+- ✅ Lightning Network integration
+- ✅ Polygon deployment
+- ✅ Demo implementation
 
-**Cost Comparison**:
-- Traditional Atomic Swap: $50-100
-- Our Solution: $0.01-0.10
-- **99.9% cost reduction**
+### Phase 2: Enhancement
+- 🔄 Partial fills support
+- 🔄 UI/UX improvements
+- 🔄 Additional token support
+- 🔄 Mobile applications
 
-**Scalability**:
-- Lightning Network: 1M+ TPS
-- Polygon: 65,000 TPS
-- Combined: Unlimited cross-chain capacity
+### Phase 3: Production
+- 🔄 Mainnet deployment
+- 🔄 Security audits
+- 🔄 Insurance integration
+- 🔄 Enterprise partnerships
 
-## 🔮 Future Roadmap
-
-**Phase 1 (Demo)**: LN ↔ Polygon swaps
-**Phase 2 (Production)**: LN ↔ Ethereum mainnet
-**Phase 3 (Scale)**: Multi-chain Lightning bridges
-**Phase 4 (Ecosystem)**: Lightning Network DeFi integration
+### Phase 4: Expansion
+- 🔄 Multi-chain support
+- 🔄 Advanced order types
+- 🔄 Institutional features
+- 🔄 Global compliance
 
 ## 🤝 Contributing
 
-This project is built on the shoulders of giants:
-- **1inch Network**: Fusion+ protocol and infrastructure
-- **Lightning Network**: Instant Bitcoin transactions
-- **Polygon**: Low-cost EVM execution
+We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-We welcome contributions and feedback from the community!
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-## 📄 License
+### Code Standards
+- TypeScript for all new code
+- Comprehensive test coverage
+- Documentation for all public APIs
+- Security best practices
 
-MIT License - see LICENSE file for details.
+## 🙏 Acknowledgments
+
+- **1inch Network**: For the Fusion+ protocol foundation
+- **Lightning Network**: For Bitcoin scalability and HTLC support
+- **Polygon**: For cost-effective Ethereum scaling
+- **Open Source Community**: For the tools and libraries that make this possible
 
 ---
 
-**Built with ❤️ for the UniteDeFi 2025 Hackathon** 
+**Built with ❤️ for the hackathon community**
+
+*This is a hackathon prototype. Not for production use without additional security audits and testing.* 
