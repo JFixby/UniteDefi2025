@@ -16,3 +16,7 @@ we have whitepaper.txt with the idea
 we preer to use Polygon network for this demo as the transactions are cheaper there
 in file SECRETS.py you can find private keys you need to run the demo
 
+Proposed idea:
+
+use lightning network to swap between BTC net and 1inch (polygon net)
+lightning network test net is alredy configured in LN folder
