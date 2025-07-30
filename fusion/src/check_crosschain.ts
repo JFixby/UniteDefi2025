@@ -6,137 +6,66 @@ import {
     PrivateKeyProviderConnector,
     SDK
 } from '@1inch/cross-chain-sdk'
-import { ethers } from 'ethers'
+import Web3 from 'web3'
 import { randomBytes } from 'node:crypto'
 
-import * as dotenv from 'dotenv'
-
-// Load environment variables
-dotenv.config()
+// Token addresses
+const ETH_USDC = '0xA0b86991c6218b36c1d19d4a2e9Eb0cE3606eB48'
+const POLYGON_USDT = '0xC2132D05D31c914a87C6611C10748AEb04B58E8F'
 
 // Configuration
 const privateKey = process.env.PRIVATE_KEY || '0x' // Set your private key in environment
-const rpc = process.env.ETHEREUM_RPC_URL || process.env.ETH_RPC || 'https://ethereum-rpc.publicnode.com'
-const authKey = process.env.DEV_PORTAL_API_TOKEN || process.env.INCH_AUTH_KEY || 'auth-key' // Get from https://portal.1inch.dev
-const source = 'fusion-example'
+const rpc = process.env.ETH_RPC || 'https://ethereum-rpc.publicnode.com'
+const authKey = process.env.AUTH_KEY || 'auth-key' // Set your 1inch auth key
+const source = 'crosschain-swap-example'
 
-// Token addresses
-const USDC_ETHEREUM = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' // USDC on Ethereum
-const USDT_POLYGON = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' // USDT on Polygon
-
-// Limit Order Protocol address (Router V6)
-const LIMIT_ORDER_PROTOCOL = '0x111111125421ca6dc452d289314280a0f8842a65'
-
-// Amount: 10 USDC (6 decimals) - increased to meet minimum requirements
-const AMOUNT_USDC = '10000000' // 10 * 10^6
+// Amount: 1.33 USDC (6 decimals)
+const USDC_AMOUNT = '1330000' // 1.33 * 10^6
 
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function main(): Promise<void> {
+async function performCrossChainSwap(): Promise<void> {
     try {
-        // Check environment variables
-        if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY === '0x' || process.env.PRIVATE_KEY === 'your_private_key_here') {
-            console.error('❌ PRIVATE_KEY environment variable is not set or invalid')
-            console.error('   Please set your private key in the .env file or environment')
-            console.error('   Example: PRIVATE_KEY=1234567890abcdef...')
-            process.exit(1)
-        }
-
-        if (!process.env.DEV_PORTAL_API_TOKEN || process.env.DEV_PORTAL_API_TOKEN === 'auth-key' || process.env.DEV_PORTAL_API_TOKEN === 'your_1inch_api_token_here') {
-            console.error('❌ DEV_PORTAL_API_TOKEN environment variable is not set or invalid')
-            console.error('   Please get your API key from https://portal.1inch.dev/')
-            console.error('   Example: DEV_PORTAL_API_TOKEN=your_api_key_here')
-            process.exit(1)
-        }
-
-        console.log('🚀 Starting cross-chain swap: USDC (Ethereum) → USDT (Polygon)')
-        console.log(`💰 Amount: ${parseInt(AMOUNT_USDC) / 1000000} USDC`)
+        console.log('🚀 Starting cross-chain swap: 1.33 USDC (Ethereum) → USDT (Polygon)')
         
-        // Initialize Web3 and get wallet address
-        const { Web3 } = require('web3')
+        // Initialize Web3 and SDK
         const web3 = new Web3(rpc)
-        const privateKeyWithPrefix = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`
-        const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKeyWithPrefix).address
+        const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address
         
-        // Display detailed configuration information
-        console.log('\n📋 Configuration Details:')
-        console.log(`👛 Wallet Address: ${walletAddress}`)
-        console.log(`🌐 Source Network: Ethereum Mainnet`)
-        console.log(`🌐 Destination Network: Polygon`)
-        console.log(`🔗 RPC Endpoint: ${rpc}`)
-        console.log(`🔑 Auth Key: ${authKey.substring(0, 8)}...${authKey.substring(authKey.length - 4)}`)
-        console.log(`📝 Source: ${source}`)
+        console.log(`📱 Wallet address: ${walletAddress}`)
         
-        // Display token addresses
-        console.log('\n🪙 Token Addresses:')
-        console.log(`   USDC (Ethereum): ${USDC_ETHEREUM}`)
-        console.log(`   USDT (Polygon): ${USDT_POLYGON}`)
-        
-
-        
-        // Display amount details
-        console.log('\n💰 Amount Details:')
-        console.log(`   Raw Amount: ${AMOUNT_USDC} (6 decimals)`)
-        console.log(`   Human Readable: ${parseInt(AMOUNT_USDC) / 1000000} USDC`)
-
-        // Initialize SDK first
         const sdk = new SDK({
             url: 'https://api.1inch.dev/fusion-plus',
             authKey,
-            blockchainProvider: new PrivateKeyProviderConnector(privateKeyWithPrefix, web3)
+            blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3 as any)
         })
-        console.log('✅ SDK initialized')
 
-
-
-
-
-        // Step 1: Get quote
-        console.log('\n📊 Getting quote...')
-        let quote
-        try {
-            quote = await sdk.getQuote({
-                amount: AMOUNT_USDC,
-                srcChainId: NetworkEnum.ETHEREUM,
-                dstChainId: NetworkEnum.POLYGON,
-                enableEstimate: true,
-                srcTokenAddress: USDC_ETHEREUM,
-                dstTokenAddress: USDT_POLYGON,
-                walletAddress
-            })
-            console.log('✅ Quote retrieved successfully')
-        } catch (quoteError: any) {
-            console.error(`❌ Quote retrieval failed:`)
-            console.error(`   Error Type: ${quoteError?.constructor?.name || 'Unknown'}`)
-            console.error(`   Error Message: ${quoteError?.message || 'Unknown error'}`)
-            if (quoteError?.response) {
-                console.error(`   HTTP Status: ${quoteError.response.status}`)
-                console.error(`   Response Data: ${JSON.stringify(quoteError.response.data, null, 2)}`)
-            }
-            throw quoteError
-        }
+        // Get quote
+        console.log('📊 Getting quote...')
+        const quote = await sdk.getQuote({
+            amount: USDC_AMOUNT,
+            srcChainId: NetworkEnum.ETHEREUM,
+            dstChainId: NetworkEnum.POLYGON,
+            enableEstimate: true,
+            srcTokenAddress: ETH_USDC,
+            dstTokenAddress: POLYGON_USDT,
+            walletAddress
+        })
 
         console.log(`📈 Quote received:`)
-        console.log(`   Source Token: ${USDC_ETHEREUM} (USDC)`)
-        console.log(`   Destination Token: ${USDT_POLYGON} (USDT)`)
-        console.log(`   Input Amount: ${quote.srcTokenAmount} USDC`)
-        console.log(`   Expected Output: ${quote.dstTokenAmount} USDT`)
-        console.log(`   Available Presets: ${Object.keys(quote.presets).join(', ')}`)
-        console.log(`   Quote ID: ${quote.quoteId}`)
-        console.log(`   Source Chain: ${quote.srcChainId}`)
-        console.log(`   Destination Chain: ${quote.dstChainId}`)
-        console.log(`   Source Escrow Factory: ${quote.srcEscrowFactory}`)
-        console.log(`   Destination Escrow Factory: ${quote.dstEscrowFactory}`)
-        console.log(`   Source Safety Deposit: ${quote.srcSafetyDeposit}`)
-        console.log(`   Destination Safety Deposit: ${quote.dstSafetyDeposit}`)
-        console.log(`   Time Locks: ${JSON.stringify(quote.timeLocks, null, 2)}`)
+        console.log(`  Source: USDC (Ethereum)`)
+        console.log(`  Destination: USDT (Polygon)`)
+        console.log(`  Input amount: ${USDC_AMOUNT} USDC`)
+        console.log(`  Output amount: ${quote.dstTokenAmount} USDT`)
 
-        // Step 2: Select preset and generate secrets
+        // Select preset
         const preset = PresetEnum.fast
-        console.log(`\n🔐 Using preset: ${preset}`)
+        console.log(`⚡ Using preset: ${preset}`)
 
+        // Generate secrets
+        console.log('🔐 Generating secrets...')
         const secrets = Array.from({
             length: quote.presets[preset].secretsCount
         }).map(() => '0x' + randomBytes(32).toString('hex'))
@@ -146,139 +75,92 @@ async function main(): Promise<void> {
             : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets))
 
         const secretHashes = secrets.map((s) => HashLock.hashSecret(s))
-        console.log(`🔑 Generated ${secrets.length} secrets`)
-        console.log(`   Secret Hashes: ${secretHashes.join(', ')}`)
-        console.log(`   Hash Lock Type: ${secrets.length === 1 ? 'Single Fill' : 'Multiple Fills'}`)
+        console.log(`Generated ${secrets.length} secrets`)
 
-        // Step 3: Create order
-        console.log('\n📝 Creating order...')
-        let hash, quoteId, order
-        try {
-            const orderResult = await sdk.createOrder(quote, {
-                walletAddress,
-                hashLock,
-                preset,
-                source,
-                secretHashes
-            })
-            hash = orderResult.hash
-            quoteId = orderResult.quoteId
-            order = orderResult.order
-            console.log('✅ Order created successfully')
-        } catch (orderError: any) {
-            console.error(`❌ Order creation failed:`)
-            console.error(`   Error Type: ${orderError?.constructor?.name || 'Unknown'}`)
-            console.error(`   Error Message: ${orderError?.message || 'Unknown error'}`)
-            if (orderError?.response) {
-                console.error(`   HTTP Status: ${orderError.response.status}`)
-                console.error(`   Response Data: ${JSON.stringify(orderError.response.data, null, 2)}`)
-            }
-            throw orderError
-        }
-        console.log(`✅ Order created:`)
-        console.log(`   Order Hash: ${hash}`)
-        console.log(`   Quote ID: ${quoteId}`)
-        console.log(`   Order Details: ${JSON.stringify(order, (key, value) => 
-            typeof value === 'bigint' ? value.toString() : value, 2)}`)
+        // Create order
+        console.log('📝 Creating order...')
+        const { hash, quoteId, order } = await sdk.createOrder(quote, {
+            walletAddress,
+            hashLock,
+            preset,
+            source,
+            secretHashes
+        })
+        console.log(`✅ Order created with hash: ${hash}`)
 
-        // Step 4: Submit order
-        console.log('\n📤 Submitting order...')
-        console.log(`   Source Chain ID: ${quote.srcChainId}`)
-        console.log(`   Quote ID: ${quoteId}`)
-        console.log(`   Secret Hashes Count: ${secretHashes.length}`)
-        console.log(`   Order Type: ${typeof order}`)
-        
-        // Check if quote is still valid (not expired)
-        const currentTime = Math.floor(Date.now() / 1000)
-        console.log(`   Current Timestamp: ${currentTime}`)
-        console.log(`   Quote Timestamp: ${quote.quoteId ? 'Available' : 'Not available'}`)
-        
-        try {
-            await sdk.submitOrder(
-                quote.srcChainId,
-                order,
-                quoteId,
-                secretHashes
-            )
-            console.log(`✅ Order submitted successfully`)
-        } catch (submitError: any) {
-            console.error(`❌ Order submission failed:`)
-            console.error(`   Error Type: ${submitError?.constructor?.name || 'Unknown'}`)
-            console.error(`   Error Message: ${submitError?.message || 'Unknown error'}`)
-            
-            if (submitError?.response) {
-                console.error(`   HTTP Status: ${submitError.response.status}`)
-                console.error(`   Response Data: ${JSON.stringify(submitError.response.data, null, 2)}`)
-                console.error(`   Request URL: ${submitError.config?.url}`)
-                console.error(`   Request Method: ${submitError.config?.method}`)
-            }
-            
-            throw submitError
-        }
+        // Submit order
+        console.log('📤 Submitting order...')
+        const orderInfo = await sdk.submitOrder(
+            quote.srcChainId,
+            order,
+            quoteId,
+            secretHashes
+        )
+        console.log(`✅ Order submitted`)
 
-        // Step 5: Monitor and submit secrets
-        console.log('\n⏳ Monitoring order execution...')
+        // Monitor and submit secrets
+        console.log('🔄 Monitoring order status and submitting secrets...')
         let attempts = 0
-        const maxAttempts = 300 // 5 minutes max
-
+        const maxAttempts = 300 // 5 minutes with 1-second intervals
+        
         while (attempts < maxAttempts) {
             const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash)
 
             if (secretsToShare.fills.length) {
-                console.log(`🔓 Found ${secretsToShare.fills.length} escrows ready for secrets`)
                 for (const { idx } of secretsToShare.fills) {
                     await sdk.submitSecret(hash, secrets[idx])
-                    console.log(`   ✅ Submitted secret ${idx}`)
+                    console.log(`🔓 Shared secret ${idx}`)
                 }
             }
 
             // Check order status
             const { status } = await sdk.getOrderStatus(hash)
-            console.log(`📊 Order status: ${status} (Attempt ${attempts + 1}/${maxAttempts})`)
+            console.log(`📊 Order status: ${status}`)
 
-            if (
-                status === OrderStatus.Executed ||
-                status === OrderStatus.Expired ||
-                status === OrderStatus.Refunded
-            ) {
-                console.log(`\n🎉 Order ${status.toLowerCase()}!`)
+            if (status === OrderStatus.Executed) {
+                console.log('🎉 Swap completed successfully!')
+                break
+            } else if (status === OrderStatus.Expired) {
+                console.log('⏰ Order expired')
+                break
+            } else if (status === OrderStatus.Refunded) {
+                console.log('↩️ Order refunded')
                 break
             }
 
             attempts++
-            await sleep(1000) // Wait 1 second before next check
+            await sleep(1000)
+        }
+
+        if (attempts >= maxAttempts) {
+            console.log('⏰ Timeout reached. Check order status manually.')
         }
 
         // Final status check
         const finalStatus = await sdk.getOrderStatus(hash)
-        console.log('\n📋 Final order details:')
-        console.log(JSON.stringify(finalStatus, null, 2))
-
-        if (finalStatus.status === OrderStatus.Executed) {
-            console.log('\n🎉 Swap completed successfully!')
-            console.log(`💰 You received USDT on Polygon`)
-        } else {
-            console.log('\n❌ Swap did not complete successfully')
-            console.log(`📊 Final status: ${finalStatus.status}`)
-        }
+        console.log('📋 Final order status:', finalStatus)
 
     } catch (error) {
-        console.error('❌ Error during swap:', error)
+        console.error('❌ Error during cross-chain swap:', error)
         throw error
     }
 }
 
-// Run the example
+// Export the function
+export { performCrossChainSwap }
+
+// Run if this file is executed directly
 if (require.main === module) {
-    main()
+    performCrossChainSwap()
         .then(() => {
-            console.log('\n✅ Example completed')
+            console.log('✅ Cross-chain swap script completed')
             process.exit(0)
         })
         .catch((error) => {
-            console.error('\n❌ Example failed:', error)
+            console.error('❌ Cross-chain swap script failed:', error)
             process.exit(1)
         })
 }
 
-export { main }
+
+
