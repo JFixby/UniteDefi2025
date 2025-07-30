@@ -51,6 +51,9 @@ on ETH side: polygon code if fully compatible with eth mainnet so it can be exec
 but also it can take advantage of using polygon and later swap to mainnet resulting funds
 using 1inch corsschain swap
 
+so we swap BTC mainnet <-> LN <-> Polygon net  <-> ETH Mainnet 
+in this demo we focus only on LN <-> Polygon net
+
 Output document structure:
 1) briefly explain idea to public audience showing the common good that this project will provide
 1.1) problem description for hackaton
@@ -62,3 +65,5 @@ Output document structure:
 6) technical details for developers and jury
 6.1) address concerns by 1inch
 7) clarify usage of polygon in details and other ress relevant remaning issues
+
+Output: produce new Readme.md file from scratch
