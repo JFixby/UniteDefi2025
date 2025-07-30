@@ -34,3 +34,10 @@ https://garden.finance has an HTLC system, we'd just like to see on build on top
 
 what is advantage of LN here?
 instant swaps on BTC side for (list reasons why it is good, starting from faster arbitrage compare to atomic swap)
+
+in terms of 1icnh what is resolver here and waht parties are involved
+how the swap scenario works?
+how is 1inch used
+what are the benefits of using 1incn
+what are the benefits of using lightning network
+how 1inch benefits form this?

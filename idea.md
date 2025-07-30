@@ -254,6 +254,189 @@ npm run execute-swap --order-id=order_123
 - **Lightning on Other Chains**: Extend to Bitcoin Cash, Litecoin
 - **Layer 2 Bridges**: Connect to other L2 solutions
 
+## 🎯 How 1inch Benefits from This Solution
+
+### 1. **Expanded Market Access** 📈
+- **Bitcoin Ecosystem**: Access to the largest cryptocurrency market ($1T+ market cap)
+- **Lightning Network Users**: Tap into 100,000+ Lightning nodes and growing user base
+- **New User Segments**: Bitcoin-only users who previously couldn't access DeFi
+
+### 2. **Enhanced Liquidity** 💧
+- **Bitcoin Liquidity**: Leverage Lightning Network's existing liquidity pools
+- **Cross-Chain Arbitrage**: Enable arbitrage between Bitcoin and Ethereum ecosystems
+- **Market Maker Participation**: Attract Bitcoin-focused market makers and resolvers
+
+### 3. **Competitive Advantage** 🏆
+- **First-Mover**: Be the first major DEX to offer Lightning Network integration
+- **Technical Innovation**: Demonstrate cutting-edge cross-chain technology
+- **Ecosystem Growth**: Expand 1inch's reach beyond EVM chains
+
+### 4. **Revenue Opportunities** 💰
+- **Resolver Fees**: New revenue stream from Bitcoin cross-chain swaps
+- **Lightning Routing Fees**: Potential revenue sharing from Lightning network fees
+- **Premium Services**: Offer Lightning-specific features and optimizations
+
+### 5. **Strategic Positioning** 🎯
+- **Bitcoin DeFi Bridge**: Position 1inch as the bridge between Bitcoin and DeFi
+- **Layer 2 Leadership**: Strengthen position in the L2 ecosystem
+- **Future-Proofing**: Prepare for Bitcoin's growing role in DeFi
+
+## 🔄 Swap Scenario & Parties Involved
+
+### **Parties in the Swap**
+
+1. **Maker (User)** 👤
+   - Initiates the cross-chain swap
+   - Provides source tokens (BTC or ETH)
+   - Receives destination tokens
+   - Signs Fusion+ order and generates secret
+
+2. **Resolver (Market Maker)** 🏢
+   - Professional entity with KYC/KYB verification
+   - Executes the cross-chain swap
+   - Provides liquidity on both chains
+   - Manages Lightning payments and Polygon escrows
+   - Earns fees for successful execution
+
+3. **1inch Network** 🌐
+   - Provides Fusion+ infrastructure
+   - Manages Dutch auction mechanism
+   - Coordinates secret revelation
+   - Ensures atomic execution
+
+4. **Lightning Network** ⚡
+   - Provides Bitcoin payment infrastructure
+   - Handles HTLC creation and settlement
+   - Enables instant Bitcoin transfers
+
+### **Detailed Swap Scenario**
+
+#### **BTC → ETH Swap Flow**
+
+```
+1. MAKER (Alice) wants to swap 0.01 BTC for 0.1 ETH
+   ├── Creates Fusion+ order on 1inch
+   ├── Generates secret and hashlock
+   └── Signs order with wallet
+
+2. 1INCH NETWORK broadcasts order
+   ├── Dutch auction begins on Polygon
+   ├── Resolvers compete for best rate
+   └── Order becomes visible to all resolvers
+
+3. RESOLVER (Bob) accepts order
+   ├── Analyzes Lightning network liquidity
+   ├── Calculates optimal routing
+   └── Commits to execute swap
+
+4. RESOLVER creates Lightning invoice
+   ├── Amount: 1,000,000 sats (0.01 BTC)
+   ├── Preimage hash: Same as Fusion+ hashlock
+   ├── Expiry: 1 hour
+   └── Routes through optimal Lightning channels
+
+5. RESOLVER creates Polygon escrow
+   ├── Deposits 0.1 ETH + safety deposit
+   ├── Uses same hashlock as Lightning invoice
+   ├── Sets timelock for atomic execution
+   └── Escrow locks funds until secret revealed
+
+6. ATOMIC EXECUTION
+   ├── 1inch verifies both escrows are ready
+   ├── Maker reveals secret to 1inch network
+   ├── 1inch broadcasts secret to all resolvers
+   ├── Resolver claims Lightning payment using secret
+   ├── Resolver claims ETH from Polygon escrow
+   └── Maker receives BTC via Lightning payment
+
+7. COMPLETION
+   ├── Maker has 0.01 BTC in Lightning wallet
+   ├── Resolver has 0.1 ETH from Polygon escrow
+   ├── Safety deposit returned to resolver
+   └── 1inch collects protocol fees
+```
+
+#### **ETH → BTC Swap Flow**
+
+```
+1. MAKER wants to swap 0.1 ETH for 0.01 BTC
+   ├── Creates Fusion+ order (ETH → BTC)
+   ├── Deposits 0.1 ETH to Polygon escrow
+   └── Generates secret and hashlock
+
+2. RESOLVER accepts order
+   ├── Creates Lightning HTLC for 0.01 BTC
+   ├── Locks Bitcoin in Lightning channel
+   └── Uses same hashlock as Fusion+ order
+
+3. ATOMIC EXECUTION
+   ├── Secret revelation triggers both chains
+   ├── Maker claims BTC from Lightning HTLC
+   ├── Resolver claims ETH from Polygon escrow
+   └── Swap completes atomically
+
+4. COMPLETION
+   ├── Maker has 0.01 BTC in Lightning wallet
+   ├── Resolver has 0.1 ETH from Polygon
+   └── All parties satisfied
+```
+
+## 🌟 Benefits Breakdown
+
+### **Benefits of Using 1inch Fusion+**
+
+1. **Proven Infrastructure** 🏗️
+   - Battle-tested escrow contracts
+   - Established resolver network
+   - Reliable secret management system
+
+2. **Dutch Auction Mechanism** 📊
+   - Competitive pricing through resolver competition
+   - Best rates for users through market forces
+   - Dynamic price discovery
+
+3. **Professional Resolvers** 👥
+   - KYC/KYB verified entities
+   - Legal agreements with 1inch
+   - Reliable execution guarantees
+
+4. **Safety Mechanisms** 🛡️
+   - Timelock protection for all parties
+   - Safety deposits incentivize proper execution
+   - Recovery mechanisms for failed swaps
+
+5. **Ecosystem Integration** 🔗
+   - Seamless integration with existing 1inch products
+   - Familiar user interface and experience
+   - Established liquidity pools
+
+### **Benefits of Using Lightning Network**
+
+1. **Instant Settlement** ⚡
+   - Sub-second Bitcoin transfers
+   - No waiting for block confirmations
+   - Real-time trading capabilities
+
+2. **Micro-Fees** 💰
+   - ~1 satoshi per transaction
+   - 99.9% cost reduction vs. on-chain
+   - Enables micro-payments and small trades
+
+3. **Scalability** 📈
+   - Millions of transactions per second
+   - No blockchain congestion issues
+   - Handles high-frequency trading
+
+4. **Privacy** 🔒
+   - Private channel transactions
+   - Onion routing for enhanced privacy
+   - No public blockchain exposure
+
+5. **Network Effects** 🌐
+   - 100,000+ Lightning nodes
+   - Growing ecosystem of wallets and services
+   - Established liquidity and routing
+
 ## 📝 Conclusion
 
 Our Lightning Network + Fusion+ solution provides a revolutionary approach to Bitcoin cross-chain swaps by:
@@ -263,5 +446,13 @@ Our Lightning Network + Fusion+ solution provides a revolutionary approach to Bi
 3. **Reducing costs** by 99.9% compared to on-chain Bitcoin transactions
 4. **Enabling new use cases** like high-frequency arbitrage
 5. **Following 1inch's existing model** while improving upon it
+
+### **Strategic Impact for 1inch**
+
+This solution positions 1inch as:
+- **The premier Bitcoin-DeFi bridge** in the ecosystem
+- **A leader in cross-chain innovation** with Lightning integration
+- **The go-to platform** for Bitcoin users wanting DeFi access
+- **A catalyst for Bitcoin DeFi adoption** through seamless UX
 
 This solution addresses all jury feedback from the previous implementation while leveraging the proven Lightning Network infrastructure for seamless Bitcoin integration with the 1inch ecosystem. 
