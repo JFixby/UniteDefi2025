@@ -1,0 +1,101 @@
+You are tasked with producing a new README.md file for a hackathon project that extends the 1inch Fusion+ protocol to support Bitcoin swaps using the Lightning Network. The goal is to generate a document suitable for developers, CTOs, and hackathon juries. It must include a clear explanation of the problem, the proposed solution, architecture, and implementation details.
+📌 Task Overview
+
+Build a prototype that:
+
+    Extends Fusion+ to support Bitcoin (non-EVM chain)
+
+    Uses Lightning Network to perform BTC transfers
+
+    Preserves hashlock and timelock (HTLC) logic
+
+    Enables bidirectional swaps between Bitcoin and Ethereum
+
+    Demonstrates onchain execution during the demo (testnets/L2s acceptable)
+
+✅ Requirements
+
+Mandatory:
+
+    Swap functionality must work in both directions (BTC ⇄ ETH)
+
+    HTLC-based security must be preserved on non-EVM chains
+
+    Use 1inch Limit Order Protocol contracts for EVM execution
+
+    Demo must include onchain swaps using testnet or L2 (Polygon preferred)
+
+Stretch Goals (optional):
+
+    Add a UI
+
+    Support partial fills
+
+📂 Provided Resources
+    
+    cross-chain-resolver-example/: the most importatnt - example of implementation
+
+    cross-chain-sdk/: Reference codebase for Fusion/Fusion+ implementations
+
+    whitepaper.txt: High-level concept and vision
+
+    SECRETS.py: Contains private keys and credentials for the demo
+
+    LN/: Pre-configured Lightning Network testnet setup
+
+    hashlocked-cli/: Previously attempted BTC–ETH swap solution using HTLC
+
+        Refer to the README and consider jury feedback
+
+🧠 Jury Feedback on Previous Work (hashlocked-cli)
+
+    Did not align with Fusion+ architecture
+
+    Required user-managed escrows on source chain
+
+    Resolver had to watch for settlement txns manually
+
+    Suggested use of PSBT to abstract BTC transfer flow
+
+    Recommends relayer model to manage secrets and swaps
+
+    HTLC systems already exist for BTC (e.g., Garden Finance)
+
+💡 Proposed Architecture
+
+    Use Lightning Network for fast BTC swaps and HTLC logic
+
+    On Ethereum side, use Polygon to minimize gas costs
+
+    Execute swaps using 1inch Fusion+ and Limit Order Protocol
+
+    Final settlement can optionally bridge to Ethereum mainnet
+
+Swap path:
+
+BTC Mainnet ⬄ Lightning Network ⬄ Polygon (1inch) ⬄ Ethereum Mainnet
+
+For demo purposes, we focus on:
+Lightning Network ⬄ Polygon
+❓ Questions to Answer in the Architecture Document
+
+    What is the public benefit and use case?
+
+    What is the problem statement being solved at the hackathon?
+
+    What is the high-level idea/solution for technical leads (executive summary)?
+
+    How does the technical architecture look?
+
+    Who are the participants/roles (user, relayer, resolver, liquidity provider)?
+
+    What is the main swap scenario for the demo?
+
+    What are the technical challenges and solutions?
+
+    How does it address the concerns raised by the 1inch jury?
+
+    Why use Polygon? (cheaper, faster, compatible with Ethereum)
+
+    How does this architecture scale to mainnet or production?
+
