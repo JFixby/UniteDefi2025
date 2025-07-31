@@ -19,6 +19,12 @@ const CONTRACT_ADDRESSES = {
   }
 };
 
+// Network explorer URLs
+const EXPLORER_URLS = {
+  POLYGON: 'https://polygonscan.com',
+  ETH_MAINNET: 'https://etherscan.io'
+};
+
 // Get contract addresses for current network
 const getContractAddresses = () => {
   return CONTRACT_ADDRESSES[NETWORK];
@@ -91,6 +97,7 @@ async function carolCreatesEscrowDeposit(secret?: string) {
   console.log(`🔗 RPC URL: ${networkConfig.rpcUrl}`);
   console.log(`⛓️  Chain ID: ${networkConfig.chainId}`);
   console.log(`🏭 Escrow Factory: ${contracts.ESCROW_FACTORY}`);
+  console.log(`🔍 Explorer: ${EXPLORER_URLS[NETWORK]}`);
   
   // Create deposit parameters
   const depositParams: DepositParams = {
@@ -127,6 +134,12 @@ async function carolCreatesEscrowDeposit(secret?: string) {
     console.log(`🏠 Escrow Address: ${result.escrowAddress}`);
     console.log(`📝 Transaction Hash: ${result.txHash}`);
     console.log(`⏰ Block Timestamp: ${result.blockTimestamp}`);
+    
+    console.log(`\n🔍 Explorer Links:`);
+    console.log(`=================`);
+    console.log(`🏭 Factory Contract: ${EXPLORER_URLS[NETWORK]}/address/${contracts.ESCROW_FACTORY}`);
+    console.log(`🏠 Escrow Contract: ${EXPLORER_URLS[NETWORK]}/address/${result.escrowAddress}`);
+    console.log(`📝 Transaction: ${EXPLORER_URLS[NETWORK]}/tx/${result.txHash}`);
     
     console.log(`\n📋 Next Steps:`);
     console.log(`==============`);
@@ -216,6 +229,12 @@ async function carolCreatesCustomEscrowDeposit(
     console.log(`🏠 Escrow Address: ${result.escrowAddress}`);
     console.log(`📝 Transaction Hash: ${result.txHash}`);
     console.log(`⏰ Block Timestamp: ${result.blockTimestamp}`);
+    
+    console.log(`\n🔍 Explorer Links:`);
+    console.log(`=================`);
+    console.log(`🏭 Factory Contract: ${EXPLORER_URLS[NETWORK]}/address/${contracts.ESCROW_FACTORY}`);
+    console.log(`🏠 Escrow Contract: ${EXPLORER_URLS[NETWORK]}/address/${result.escrowAddress}`);
+    console.log(`📝 Transaction: ${EXPLORER_URLS[NETWORK]}/tx/${result.txHash}`);
     
     return {
       ...result,
