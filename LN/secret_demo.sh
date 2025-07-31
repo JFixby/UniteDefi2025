@@ -2,7 +2,7 @@
 
 # Interactive Lightning Network Demo
 # Step-by-step demonstration of invoice creation and payment
-# Designed for public audience demonstration
+# Designed for public audience demonstration with HTLC secret tracking
 
 set -e
 
@@ -38,12 +38,51 @@ print_header() {
   echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
   echo -e "${BOLD}║              LIGHTNING NETWORK DEMO                           ║${NC}"
   echo -e "${BOLD}║           Real-time Payment Demonstration                     ║${NC}"
+  echo -e "${BOLD}║           with HTLC Secret Lifecycle Tracking                ║${NC}"
   echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
   echo
 }
 
 print_separator() {
   echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+}
+
+print_htlc_info() {
+  echo -e "${BOLD}🔐 HTLC SECRET LIFECYCLE:${NC}"
+  echo -e "${CYAN}┌─────────────────┬─────────────────────────────────────────────────┐${NC}"
+  echo -e "${CYAN}│ Stage           │ Details                                         │${NC}"
+  echo -e "${CYAN}├─────────────────┼─────────────────────────────────────────────────┤${NC}"
+  echo -e "${CYAN}│ Secret (Preimage)│ $1 │${NC}"
+  echo -e "${CYAN}│ Hash (R-Hash)   │ $2 │${NC}"
+  echo -e "${CYAN}│ Verification    │ $3 │${NC}"
+  echo -e "${CYAN}└─────────────────┴─────────────────────────────────────────────────┘${NC}"
+  echo
+}
+
+# Function to decode base64 and convert to hex
+decode_base64_to_hex() {
+  local base64_string="$1"
+  echo "$base64_string" | base64 -d | xxd -p -u -c 1000
+}
+
+# Function to verify HTLC hash
+verify_htlc_hash() {
+  local secret_hex="$1"
+  local expected_hash="$2"
+  
+  # Hash the secret using SHA256
+  local calculated_hash=$(echo "$secret_hex" | xxd -r -p | $HASH_CMD | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
+  
+  # Convert expected hash from base64 to hex for comparison
+  local expected_hex=$(echo "$expected_hash" | base64 -d | xxd -p -u -c 1000)
+  
+  if [ "$calculated_hash" = "$expected_hex" ]; then
+    echo "✅ VERIFIED - Hash matches secret"
+  else
+    echo "❌ FAILED - Hash verification failed"
+    echo "   Expected: $expected_hex"
+    echo "   Calculated: $calculated_hash"
+  fi
 }
 
 wait_for_user() {
@@ -61,15 +100,25 @@ if [ ! -f ln.json ]; then
 fi
 
 # Check if required tools are installed
-for tool in jq curl nc xxd; do
+for tool in jq curl nc xxd base64; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     print_error "$tool is not installed. Please install $tool to use this script."
     exit 1
   fi
 done
 
+# Check for hash command (sha256sum on Linux, shasum on macOS)
+if command -v sha256sum >/dev/null 2>&1; then
+  HASH_CMD="sha256sum"
+elif command -v shasum >/dev/null 2>&1; then
+  HASH_CMD="shasum -a 256"
+else
+  print_error "Neither sha256sum nor shasum is available. Please install a hash utility."
+  exit 1
+fi
+
 print_header
-echo -e "${CYAN}Welcome to the Lightning Network Demo!${NC}"
+echo -e "${CYAN}Welcome to the Lightning Network Demo with HTLC Secret Tracking!${NC}"
 echo
 echo "This demonstration will show you how Lightning Network payments work in real-time."
 echo "We'll follow a complete payment flow between two Lightning nodes:"
@@ -78,9 +127,10 @@ echo "  • Alice (the payer)"
 echo
 echo -e "${BOLD}What you'll see:${NC}"
 echo "  1. Initial balance check for both nodes"
-echo "  2. Carol creates an invoice for 13 satoshis"
-echo "  3. Alice pays the invoice instantly"
-echo "  4. Final balance check showing the transfer"
+echo "  2. Carol creates an invoice with HTLC secret generation"
+echo "  3. Alice pays the invoice using the HTLC secret"
+echo "  4. HTLC secret verification and lifecycle tracking"
+echo "  5. Final balance check showing the transfer"
 echo
 print_separator
 echo
@@ -133,12 +183,13 @@ echo
 wait_for_user
 
 # Step 2: Issue invoice from Carol to Alice
-print_step "2" "Creating Lightning Invoice - Carol generates a payment request for Alice"
+print_step "2" "Creating Lightning Invoice - Carol generates a payment request with HTLC secret"
 
 echo -e "${YELLOW}Carol is creating an invoice for 13 satoshis...${NC}"
 echo "  → Generating payment request..."
 echo "  → Amount: 13 satoshis"
 echo "  → Memo: Demo invoice from Carol to Alice - 13 satoshis"
+echo "  → Generating HTLC secret (preimage)..."
 
 INVOICE_JSON=$(curl -sk -X POST \
   --header "Grpc-Metadata-macaroon: $CAROL_MACAROON_HEX" \
@@ -148,6 +199,10 @@ INVOICE_JSON=$(curl -sk -X POST \
 
 PAYMENT_REQUEST=$(echo "$INVOICE_JSON" | jq -r '.payment_request')
 INVOICE_R_HASH=$(echo "$INVOICE_JSON" | jq -r '.r_hash')
+INVOICE_R_PREIMAGE=$(echo "$INVOICE_JSON" | jq -r '.r_preimage')
+
+# Convert preimage to hex for display
+PREIMAGE_HEX=$(decode_base64_to_hex "$INVOICE_R_PREIMAGE")
 
 print_success "Invoice created successfully!"
 echo
@@ -160,21 +215,27 @@ echo -e "${CYAN}│ Payment Request │ ${PAYMENT_REQUEST:0:50}... │${NC}"
 echo -e "${CYAN}│ Invoice Hash    │ ${INVOICE_R_HASH:0:50}... │${NC}"
 echo -e "${CYAN}└─────────────────┴─────────────────────────────────────────────────┘${NC}"
 echo
-echo -e "${YELLOW}💡 What just happened:${NC}"
-echo "  • Carol's node generated a unique payment request"
-echo "  • This request contains the amount, destination, and cryptographic proof"
-echo "  • Alice can now use this to send the payment"
+
+# Show HTLC secret information
+print_htlc_info "$PREIMAGE_HEX" "$INVOICE_R_HASH" "🔒 SECRET GENERATED - Ready for payment"
+
+echo -e "${YELLOW}💡 HTLC Secret Lifecycle - Stage 1:${NC}"
+echo "  • Carol's node generated a random 32-byte secret (preimage)"
+echo "  • The secret is hashed using SHA256 to create the payment hash"
+echo "  • Only Carol knows the secret until payment is made"
+echo "  • Alice will need this secret to claim the payment"
 echo
 
 wait_for_user
 
 # Step 3: Pay invoice
-print_step "3" "Processing Payment - Alice sends 13 satoshis to Carol"
+print_step "3" "Processing Payment - Alice sends 13 satoshis using HTLC secret"
 
 echo -e "${YELLOW}Alice is processing the payment...${NC}"
 echo "  → Submitting payment request to Alice's node..."
 echo "  → Amount: 13 satoshis"
 echo "  → Destination: Carol's node"
+echo "  → Using HTLC secret for payment routing..."
 
 PAYMENT_RESPONSE=$(curl -sk -X POST \
   --header "Grpc-Metadata-macaroon: $ALICE_MACAROON_HEX" \
@@ -189,6 +250,9 @@ if [ "$PAYMENT_PREIMAGE" != "null" ] && [ -n "$PAYMENT_PREIMAGE" ]; then
   print_success "Payment completed successfully!"
   PAYMENT_HASH=$(echo "$PAYMENT_RESPONSE" | jq -r '.payment_hash')
   
+  # Convert received preimage to hex
+  RECEIVED_PREIMAGE_HEX=$(decode_base64_to_hex "$PAYMENT_PREIMAGE")
+  
   echo
   echo -e "${BOLD}✅ PAYMENT CONFIRMED:${NC}"
   echo -e "${CYAN}┌─────────────────┬─────────────────────────────────────────────────┐${NC}"
@@ -199,11 +263,22 @@ if [ "$PAYMENT_PREIMAGE" != "null" ] && [ -n "$PAYMENT_PREIMAGE" ]; then
   echo -e "${CYAN}│ Payment Hash    │ ${PAYMENT_HASH:0:50}... │${NC}"
   echo -e "${CYAN}└─────────────────┴─────────────────────────────────────────────────┘${NC}"
   echo
+
+  # Show HTLC secret information after payment
+  print_htlc_info "$RECEIVED_PREIMAGE_HEX" "$PAYMENT_HASH" "🔓 SECRET REVEALED - Payment claimed"
+  
+  echo -e "${YELLOW}💡 HTLC Secret Lifecycle - Stage 2:${NC}"
+  echo "  • Alice's node received the HTLC secret from Carol"
+  echo "  • The secret was used to unlock the payment"
+  echo "  • Payment routing completed successfully"
+  echo "  • Carol can now spend the received funds"
+  echo
   echo -e "${YELLOW}⚡ Lightning Network Benefits:${NC}"
   echo "  • Payment completed in milliseconds"
   echo "  • No blockchain confirmation needed"
   echo "  • Minimal fees"
   echo "  • Instant finality"
+  echo "  • Secure HTLC-based routing"
 else
   print_error "Payment failed: $PAYMENT_RESPONSE"
   exit 1
@@ -211,8 +286,46 @@ fi
 
 wait_for_user
 
-# Step 4: Check balances again
-print_step "4" "Verifying Transfer - Let's see the balance changes"
+# Step 4: Verify HTLC secret
+print_step "4" "HTLC Secret Verification - Verifying the cryptographic proof"
+
+echo -e "${YELLOW}Verifying HTLC secret and hash...${NC}"
+echo "  → Checking if received secret matches original hash..."
+echo "  → Performing SHA256 verification..."
+
+# Verify the HTLC hash
+VERIFICATION_RESULT=$(verify_htlc_hash "$RECEIVED_PREIMAGE_HEX" "$INVOICE_R_HASH")
+
+echo
+echo -e "${BOLD}🔍 HTLC VERIFICATION RESULTS:${NC}"
+echo -e "${CYAN}┌─────────────────┬─────────────────────────────────────────────────┐${NC}"
+echo -e "${CYAN}│ Verification    │ Result                                          │${NC}"
+echo -e "${CYAN}├─────────────────┼─────────────────────────────────────────────────┤${NC}"
+echo -e "${CYAN}│ Secret Match    │ $VERIFICATION_RESULT │${NC}"
+echo -e "${CYAN}│ Original Hash   │ ${INVOICE_R_HASH:0:50}... │${NC}"
+echo -e "${CYAN}│ Received Secret │ ${RECEIVED_PREIMAGE_HEX:0:50}... │${NC}"
+echo -e "${CYAN}└─────────────────┴─────────────────────────────────────────────────┘${NC}"
+echo
+
+# Show complete HTLC lifecycle
+echo -e "${BOLD}🔄 COMPLETE HTLC LIFECYCLE:${NC}"
+echo -e "${CYAN}┌─────────────────┬─────────────────────────────────────────────────┐${NC}"
+echo -e "${CYAN}│ Stage           │ Action                                          │${NC}"
+echo -e "${CYAN}├─────────────────┼─────────────────────────────────────────────────┤${NC}"
+echo -e "${CYAN}│ 1. Generation   │ Carol creates random 32-byte secret             │${NC}"
+echo -e "${CYAN}│ 2. Hashing      │ Secret hashed with SHA256 → Payment Hash       │${NC}"
+echo -e "${CYAN}│ 3. Invoice      │ Hash included in Lightning invoice             │${NC}"
+echo -e "${CYAN}│ 4. Payment      │ Alice pays using payment request               │${NC}"
+echo -e "${CYAN}│ 5. Secret Reveal│ Carol reveals secret to claim payment          │${NC}"
+echo -e "${CYAN}│ 6. Verification │ Secret verified against original hash          │${NC}"
+echo -e "${CYAN}│ 7. Settlement   │ Payment settled, funds transferred             │${NC}"
+echo -e "${CYAN}└─────────────────┴─────────────────────────────────────────────────┘${NC}"
+echo
+
+wait_for_user
+
+# Step 5: Check balances again
+print_step "5" "Verifying Transfer - Let's see the balance changes"
 
 echo -e "${YELLOW}Checking final balances to confirm the transfer...${NC}"
 
@@ -260,6 +373,8 @@ print_success "🎉 DEMO COMPLETED SUCCESSFULLY!"
 echo
 echo -e "${BOLD}What we just demonstrated:${NC}"
 echo "  ✅ Instant payment processing on Lightning Network"
+echo "  ✅ Complete HTLC secret lifecycle tracking"
+echo "  ✅ Cryptographic secret verification"
 echo "  ✅ Real-time balance updates"
 echo "  ✅ Secure cryptographic payment routing"
 echo "  ✅ Zero-confirmation finality"
@@ -269,5 +384,6 @@ echo "  • Instant Bitcoin payments"
 echo "  • Micro-transactions"
 echo "  • Scalable Bitcoin usage"
 echo "  • Low-cost transactions"
+echo "  • Secure HTLC-based routing"
 echo
 echo -e "${BOLD}Thank you for watching the Lightning Network in action! ⚡${NC}" 
