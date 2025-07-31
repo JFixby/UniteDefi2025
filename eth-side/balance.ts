@@ -34,6 +34,52 @@ const ERC20_ABI = [
   'function totalSupply() view returns (uint256)'
 ];
 
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second
+  maxDelay: 10000, // 10 seconds
+};
+
+// Helper function to wait with exponential backoff
+function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Helper function to retry with exponential backoff
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = RETRY_CONFIG.maxRetries,
+  baseDelay: number = RETRY_CONFIG.baseDelay
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Check if it's a rate limit error
+      const isRateLimitError = error instanceof Error && 
+        (error.message.includes('Too Many Requests') || 
+         error.message.includes('rate limit') ||
+         error.message.includes('429'));
+      
+      if (!isRateLimitError || attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Calculate delay with exponential backoff
+      const delay = Math.min(baseDelay * Math.pow(2, attempt), RETRY_CONFIG.maxDelay);
+      console.log(`⚠️  Rate limited, retrying in ${delay}ms... (attempt ${attempt + 1}/${maxRetries + 1})`);
+      await wait(delay);
+    }
+  }
+  
+  throw lastError!;
+}
+
 async function checkBalances() {
   console.log('=== Full Token Balance Check for ALICE and CAROL ===\n');
 
@@ -98,24 +144,24 @@ async function checkBalances() {
     for (const tokenName of tokenOrder) {
       const tokenAddress = networkTokens[tokenName as keyof typeof networkTokens];
       
-      if (!tokenAddress || tokenAddress === '0x0000000000000000000000000000000000000000') {
-        console.log(`${tokenName}: ⚠️  Token address not configured or invalid`);
+      if (!tokenAddress) {
+        console.log(`${tokenName}: ⚠️  Token address not configured`);
         continue;
       }
 
       try {
         const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
         
-        // Get token info
+        // Get token info with retry
         const [symbol, decimals] = await Promise.all([
-          tokenContract.symbol(),
-          tokenContract.decimals()
+          retryWithBackoff(() => tokenContract.symbol()),
+          retryWithBackoff(() => tokenContract.decimals())
         ]);
 
-        // Get balances
+        // Get balances with retry
         const [aliceTokenBalance, carolTokenBalance] = await Promise.all([
-          tokenContract.balanceOf(aliceAddress),
-          tokenContract.balanceOf(carolAddress)
+          retryWithBackoff(() => tokenContract.balanceOf(aliceAddress)),
+          retryWithBackoff(() => tokenContract.balanceOf(carolAddress))
         ]);
 
         // Format balances
