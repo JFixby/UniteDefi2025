@@ -9,14 +9,13 @@ import {
   getAliceAddress
 } from './variables';
 
-// Contract addresses from cross-chain-sdk deployments
-// These are the actual deployed contract addresses
+// Contract addresses - will be populated after deployment
 const CONTRACT_ADDRESSES = {
   POLYGON: {
-    ESCROW_FACTORY: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
+    ESCROW_FACTORY: '' // Will be filled after deployment
   },
   ETH_MAINNET: {
-    ESCROW_FACTORY: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
+    ESCROW_FACTORY: '' // Will be filled after deployment
   }
 };
 
@@ -129,10 +128,18 @@ async function carolCreatesEscrowDeposit(secret?: string) {
   console.log(`   Hashed Secret: ${depositParams.hashedSecret}`);
   
   try {
+    // Deploy or get factory address
+    let factoryAddress = contracts.ESCROW_FACTORY;
+    if (!factoryAddress) {
+      console.log('🏭 No factory address found, deploying BTCEscrowFactory...');
+      factoryAddress = await EscrowDeposit.deployFactory(CAROL_PRIVATE_KEY, networkConfig);
+      CONTRACT_ADDRESSES[NETWORK].ESCROW_FACTORY = factoryAddress;
+    }
+    
     // Create escrow deposit instance
     const escrowDeposit = new EscrowDeposit(
       CAROL_PRIVATE_KEY,
-      contracts.ESCROW_FACTORY,
+      factoryAddress,
       networkConfig
     );
     
@@ -226,10 +233,18 @@ async function carolCreatesCustomEscrowDeposit(
   console.log(`   Safety Deposit: ${depositParams.safetyDeposit} ${networkConfig.networkName === 'POLYGON' ? 'MATIC' : 'ETH'}`);
   
   try {
+    // Deploy or get factory address
+    let factoryAddress = contracts.ESCROW_FACTORY;
+    if (!factoryAddress) {
+      console.log('🏭 No factory address found, deploying BTCEscrowFactory...');
+      factoryAddress = await EscrowDeposit.deployFactory(CAROL_PRIVATE_KEY, networkConfig);
+      CONTRACT_ADDRESSES[NETWORK].ESCROW_FACTORY = factoryAddress;
+    }
+    
     // Create escrow deposit instance
     const escrowDeposit = new EscrowDeposit(
       CAROL_PRIVATE_KEY,
-      contracts.ESCROW_FACTORY,
+      factoryAddress,
       networkConfig
     );
     

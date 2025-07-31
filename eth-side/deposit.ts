@@ -19,13 +19,19 @@ interface NetworkConfig {
   networkName: string;
 }
 
-// Escrow factory ABI - actual functions from the deployed contract
-const ESCROW_FACTORY_ABI = [
-  'function deployDst(bytes calldata immutables, uint256 privateCancellation) external payable returns (address escrow, uint256 blockTimestamp)',
-  'function createDstEscrow(bytes calldata immutables, uint256 srcCancellationTimestamp) external payable returns (address escrow, uint256 blockTimestamp)',
-  'function getDstEscrowAddress(bytes calldata srcImmutables, bytes calldata complement, uint256 blockTime, address taker, address implementation) external view returns (address)',
-  'function getDestinationImpl() external view returns (address)',
-  'function getSourceImpl() external view returns (address)'
+// BTCEscrowFactory ABI - our custom factory contract
+const BTCEscrowFactory_ABI = [
+  'function createSrcEscrow(tuple(bytes32 orderHash, bytes32 hashlock, uint256 maker, uint256 taker, uint256 token, uint256 amount, uint256 safetyDeposit, uint256 timelocks) immutables) external payable returns (address escrow, uint256 blockTimestamp)',
+  'function createDstEscrow(tuple(bytes32 orderHash, bytes32 hashlock, uint256 maker, uint256 taker, uint256 token, uint256 amount, uint256 safetyDeposit, uint256 timelocks) immutables, uint256 srcCancellationTimestamp) external payable returns (address escrow, uint256 blockTimestamp)',
+  'function addressOfEscrowSrc(tuple(bytes32 orderHash, bytes32 hashlock, uint256 maker, uint256 taker, uint256 token, uint256 amount, uint256 safetyDeposit, uint256 timelocks) immutables) external view returns (address)',
+  'function addressOfEscrowDst(tuple(bytes32 orderHash, bytes32 hashlock, uint256 maker, uint256 taker, uint256 token, uint256 amount, uint256 safetyDeposit, uint256 timelocks) immutables) external view returns (address)',
+  'function withdraw(address escrowAddress, bytes32 secret, tuple(bytes32 orderHash, bytes32 hashlock, uint256 maker, uint256 taker, uint256 token, uint256 amount, uint256 safetyDeposit, uint256 timelocks) immutables) external',
+  'function cancel(address escrowAddress, tuple(bytes32 orderHash, bytes32 hashlock, uint256 maker, uint256 taker, uint256 token, uint256 amount, uint256 safetyDeposit, uint256 timelocks) immutables) external',
+  'function getCreationFee() external view returns (uint256)',
+  'function creationFee() external view returns (uint256)',
+  'event EscrowCreated(address indexed escrow, bytes32 indexed orderHash, address indexed maker, address taker, uint256 amount, bytes32 hashlock)',
+  'event EscrowWithdrawn(address indexed escrow, bytes32 indexed secret, address indexed taker)',
+  'event EscrowCancelled(address indexed escrow, address indexed maker)'
 ];
 
 // Escrow contract ABI - for withdrawal and cancellation
@@ -42,6 +48,7 @@ class EscrowDeposit {
   private signer: ethers.Wallet;
   private escrowFactory: ethers.Contract;
   private networkConfig: NetworkConfig;
+  private static factoryAddress: string | null = null;
 
   constructor(
     privateKey: string,
@@ -54,9 +61,69 @@ class EscrowDeposit {
     
     this.escrowFactory = new ethers.Contract(
       escrowFactoryAddress,
-      ESCROW_FACTORY_ABI,
+      BTCEscrowFactory_ABI,
       this.signer
     );
+  }
+
+  /**
+   * Deploy TestEscrowFactory contract
+   */
+  static async deployFactory(
+    privateKey: string,
+    networkConfig: NetworkConfig
+  ): Promise<string> {
+    if (EscrowDeposit.factoryAddress) {
+      console.log(`🏭 Using existing factory: ${EscrowDeposit.factoryAddress}`);
+      return EscrowDeposit.factoryAddress;
+    }
+
+    console.log('🏭 Deploying TestEscrowFactory contract...');
+    
+    const provider = new ethers.JsonRpcProvider(networkConfig.rpcUrl);
+    const signer = new ethers.Wallet(privateKey, provider);
+    
+    // TestEscrowFactory bytecode (you'll need to compile this)
+    const TestEscrowFactory_Bytecode = "0x..."; // This will be filled after compilation
+    
+    try {
+      // Deploy the contract with constructor parameters matching cross-chain-resolver-example
+      const factory = new ethers.ContractFactory(
+        BTCEscrowFactory_ABI,
+        TestEscrowFactory_Bytecode,
+        signer
+      );
+      
+      // Constructor parameters from cross-chain-resolver-example
+      const limitOrderProtocol = "0x111111125421ca6dc452d289314280a0f8842a65"; // 1inch LOP
+      const feeToken = "0x0000000000000000000000000000000000000000"; // ETH
+      const accessToken = "0x0000000000000000000000000000000000000000"; // No access token
+      const owner = signer.address;
+      const rescueDelaySrc = 1800; // 30 minutes
+      const rescueDelayDst = 1800; // 30 minutes
+      
+      const deployedFactory = await factory.deploy(
+        limitOrderProtocol,
+        feeToken,
+        accessToken,
+        owner,
+        rescueDelaySrc,
+        rescueDelayDst
+      );
+      await deployedFactory.waitForDeployment();
+      
+      const factoryAddress = await deployedFactory.getAddress();
+      EscrowDeposit.factoryAddress = factoryAddress;
+      
+      console.log(`✅ TestEscrowFactory deployed to: ${factoryAddress}`);
+      console.log(`🔍 Explorer: ${networkConfig.networkName === 'POLYGON' ? 'https://polygonscan.com' : 'https://etherscan.io'}/address/${factoryAddress}`);
+      
+      return factoryAddress;
+      
+    } catch (error) {
+      console.error('❌ Failed to deploy TestEscrowFactory:', error);
+      throw error;
+    }
   }
 
   /**
@@ -71,6 +138,8 @@ class EscrowDeposit {
     console.log(`🌐 Network: ${this.networkConfig.networkName}`);
     console.log(`🔗 RPC URL: ${this.networkConfig.rpcUrl}`);
     console.log(`⛓️  Chain ID: ${this.networkConfig.chainId}`);
+    console.log(`🏭 Escrow Factory Contract: ${this.escrowFactory.target}`);
+    console.log(`🔧 Contract Type: 1inch EscrowFactory`);
     console.log('📋 Parameters:');
     console.log(`   Hashed Secret: ${params.hashedSecret}`);
     console.log(`   Amount: ${params.amount}`);
@@ -98,9 +167,31 @@ class EscrowDeposit {
       console.log(`💰 Total Value: ${ethers.formatEther(totalValue)} ${this.networkConfig.networkName === 'POLYGON' ? 'MATIC' : 'ETH'}`);
       
       // Deploy destination escrow using factory directly
-      const tx = await this.escrowFactory.deployDst(
+      console.log(`🔧 Immutables data: ${immutables}`);
+      console.log(`⏰ Private cancellation: ${privateCancellation}`);
+      console.log(`💰 Total value: ${totalValue}`);
+      
+      // Try to get the escrow address first to validate our immutables
+      try {
+        const escrowAddress = await this.escrowFactory.addressOfEscrowSrc(immutables);
+        console.log(`🏠 Calculated escrow address: ${escrowAddress}`);
+      } catch (error) {
+        console.log(`⚠️ Could not calculate escrow address: ${error}`);
+      }
+      
+      console.log(`🔧 Calling function: createSrcEscrow`);
+      console.log(`📦 Immutables structure:`);
+      console.log(`   Order Hash: ${immutables.orderHash}`);
+      console.log(`   Hashlock: ${immutables.hashlock}`);
+      console.log(`   Maker (uint256): ${immutables.maker.toString()}`);
+      console.log(`   Taker (uint256): ${immutables.taker.toString()}`);
+      console.log(`   Token (uint256): ${immutables.token.toString()}`);
+      console.log(`   Amount: ${immutables.amount.toString()}`);
+      console.log(`   Safety Deposit: ${immutables.safetyDeposit.toString()}`);
+      console.log(`   Timelocks: ${immutables.timelocks.toString()}`);
+      
+      const tx = await this.escrowFactory.createSrcEscrow(
         immutables,
-        privateCancellation,
         {
           value: totalValue,
           gasLimit: 500000
@@ -194,50 +285,35 @@ class EscrowDeposit {
   /**
    * Create immutables structure for escrow
    */
-  private createImmutables(params: DepositParams): string {
-    // This is a simplified immutables structure
-    // In a real implementation, you'd need to match the exact format expected by the contract
-    
+  private createImmutables(params: DepositParams): any {
+    // Create order hash
     const orderHash = ethers.keccak256(ethers.toUtf8Bytes(`order_${Date.now()}`));
-    const hashLock = params.hashedSecret;
-    const maker = this.signer.address;
-    const taker = params.takerAddress;
-    const token = '0x0000000000000000000000000000000000000000'; // Native token
-    const amount = ethers.parseEther(params.amount);
-    const safetyDeposit = ethers.parseEther(params.safetyDeposit);
     
-    // Create timelocks
-    const currentTime = BigInt(Math.floor(Date.now() / 1000));
-    const withdrawalTime = currentTime + BigInt(params.timelock.withdrawalPeriod);
-    const cancellationTime = currentTime + BigInt(params.timelock.cancellationPeriod);
+    // Pack timelocks according to the contract format
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    const withdrawalPeriod = BigInt(params.timelock.withdrawalPeriod);
+    const publicWithdrawal = withdrawalPeriod * 2n; // Public withdrawal is 2x withdrawal period
+    const cancellationPeriod = BigInt(params.timelock.cancellationPeriod);
     
-    // Encode immutables (simplified structure)
-    const immutablesData = ethers.AbiCoder.defaultAbiCoder().encode(
-      [
-        'bytes32', // orderHash
-        'bytes32', // hashLock
-        'address', // maker
-        'address', // taker
-        'address', // token
-        'uint256', // amount
-        'uint256', // safetyDeposit
-        'uint256', // withdrawalTime
-        'uint256'  // cancellationTime
-      ],
-      [
-        orderHash,
-        hashLock,
-        maker,
-        taker,
-        token,
-        amount,
-        safetyDeposit,
-        withdrawalTime,
-        cancellationTime
-      ]
-    );
+    // Pack timelocks: (now << 224) | (cancellation << 64) | (publicWithdrawal << 32) | withdrawal
+    const timelocks = (now << 224n) |
+                     (cancellationPeriod << 64n) |
+                     (publicWithdrawal << 32n) |
+                     withdrawalPeriod;
     
-    return immutablesData;
+    // Create immutables object matching the contract structure
+    const immutables = {
+      orderHash: orderHash,
+      hashlock: params.hashedSecret,
+      maker: BigInt(this.signer.address),      // Convert address to uint256
+      taker: BigInt(params.takerAddress),      // Convert address to uint256
+      token: BigInt(ethers.ZeroAddress),       // Native token (ETH/MATIC)
+      amount: ethers.parseEther(params.amount),
+      safetyDeposit: ethers.parseEther(params.safetyDeposit),
+      timelocks: timelocks
+    };
+    
+    return immutables;
   }
 
   /**
