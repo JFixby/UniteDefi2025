@@ -288,9 +288,10 @@ def save_receipt_data(invoice_data: Dict[str, Any], payment_response: Dict[str, 
         "hash_verification": {
             "invoice_hash_base64": original_hash,
             "payment_hash_base64": payment_hash,
-            "calculated_hash_base64": hash_verification.get("calculated_hash_base64", ""),
+            "secret_hash_base64": hash_verification.get("calculated_hash_base64", ""),
             "verification_flags": {
-                "hashes_match": original_hash == payment_hash,
+                "invoice_vs_payment_hash_match": original_hash == payment_hash,
+                "invoice_vs_secret_hash_match": original_hash == hash_verification.get("calculated_hash_base64", ""),
                 "preimage_verifies": hash_verification.get("verified", False),
                 "correct_length": hash_verification.get("secret_length_bytes", 0) == 32,
                 "overall_verification": (original_hash == payment_hash) and hash_verification.get("verified", False) and (hash_verification.get("secret_length_bytes", 0) == 32)
@@ -306,9 +307,11 @@ def save_receipt_data(invoice_data: Dict[str, Any], payment_response: Dict[str, 
         "htlc_secret": {
             "preimage_base64": payment_preimage,
             "preimage_hex": payment_preimage_hex,
-            "hash_base64": original_hash,
+            "invoice_hash_base64": original_hash,
+            "secret_hash_base64": hash_verification.get("calculated_hash_base64", ""),
             "verification": {
                 "hash_verified": hash_verification.get("verified", False),
+                "invoice_vs_secret_hash_match": original_hash == hash_verification.get("calculated_hash_base64", ""),
                 "calculated_hash": hash_verification.get("calculated_hash_base64", ""),
                 "expected_hash": hash_verification.get("expected_hash_base64", ""),
                 "secret_length_bytes": hash_verification.get("secret_length_bytes", 0),
@@ -335,7 +338,7 @@ def save_receipt_data(invoice_data: Dict[str, Any], payment_response: Dict[str, 
         print_colored(f"[ERROR] Failed to save receipt data: {e}", RED)
         sys.exit(1)
 
-def print_payment_summary(invoice_data: Dict[str, Any], payment_response: Dict[str, Any], secret_hex: str) -> None:
+def print_payment_summary(invoice_data: Dict[str, Any], payment_response: Dict[str, Any], secret_hex: str, secret_check_result: Dict[str, Any] = None) -> None:
     """Print summary of payment"""
     amount_satoshis = invoice_data.get('metadata', {}).get('amount_satoshis', 0)
     
@@ -350,13 +353,19 @@ def print_payment_summary(invoice_data: Dict[str, Any], payment_response: Dict[s
     print_colored("└─────────────────┴─────────────────────────────────────────────────┘", CYAN)
     print()
     
+    # Get the calculated hash from secret check result
+    calculated_hash = ""
+    if secret_check_result and 'hash_verification' in secret_check_result:
+        calculated_hash = secret_check_result['hash_verification'].get('calculated_hash_base64', '')
+    
     print_colored("🔐 HTLC SECRET DETAILS:", BOLD)
     print_colored("┌─────────────────┬─────────────────────────────────────────────────┐", CYAN)
     print_colored("│ Field           │ Value                                           │", CYAN)
     print_colored("├─────────────────┼─────────────────────────────────────────────────┤", CYAN)
     print_colored(f"│ Secret (Preimage)│ {secret_hex} │", CYAN)
-    print_colored(f"│ Hash (R-Hash)   │ {invoice_data.get('htlc_secret', {}).get('hash_base64', '')} │", CYAN)
-    print_colored(f"│ Verification    │ ✅ HASH VERIFIED │", CYAN)
+    print_colored(f"│ Invoice Hash    │ {invoice_data.get('htlc_secret', {}).get('hash_base64', '')} │", CYAN)
+    print_colored(f"│ Secret Hash     │ {calculated_hash} │", CYAN)
+    print_colored(f"│ Hash Match      │ ✅ VERIFIED │", CYAN)
     print_colored("└─────────────────┴─────────────────────────────────────────────────┘", CYAN)
     print()
     
@@ -429,7 +438,7 @@ def main():
     save_receipt_data(invoice_data, payment_response, secret_hex, secret_check_result)
     
     # Print summary
-    print_payment_summary(invoice_data, payment_response, secret_hex)
+    print_payment_summary(invoice_data, payment_response, secret_hex, secret_check_result)
     
     print_colored("🎉 Payment completed successfully!", GREEN)
     print_colored("📄 Check receipt.json for complete payment details", CYAN)

@@ -1,32 +1,65 @@
 {
   "payment_receipt": {
-    "payment_hash": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
-    "payment_preimage_base64": "u4gbkAOK4PKnjDjpF9frfWwoC1wnUa8oe6ktlr7Zkx0=",
-    "payment_preimage_hex": "BB881B90038AE0F2A78C38E917D7EB7D6C280B5C2751AF287BA92D96BED9931D",
-    "payment_timestamp": "2025-07-31T07:31:43.752937",
+    "payment_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "payment_preimage_base64": "Xhqjg5aFNiE/UOdCWlzUCp2On6+UYY5fGvWAlrFMZyQ=",
+    "payment_preimage_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724",
+    "payment_timestamp": "2025-07-31T07:41:10.356460",
     "payment_status": "FAILED"
   },
+  "hash_verification": {
+    "invoice_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "payment_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "secret_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "verification_flags": {
+      "invoice_vs_payment_hash_match": true,
+      "invoice_vs_secret_hash_match": true,
+      "preimage_verifies": true,
+      "correct_length": true,
+      "overall_verification": true
+    },
+    "comprehensive_verification": {
+      "overall_verification": true,
+      "hash_match_check": true,
+      "hash_verification": {
+        "verified": true,
+        "calculated_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+        "expected_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+        "secret_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724",
+        "secret_length_bytes": 32
+      },
+      "preimage_length_check": true,
+      "original_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+      "payment_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+      "payment_preimage_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724"
+    },
+    "verification_timestamp": "2025-07-31T07:41:10.356460"
+  },
   "htlc_secret": {
-    "preimage_base64": "u4gbkAOK4PKnjDjpF9frfWwoC1wnUa8oe6ktlr7Zkx0=",
-    "preimage_hex": "BB881B90038AE0F2A78C38E917D7EB7D6C280B5C2751AF287BA92D96BED9931D",
-    "hash_base64": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
+    "preimage_base64": "Xhqjg5aFNiE/UOdCWlzUCp2On6+UYY5fGvWAlrFMZyQ=",
+    "preimage_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724",
+    "invoice_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "secret_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
     "verification": {
       "hash_verified": true,
-      "timestamp": "2025-07-31T07:31:43.752937",
+      "invoice_vs_secret_hash_match": true,
+      "calculated_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+      "expected_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+      "secret_length_bytes": 32,
+      "timestamp": "2025-07-31T07:41:10.356460",
       "status": "PAYMENT_COMPLETED_SECRET_REVEALED"
     }
   },
   "original_invoice": {
     "invoice": {
-      "r_hash": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
-      "payment_request": "lnbcrt130n1p5gk32spp5n73jntvfrhzuc5mhs5ehaay5yhwec8ssh6mane4s2hpz3q6n8ssqdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5u58zt33cxlf4fwysjgazf6m3cqplkqnlxl4dgkjknpnfp7dqrvjs9qxpqysgqhe2x70fzs2prj467p9s7ww78w6ejkfyy7rm38su7c0cd3el33lxzs5dff9je9hru8cmdncmv6m3lqlz8c4txxzaqljc8zwx4daszyvgprrvswd",
-      "add_index": "27",
-      "payment_addr": "5Q4lxjg301S4kJI6JOtxwAP7An836tRaVphmkPmgGyU="
+      "r_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+      "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
+      "add_index": "30",
+      "payment_addr": "EOyMorU/VU8qjZvem0j5Ba2swRiRONraPcRdkgsTVvk="
     },
     "htlc_secret": {
       "preimage_base64": "NOT_AVAILABLE_YET",
       "preimage_hex": "PENDING_PAYMENT",
-      "hash_base64": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
+      "hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
       "verification": {
         "hash_verified": "PENDING_PAYMENT",
         "timestamp": "",
@@ -37,7 +70,7 @@
     "metadata": {
       "amount_satoshis": 13,
       "memo": "Demo invoice from Carol to Alice - 13 satoshis",
-      "payment_request": "lnbcrt130n1p5gk32spp5n73jntvfrhzuc5mhs5ehaay5yhwec8ssh6mane4s2hpz3q6n8ssqdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5u58zt33cxlf4fwysjgazf6m3cqplkqnlxl4dgkjknpnfp7dqrvjs9qxpqysgqhe2x70fzs2prj467p9s7ww78w6ejkfyy7rm38su7c0cd3el33lxzs5dff9je9hru8cmdncmv6m3lqlz8c4txxzaqljc8zwx4daszyvgprrvswd",
+      "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
       "created_by": "Carol",
       "created_for": "Alice",
       "invoice_status": "UNPAID"
@@ -46,7 +79,7 @@
   "metadata": {
     "amount_satoshis": 13,
     "memo": "Demo invoice from Carol to Alice - 13 satoshis",
-    "payment_request": "lnbcrt130n1p5gk32spp5n73jntvfrhzuc5mhs5ehaay5yhwec8ssh6mane4s2hpz3q6n8ssqdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5u58zt33cxlf4fwysjgazf6m3cqplkqnlxl4dgkjknpnfp7dqrvjs9qxpqysgqhe2x70fzs2prj467p9s7ww78w6ejkfyy7rm38su7c0cd3el33lxzs5dff9je9hru8cmdncmv6m3lqlz8c4txxzaqljc8zwx4daszyvgprrvswd",
+    "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
     "paid_by": "Alice",
     "paid_to": "Carol",
     "payment_status": "COMPLETED"
