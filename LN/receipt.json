@@ -1,0 +1,54 @@
+{
+  "payment_receipt": {
+    "payment_hash": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
+    "payment_preimage_base64": "u4gbkAOK4PKnjDjpF9frfWwoC1wnUa8oe6ktlr7Zkx0=",
+    "payment_preimage_hex": "BB881B90038AE0F2A78C38E917D7EB7D6C280B5C2751AF287BA92D96BED9931D",
+    "payment_timestamp": "2025-07-31T07:31:43.752937",
+    "payment_status": "FAILED"
+  },
+  "htlc_secret": {
+    "preimage_base64": "u4gbkAOK4PKnjDjpF9frfWwoC1wnUa8oe6ktlr7Zkx0=",
+    "preimage_hex": "BB881B90038AE0F2A78C38E917D7EB7D6C280B5C2751AF287BA92D96BED9931D",
+    "hash_base64": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
+    "verification": {
+      "hash_verified": true,
+      "timestamp": "2025-07-31T07:31:43.752937",
+      "status": "PAYMENT_COMPLETED_SECRET_REVEALED"
+    }
+  },
+  "original_invoice": {
+    "invoice": {
+      "r_hash": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
+      "payment_request": "lnbcrt130n1p5gk32spp5n73jntvfrhzuc5mhs5ehaay5yhwec8ssh6mane4s2hpz3q6n8ssqdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5u58zt33cxlf4fwysjgazf6m3cqplkqnlxl4dgkjknpnfp7dqrvjs9qxpqysgqhe2x70fzs2prj467p9s7ww78w6ejkfyy7rm38su7c0cd3el33lxzs5dff9je9hru8cmdncmv6m3lqlz8c4txxzaqljc8zwx4daszyvgprrvswd",
+      "add_index": "27",
+      "payment_addr": "5Q4lxjg301S4kJI6JOtxwAP7An836tRaVphmkPmgGyU="
+    },
+    "htlc_secret": {
+      "preimage_base64": "NOT_AVAILABLE_YET",
+      "preimage_hex": "PENDING_PAYMENT",
+      "hash_base64": "n6MprYkdxcxTd4UzfvSUJd2cHhC+t9nmsFXCKINTPCA=",
+      "verification": {
+        "hash_verified": "PENDING_PAYMENT",
+        "timestamp": "",
+        "expiry": "",
+        "status": "INVOICE_CREATED_AWAITING_PAYMENT"
+      }
+    },
+    "metadata": {
+      "amount_satoshis": 13,
+      "memo": "Demo invoice from Carol to Alice - 13 satoshis",
+      "payment_request": "lnbcrt130n1p5gk32spp5n73jntvfrhzuc5mhs5ehaay5yhwec8ssh6mane4s2hpz3q6n8ssqdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5u58zt33cxlf4fwysjgazf6m3cqplkqnlxl4dgkjknpnfp7dqrvjs9qxpqysgqhe2x70fzs2prj467p9s7ww78w6ejkfyy7rm38su7c0cd3el33lxzs5dff9je9hru8cmdncmv6m3lqlz8c4txxzaqljc8zwx4daszyvgprrvswd",
+      "created_by": "Carol",
+      "created_for": "Alice",
+      "invoice_status": "UNPAID"
+    }
+  },
+  "metadata": {
+    "amount_satoshis": 13,
+    "memo": "Demo invoice from Carol to Alice - 13 satoshis",
+    "payment_request": "lnbcrt130n1p5gk32spp5n73jntvfrhzuc5mhs5ehaay5yhwec8ssh6mane4s2hpz3q6n8ssqdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5u58zt33cxlf4fwysjgazf6m3cqplkqnlxl4dgkjknpnfp7dqrvjs9qxpqysgqhe2x70fzs2prj467p9s7ww78w6ejkfyy7rm38su7c0cd3el33lxzs5dff9je9hru8cmdncmv6m3lqlz8c4txxzaqljc8zwx4daszyvgprrvswd",
+    "paid_by": "Alice",
+    "paid_to": "Carol",
+    "payment_status": "COMPLETED"
+  }
+}
