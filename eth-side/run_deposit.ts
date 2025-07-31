@@ -12,12 +12,10 @@ import {
 // These are the actual deployed contract addresses
 const CONTRACT_ADDRESSES = {
   POLYGON: {
-    ESCROW_FACTORY: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a',
-    RESOLVER: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a' // Using factory as resolver for this implementation
+    ESCROW_FACTORY: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
   },
   ETH_MAINNET: {
-    ESCROW_FACTORY: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a',
-    RESOLVER: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a' // Using factory as resolver for this implementation
+    ESCROW_FACTORY: '0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a'
   }
 };
 
@@ -93,7 +91,6 @@ async function carolCreatesEscrowDeposit(secret?: string) {
   console.log(`🔗 RPC URL: ${networkConfig.rpcUrl}`);
   console.log(`⛓️  Chain ID: ${networkConfig.chainId}`);
   console.log(`🏭 Escrow Factory: ${contracts.ESCROW_FACTORY}`);
-  console.log(`🔧 Resolver: ${contracts.RESOLVER}`);
   
   // Create deposit parameters
   const depositParams: DepositParams = {
@@ -120,7 +117,6 @@ async function carolCreatesEscrowDeposit(secret?: string) {
     const escrowDeposit = new EscrowDeposit(
       CAROL_PRIVATE_KEY,
       contracts.ESCROW_FACTORY,
-      contracts.RESOLVER,
       networkConfig
     );
     
@@ -210,7 +206,6 @@ async function carolCreatesCustomEscrowDeposit(
     const escrowDeposit = new EscrowDeposit(
       CAROL_PRIVATE_KEY,
       contracts.ESCROW_FACTORY,
-      contracts.RESOLVER,
       networkConfig
     );
     

@@ -118,10 +118,14 @@ Test on Polygon Mumbai, Goerli/Sepolia, or BSC Testnet. Covers deposit, withdraw
 
 **Cross-Chain Resolver Example** - Advanced cross-chain atomic swaps: [cross-chain-resolver-example](../cross-chain-resolver-example/)
 
-Key files:
-- `contracts/src/Resolver.sol` - Main resolver contract
-- `tests/main.spec.ts` - Test suite (Ethereum ↔ BSC)
-- `tests/config.ts` - Network configuration
+### Key Contract Files:
+- **`contracts/src/Resolver.sol`** - Orchestrates cross-chain swaps by deploying escrows on both chains and managing the atomic swap process
+- **`contracts/src/TestEscrowFactory.sol`** - Extended escrow factory for testing, inherits from 1inch's EscrowFactory with test-specific configurations
+
+### Key Test Files:
+- **`tests/main.spec.ts`** - Comprehensive test suite demonstrating Ethereum ↔ BSC USDC swaps
+- **`tests/config.ts`** - Network configuration for source and destination chains
+- **`tests/resolver.ts`** - TypeScript wrapper for interacting with the Resolver contract
 
 ## Future Features
 
