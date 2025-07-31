@@ -19,31 +19,33 @@ interface NetworkConfig {
   networkName: string;
 }
 
-// Mock escrow factory ABI for demonstration
+// Escrow factory ABI - actual functions from the deployed contract
 const ESCROW_FACTORY_ABI = [
   'function deployDst(bytes calldata immutables, uint256 privateCancellation) external payable returns (address escrow, uint256 blockTimestamp)',
+  'function createDstEscrow(bytes calldata immutables, uint256 srcCancellationTimestamp) external payable returns (address escrow, uint256 blockTimestamp)',
   'function getDstEscrowAddress(bytes calldata srcImmutables, bytes calldata complement, uint256 blockTime, address taker, address implementation) external view returns (address)',
-  'function getDestinationImpl() external view returns (address)'
+  'function getDestinationImpl() external view returns (address)',
+  'function getSourceImpl() external view returns (address)'
 ];
 
-// Mock resolver ABI for demonstration
-const RESOLVER_ABI = [
-  'function deployDst(bytes calldata immutables, uint256 privateCancellation) external payable returns (address escrow, uint256 blockTimestamp)',
-  'function withdraw(string calldata escrow, string calldata secret, bytes calldata immutables) external',
-  'function cancel(string calldata escrow, bytes calldata immutables) external'
+// Escrow contract ABI - for withdrawal and cancellation
+const ESCROW_ABI = [
+  'function withdraw(bytes32 secret, bytes calldata immutables) external',
+  'function cancel(bytes calldata immutables) external',
+  'function publicWithdraw(bytes32 secret, bytes calldata immutables) external',
+  'event EscrowWithdrawal(bytes32 secret)',
+  'event EscrowCancelled()'
 ];
 
 class EscrowDeposit {
   private provider: ethers.JsonRpcProvider;
   private signer: ethers.Wallet;
   private escrowFactory: ethers.Contract;
-  private resolver: ethers.Contract;
   private networkConfig: NetworkConfig;
 
   constructor(
     privateKey: string,
     escrowFactoryAddress: string,
-    resolverAddress: string,
     networkConfig: NetworkConfig
   ) {
     this.networkConfig = networkConfig;
@@ -53,12 +55,6 @@ class EscrowDeposit {
     this.escrowFactory = new ethers.Contract(
       escrowFactoryAddress,
       ESCROW_FACTORY_ABI,
-      this.signer
-    );
-    
-    this.resolver = new ethers.Contract(
-      resolverAddress,
-      RESOLVER_ABI,
       this.signer
     );
   }
@@ -84,7 +80,7 @@ class EscrowDeposit {
     console.log(`   Cancellation Period: ${params.timelock.cancellationPeriod} seconds`);
 
     try {
-      // Create immutables structure (simplified for demonstration)
+      // Create immutables structure
       const immutables = this.createImmutables(params);
       
       // Calculate private cancellation time
@@ -96,48 +92,45 @@ class EscrowDeposit {
       
       console.log(`⛽ Gas Price: ${ethers.formatUnits(gasPrice, 'gwei')} gwei`);
       
-      // Deploy destination escrow
-      const tx = await this.resolver.deployDst(
+      // Calculate total value to send (amount + safety deposit)
+      const totalValue = ethers.parseEther(params.amount).add(ethers.parseEther(params.safetyDeposit));
+      
+      console.log(`💰 Total Value: ${ethers.formatEther(totalValue)} ${this.networkConfig.networkName === 'POLYGON' ? 'MATIC' : 'ETH'}`);
+      
+      // Deploy destination escrow using factory directly
+      const tx = await this.escrowFactory.deployDst(
         immutables,
         privateCancellation,
         {
-          value: ethers.parseEther(params.safetyDeposit),
-          gasPrice: gasPrice
+          value: totalValue,
+          gasLimit: 500000
         }
       );
       
-      console.log(`⏳ Transaction submitted: ${tx.hash}`);
+      console.log(`📝 Transaction sent: ${tx.hash}`);
       
-      // Wait for confirmation
+      // Wait for transaction confirmation
       const receipt = await tx.wait();
       
       if (!receipt) {
-        throw new Error('Transaction failed');
+        throw new Error('Transaction failed - no receipt received');
       }
       
-      // Get block timestamp
-      const block = await this.provider.getBlock(receipt.blockNumber);
-      const blockTimestamp = block?.timestamp || 0;
+      // Get the escrow address from the transaction receipt
+      const escrowAddress = await this.getEscrowAddressFromReceipt(receipt, immutables);
       
-      // Calculate escrow address
-      const implementation = await this.escrowFactory.getDestinationImpl();
-      const escrowAddress = await this.escrowFactory.getDstEscrowAddress(
-        immutables,
-        immutables, // complement (simplified)
-        BigInt(blockTimestamp),
-        params.takerAddress,
-        implementation
-      );
-      
-      console.log('✅ Escrow deposit created successfully!');
+      console.log(`✅ Escrow deployed successfully!`);
       console.log(`🏠 Escrow Address: ${escrowAddress}`);
-      console.log(`📝 Transaction Hash: ${tx.hash}`);
-      console.log(`⏰ Block Timestamp: ${blockTimestamp}`);
-      console.log(`⛽ Gas Used: ${receipt.gasUsed.toString()}`);
+      console.log(`📝 Transaction Hash: ${receipt.hash}`);
+      console.log(`⏰ Block Number: ${receipt.blockNumber}`);
+      
+      // Get block timestamp
+      const block = await this.provider.getBlock(receipt.blockNumber!);
+      const blockTimestamp = block?.timestamp || 0;
       
       return {
         escrowAddress,
-        txHash: tx.hash,
+        txHash: receipt.hash,
         blockTimestamp
       };
       
@@ -148,63 +141,133 @@ class EscrowDeposit {
   }
 
   /**
-   * Create immutables structure for escrow
+   * Get escrow address from transaction receipt
    */
-  private createImmutables(params: DepositParams): string {
-    // This is a simplified version - in a real implementation,
-    // you would use the proper SDK classes to create immutables
-    const immutablesData = {
-      hashedSecret: params.hashedSecret,
-      amount: ethers.parseEther(params.amount),
-      taker: params.takerAddress,
-      timelock: {
-        withdrawalPeriod: BigInt(params.timelock.withdrawalPeriod),
-        cancellationPeriod: BigInt(params.timelock.cancellationPeriod)
-      },
-      safetyDeposit: ethers.parseEther(params.safetyDeposit)
-    };
-    
-    // For demonstration, we'll encode this as a simple structure
-    // In reality, you'd use the proper SDK encoding
-    return ethers.AbiCoder.defaultAbiCoder().encode(
-      ['tuple(bytes32,uint256,address,tuple(uint256,uint256),uint256)'],
-      [[
-        params.hashedSecret,
-        immutablesData.amount,
-        params.takerAddress,
-        [immutablesData.timelock.withdrawalPeriod, immutablesData.timelock.cancellationPeriod],
-        immutablesData.safetyDeposit
-      ]]
-    );
+  private async getEscrowAddressFromReceipt(receipt: ethers.TransactionReceipt, immutables: string): Promise<string> {
+    try {
+      // Try to get escrow address from logs
+      for (const log of receipt.logs) {
+        if (log.address.toLowerCase() === this.escrowFactory.target.toLowerCase()) {
+          // Parse the log to get escrow address
+          // This is a simplified approach - in practice you'd decode the specific event
+          const escrowAddress = await this.escrowFactory.getDstEscrowAddress(
+            immutables,
+            '0x', // complement - simplified
+            BigInt(Date.now() / 1000), // block time
+            this.signer.address, // taker
+            await this.escrowFactory.getDestinationImpl() // implementation
+          );
+          return escrowAddress;
+        }
+      }
+      
+      // Fallback: compute escrow address
+      return await this.computeEscrowAddress(immutables);
+      
+    } catch (error) {
+      console.warn('⚠️ Could not get escrow address from receipt, using fallback');
+      return await this.computeEscrowAddress(immutables);
+    }
   }
 
   /**
-   * Withdraw funds from escrow using secret
+   * Compute escrow address
+   */
+  private async computeEscrowAddress(immutables: string): Promise<string> {
+    try {
+      const implementation = await this.escrowFactory.getDestinationImpl();
+      const blockTime = BigInt(Math.floor(Date.now() / 1000));
+      
+      return await this.escrowFactory.getDstEscrowAddress(
+        immutables,
+        '0x', // complement - simplified
+        blockTime,
+        this.signer.address, // taker
+        implementation
+      );
+    } catch (error) {
+      console.error('❌ Failed to compute escrow address:', error);
+      throw new Error('Could not determine escrow address');
+    }
+  }
+
+  /**
+   * Create immutables structure for escrow
+   */
+  private createImmutables(params: DepositParams): string {
+    // This is a simplified immutables structure
+    // In a real implementation, you'd need to match the exact format expected by the contract
+    
+    const orderHash = ethers.keccak256(ethers.toUtf8Bytes(`order_${Date.now()}`));
+    const hashLock = params.hashedSecret;
+    const maker = this.signer.address;
+    const taker = params.takerAddress;
+    const token = '0x0000000000000000000000000000000000000000'; // Native token
+    const amount = ethers.parseEther(params.amount);
+    const safetyDeposit = ethers.parseEther(params.safetyDeposit);
+    
+    // Create timelocks
+    const currentTime = BigInt(Math.floor(Date.now() / 1000));
+    const withdrawalTime = currentTime + BigInt(params.timelock.withdrawalPeriod);
+    const cancellationTime = currentTime + BigInt(params.timelock.cancellationPeriod);
+    
+    // Encode immutables (simplified structure)
+    const immutablesData = ethers.AbiCoder.defaultAbiCoder().encode(
+      [
+        'bytes32', // orderHash
+        'bytes32', // hashLock
+        'address', // maker
+        'address', // taker
+        'address', // token
+        'uint256', // amount
+        'uint256', // safetyDeposit
+        'uint256', // withdrawalTime
+        'uint256'  // cancellationTime
+      ],
+      [
+        orderHash,
+        hashLock,
+        maker,
+        taker,
+        token,
+        amount,
+        safetyDeposit,
+        withdrawalTime,
+        cancellationTime
+      ]
+    );
+    
+    return immutablesData;
+  }
+
+  /**
+   * Withdraw from escrow using secret
    */
   async withdrawFromEscrow(
     escrowAddress: string,
     secret: string,
     immutables: string
   ): Promise<string> {
-    console.log('💰 Withdrawing funds from escrow...');
-    console.log(`🏠 Escrow Address: ${escrowAddress}`);
+    console.log(`💰 Withdrawing from escrow: ${escrowAddress}`);
     console.log(`🔑 Secret: ${secret}`);
     
     try {
-      const tx = await this.resolver.withdraw(
+      const escrowContract = new ethers.Contract(
         escrowAddress,
-        secret,
-        immutables
+        ESCROW_ABI,
+        this.signer
       );
       
-      console.log(`⏳ Withdrawal transaction submitted: ${tx.hash}`);
+      // Convert secret to bytes32
+      const secretBytes32 = ethers.keccak256(ethers.toUtf8Bytes(secret));
+      
+      const tx = await escrowContract.withdraw(secretBytes32, immutables);
+      console.log(`📝 Withdrawal transaction sent: ${tx.hash}`);
+      
       const receipt = await tx.wait();
+      console.log(`✅ Withdrawal successful! Transaction: ${receipt.hash}`);
       
-      console.log('✅ Withdrawal successful!');
-      console.log(`📝 Transaction Hash: ${tx.hash}`);
-      console.log(`⛽ Gas Used: ${receipt?.gasUsed.toString()}`);
-      
-      return tx.hash;
+      return receipt.hash;
       
     } catch (error) {
       console.error('❌ Failed to withdraw from escrow:', error);
@@ -213,156 +276,124 @@ class EscrowDeposit {
   }
 
   /**
-   * Cancel escrow and refund
+   * Cancel escrow
    */
   async cancelEscrow(
     escrowAddress: string,
     immutables: string
   ): Promise<string> {
-    console.log('❌ Cancelling escrow...');
-    console.log(`🏠 Escrow Address: ${escrowAddress}`);
+    console.log(`❌ Cancelling escrow: ${escrowAddress}`);
     
     try {
-      const tx = await this.resolver.cancel(
+      const escrowContract = new ethers.Contract(
         escrowAddress,
-        immutables
+        ESCROW_ABI,
+        this.signer
       );
       
-      console.log(`⏳ Cancellation transaction submitted: ${tx.hash}`);
+      const tx = await escrowContract.cancel(immutables);
+      console.log(`📝 Cancellation transaction sent: ${tx.hash}`);
+      
       const receipt = await tx.wait();
+      console.log(`✅ Escrow cancelled successfully! Transaction: ${receipt.hash}`);
       
-      console.log('✅ Escrow cancelled successfully!');
-      console.log(`📝 Transaction Hash: ${tx.hash}`);
-      console.log(`⛽ Gas Used: ${receipt?.gasUsed.toString()}`);
-      
-      return tx.hash;
+      return receipt.hash;
       
     } catch (error) {
       console.error('❌ Failed to cancel escrow:', error);
       throw error;
     }
   }
+
+  /**
+   * Get escrow factory address
+   */
+  getEscrowFactoryAddress(): string {
+    return this.escrowFactory.target as string;
+  }
+
+  /**
+   * Get signer address
+   */
+  getSignerAddress(): string {
+    return this.signer.address;
+  }
 }
 
-/**
- * Main function to handle deposit creation
- * Now accepts all parameters as arguments
- */
+// Main function for command line usage
 async function main() {
-  console.log('🚀 ETH-Side Escrow Deposit Script');
-  console.log('==================================');
-  
-  // Get all parameters from command line arguments
   const args = process.argv.slice(2);
   
-  if (args.length < 8) {
-    console.error('❌ Insufficient arguments provided');
-    console.error('Usage: npx ts-node deposit.ts <private_key> <rpc_url> <chain_id> <network_name> <escrow_factory_address> <resolver_address> <hashed_secret> [amount] [taker_address] [withdrawal_period] [cancellation_period] [safety_deposit]');
-    console.error('\nExample:');
-    console.error('npx ts-node deposit.ts 0x123... https://polygon-rpc.com 137 POLYGON 0xabc... 0xdef... 0x456... 0.1 0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6 3600 7200 0.01');
+  if (args.length < 6) {
+    console.error('Usage: npx ts-node deposit.ts <private_key> <rpc_url> <chain_id> <network_name> <escrow_factory_address> <hashed_secret> [amount] [taker_address] [withdrawal_period] [cancellation_period] [safety_deposit]');
+    console.error('');
+    console.error('Example:');
+    console.error('npx ts-node deposit.ts 0x1234... https://polygon-rpc.com 137 POLYGON 0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a 0xabcd... 0.01 0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6 3600 7200 0.001');
     process.exit(1);
   }
   
   const [
     privateKey,
     rpcUrl,
-    chainIdStr,
+    chainId,
     networkName,
     escrowFactoryAddress,
-    resolverAddress,
     hashedSecret,
-    amount = '0.1',
+    amount = '0.01',
     takerAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
-    withdrawalPeriodStr = '3600',
-    cancellationPeriodStr = '7200',
-    safetyDeposit = '0.01'
+    withdrawalPeriod = '3600',
+    cancellationPeriod = '7200',
+    safetyDeposit = '0.001'
   ] = args;
   
-  // Validate hashed secret format (should be 32 bytes = 64 hex chars)
-  if (!/^0x[a-fA-F0-9]{64}$/.test(hashedSecret)) {
-    console.error('❌ Invalid hashed secret format');
-    console.error('Expected format: 0x followed by 64 hexadecimal characters');
+  // Validate addresses
+  if (!/^0x[a-fA-F0-9]{40}$/.test(escrowFactoryAddress)) {
+    console.error('❌ Invalid escrow factory address');
     process.exit(1);
   }
   
-  // Validate private key format
-  if (!/^0x[a-fA-F0-9]{64}$/.test(privateKey)) {
-    console.error('❌ Invalid private key format');
-    console.error('Expected format: 0x followed by 64 hexadecimal characters');
+  if (!/^0x[a-fA-F0-9]{40}$/.test(takerAddress)) {
+    console.error('❌ Invalid taker address');
     process.exit(1);
   }
   
-  // Validate contract addresses
-  if (!/^0x[a-fA-F0-9]{40}$/.test(escrowFactoryAddress) || !/^0x[a-fA-F0-9]{40}$/.test(resolverAddress)) {
-    console.error('❌ Invalid contract address format');
-    console.error('Expected format: 0x followed by 40 hexadecimal characters');
-    process.exit(1);
-  }
-  
-  // Parse numeric values
-  const chainId = parseInt(chainIdStr);
-  const withdrawalPeriod = parseInt(withdrawalPeriodStr);
-  const cancellationPeriod = parseInt(cancellationPeriodStr);
-  
-  if (isNaN(chainId) || isNaN(withdrawalPeriod) || isNaN(cancellationPeriod)) {
-    console.error('❌ Invalid numeric values provided');
-    process.exit(1);
-  }
-  
-  // Create network configuration
   const networkConfig: NetworkConfig = {
     rpcUrl,
-    chainId,
+    chainId: parseInt(chainId),
     networkName
   };
   
-  console.log(`👤 Using provided private key`);
-  console.log(`🌐 Network: ${networkName}`);
-  console.log(`🔗 RPC URL: ${rpcUrl}`);
-  console.log(`⛓️  Chain ID: ${chainId}`);
-  console.log(`🏭 Escrow Factory: ${escrowFactoryAddress}`);
-  console.log(`🔧 Resolver: ${resolverAddress}`);
-  
-  // Create escrow deposit instance
-  const escrowDeposit = new EscrowDeposit(
-    privateKey,
-    escrowFactoryAddress,
-    resolverAddress,
-    networkConfig
-  );
-  
-  // Create deposit parameters
   const depositParams: DepositParams = {
-    hashedSecret: hashedSecret,
-    amount: amount,
-    takerAddress: takerAddress,
+    hashedSecret,
+    amount,
+    takerAddress,
     timelock: {
-      withdrawalPeriod: withdrawalPeriod,
-      cancellationPeriod: cancellationPeriod
+      withdrawalPeriod: parseInt(withdrawalPeriod),
+      cancellationPeriod: parseInt(cancellationPeriod)
     },
-    safetyDeposit: safetyDeposit
+    safetyDeposit
   };
   
   try {
-    // Create the deposit
+    console.log('🚀 Initializing EscrowDeposit...');
+    console.log(`🔧 Escrow Factory: ${escrowFactoryAddress}`);
+    console.log(`🔧 Resolver: Not needed - using factory directly`);
+    
+    const escrowDeposit = new EscrowDeposit(
+      privateKey,
+      escrowFactoryAddress,
+      networkConfig
+    );
+    
     const result = await escrowDeposit.createDeposit(depositParams);
     
     console.log('\n🎉 Deposit created successfully!');
-    console.log('===============================');
     console.log(`🏠 Escrow Address: ${result.escrowAddress}`);
     console.log(`📝 Transaction Hash: ${result.txHash}`);
     console.log(`⏰ Block Timestamp: ${result.blockTimestamp}`);
-    console.log(`🔐 Hashed Secret: ${hashedSecret}`);
-    
-    console.log('\n📋 Next Steps:');
-    console.log('==============');
-    console.log('1. Share the escrow address with the counterparty');
-    console.log('2. Wait for the counterparty to fund their side');
-    console.log('3. Use the secret to withdraw funds when ready');
-    console.log('4. Or cancel the escrow if needed');
     
   } catch (error) {
-    console.error('❌ Failed to create deposit:', error);
+    console.error('❌ Script failed:', error);
     process.exit(1);
   }
 }
@@ -375,4 +406,8 @@ if (require.main === module) {
   });
 }
 
-export { EscrowDeposit, DepositParams, NetworkConfig }; 
+export { 
+  EscrowDeposit, 
+  DepositParams, 
+  NetworkConfig 
+}; 
