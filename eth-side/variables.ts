@@ -4,30 +4,40 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Core environment variables
-export const PRIVATE_KEY = process.env.PRIVATE_KEY ? `0x${process.env.PRIVATE_KEY}` : '';
+export const ALICE_PRIVATE_KEY = process.env.ALICE_PRIVATE_KEY ? `0x${process.env.ALICE_PRIVATE_KEY}` : '';
+export const CAROL_PRIVATE_KEY = process.env.CAROL_PRIVATE_KEY ? `0x${process.env.CAROL_PRIVATE_KEY}` : '';
 export const DEV_PORTAL_API_TOKEN = process.env.DEV_PORTAL_API_TOKEN || '';
 
-// Network configuration
-export const NETWORK = process.env.NETWORK || 'POLYGON';
+// Network configuration - only POLYGON or ETH_MAINNET
+export const NETWORK = (process.env.NETWORK || 'POLYGON').toUpperCase() as 'POLYGON' | 'ETH_MAINNET';
 
-// RPC URLs
+// Validate network value
+if (NETWORK !== 'POLYGON' && NETWORK !== 'ETH_MAINNET') {
+  throw new Error('NETWORK must be either "POLYGON" or "ETH_MAINNET"');
+}
+
+// RPC URLs - only for supported networks
 export const RPC_URLS = {
   POLYGON: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
-  ETHEREUM: process.env.ETHEREUM_RPC_URL || 'https://eth.llamarpc.com',
-  SEPOLIA: process.env.SEPOLIA_RPC_URL || 'https://sepolia.drpc.org',
-  MAINNET: process.env.MAINNET_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/demo',
-  BSC: process.env.BSC_RPC_URL || 'https://bsc-dataseed1.binance.org',
+  ETH_MAINNET: process.env.ETH_MAINNET_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/demo',
 } as const;
 
 // Get current RPC URL based on network
 export const getRpcUrl = (): string => {
-  const network = NETWORK.toUpperCase();
-  return RPC_URLS[network as keyof typeof RPC_URLS] || RPC_URLS.POLYGON;
+  return RPC_URLS[NETWORK];
 };
 
 // Validation helpers
-export const hasValidPrivateKey = (): boolean => {
-  return PRIVATE_KEY.length > 0 && PRIVATE_KEY !== '0x';
+export const hasValidAlicePrivateKey = (): boolean => {
+  return ALICE_PRIVATE_KEY.length > 0 && ALICE_PRIVATE_KEY !== '0x';
+};
+
+export const hasValidCarolPrivateKey = (): boolean => {
+  return CAROL_PRIVATE_KEY.length > 0 && CAROL_PRIVATE_KEY !== '0x';
+};
+
+export const hasValidPrivateKeys = (): boolean => {
+  return hasValidAlicePrivateKey() && hasValidCarolPrivateKey();
 };
 
 export const hasValidApiToken = (): boolean => {
