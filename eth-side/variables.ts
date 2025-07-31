@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { ethers } from 'ethers';
 
 // Load environment variables
 dotenv.config();
@@ -53,4 +54,13 @@ export const hasValidPrivateKeys = (): boolean => {
 
 export const hasValidApiToken = (): boolean => {
   return DEV_PORTAL_API_TOKEN.length > 0;
+};
+
+// Get Alice's address from her private key
+export const getAliceAddress = (): string => {
+  if (!hasValidAlicePrivateKey()) {
+    throw new Error('ALICE_PRIVATE_KEY is not set or invalid');
+  }
+  const aliceWallet = new ethers.Wallet(ALICE_PRIVATE_KEY);
+  return aliceWallet.address;
 }; 

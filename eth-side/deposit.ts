@@ -93,7 +93,7 @@ class EscrowDeposit {
       console.log(`⛽ Gas Price: ${ethers.formatUnits(gasPrice, 'gwei')} gwei`);
       
       // Calculate total value to send (amount + safety deposit)
-      const totalValue = ethers.parseEther(params.amount).add(ethers.parseEther(params.safetyDeposit));
+      const totalValue = ethers.parseEther(params.amount) + ethers.parseEther(params.safetyDeposit);
       
       console.log(`💰 Total Value: ${ethers.formatEther(totalValue)} ${this.networkConfig.networkName === 'POLYGON' ? 'MATIC' : 'ETH'}`);
       
@@ -147,7 +147,7 @@ class EscrowDeposit {
     try {
       // Try to get escrow address from logs
       for (const log of receipt.logs) {
-        if (log.address.toLowerCase() === this.escrowFactory.target.toLowerCase()) {
+        if (log.address.toLowerCase() === this.escrowFactory.target.toString().toLowerCase()) {
           // Parse the log to get escrow address
           // This is a simplified approach - in practice you'd decode the specific event
           const escrowAddress = await this.escrowFactory.getDstEscrowAddress(

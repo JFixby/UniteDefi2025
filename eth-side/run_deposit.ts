@@ -5,7 +5,8 @@ import {
   NETWORK, 
   getRpcUrl, 
   getChainId, 
-  hasValidCarolPrivateKey 
+  hasValidCarolPrivateKey,
+  getAliceAddress
 } from './variables';
 
 // Contract addresses from cross-chain-sdk deployments
@@ -103,13 +104,21 @@ async function carolCreatesEscrowDeposit(secret?: string) {
   const depositParams: DepositParams = {
     hashedSecret: secretData.hashedSecret,
     amount: '0.01', // 0.01 native tokens (ETH/MATIC)
-    takerAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', // Example taker address
+    takerAddress: '', // Example taker address - will be fixed
     timelock: {
       withdrawalPeriod: 3600, // 1 hour
       cancellationPeriod: 7200 // 2 hours
     },
     safetyDeposit: '0.001' // 0.001 native tokens safety deposit
   };
+  
+  // Use Alice's address as the taker
+  try {
+    depositParams.takerAddress = getAliceAddress();
+    console.log(`👤 Using Alice's address as taker: ${depositParams.takerAddress}`);
+  } catch (error) {
+    throw new Error('❌ Failed to get Alice\'s address. Please ensure ALICE_PRIVATE_KEY is set in your .env file.');
+  }
   
   console.log(`\n📋 Deposit Parameters:`);
   console.log(`   Amount: ${depositParams.amount} ${networkConfig.networkName === 'POLYGON' ? 'MATIC' : 'ETH'}`);
@@ -132,7 +141,9 @@ async function carolCreatesEscrowDeposit(secret?: string) {
     
     console.log(`\n✅ Escrow deposit created successfully!`);
     console.log(`🏠 Escrow Address: ${result.escrowAddress}`);
+    console.log(`   🔍 View: ${EXPLORER_URLS[NETWORK]}/address/${result.escrowAddress}`);
     console.log(`📝 Transaction Hash: ${result.txHash}`);
+    console.log(`   🔍 View: ${EXPLORER_URLS[NETWORK]}/tx/${result.txHash}`);
     console.log(`⏰ Block Timestamp: ${result.blockTimestamp}`);
     
     console.log(`\n🔍 Explorer Links:`);
@@ -227,7 +238,9 @@ async function carolCreatesCustomEscrowDeposit(
     
     console.log(`\n✅ Custom escrow deposit created successfully!`);
     console.log(`🏠 Escrow Address: ${result.escrowAddress}`);
+    console.log(`   🔍 View: ${EXPLORER_URLS[NETWORK]}/address/${result.escrowAddress}`);
     console.log(`📝 Transaction Hash: ${result.txHash}`);
+    console.log(`   🔍 View: ${EXPLORER_URLS[NETWORK]}/tx/${result.txHash}`);
     console.log(`⏰ Block Timestamp: ${result.blockTimestamp}`);
     
     console.log(`\n🔍 Explorer Links:`);
@@ -269,7 +282,16 @@ async function main() {
       case 'custom':
         // Custom deposit with all parameters
         const amount = process.argv[3] || '0.01';
-        const takerAddress = process.argv[4] || '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6';
+        // Use Alice's address as default taker if not provided
+        let takerAddress = process.argv[4];
+        if (!takerAddress) {
+          try {
+            takerAddress = getAliceAddress();
+            console.log(`👤 Using Alice's address as default taker: ${takerAddress}`);
+          } catch (error) {
+            throw new Error('❌ Failed to get Alice\'s address. Please ensure ALICE_PRIVATE_KEY is set in your .env file or provide a taker address.');
+          }
+        }
         const withdrawalPeriod = parseInt(process.argv[5]) || 3600;
         const cancellationPeriod = parseInt(process.argv[6]) || 7200;
         const customSecret = process.argv[7]; // Optional secret
