@@ -182,9 +182,10 @@ PAYMENT_RESPONSE=$(curl -sk -X POST \
   -d "{\"payment_request\":\"$PAYMENT_REQUEST\"}" \
   https://localhost:$ALICE_REST_PORT/v1/channels/transactions)
 
-PAYMENT_STATUS=$(echo "$PAYMENT_RESPONSE" | jq -r '.status')
+# Check if payment was successful by looking for payment_preimage (indicates success)
+PAYMENT_PREIMAGE=$(echo "$PAYMENT_RESPONSE" | jq -r '.payment_preimage')
 
-if [ "$PAYMENT_STATUS" = "SUCCEEDED" ]; then
+if [ "$PAYMENT_PREIMAGE" != "null" ] && [ -n "$PAYMENT_PREIMAGE" ]; then
   print_success "Payment completed successfully!"
   PAYMENT_HASH=$(echo "$PAYMENT_RESPONSE" | jq -r '.payment_hash')
   
