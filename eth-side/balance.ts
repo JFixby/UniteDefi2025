@@ -9,17 +9,18 @@ import {
 } from './variables';
 
 // Token addresses for the specific tokens you want to check
+// Updated with official addresses from official-tokens.txt
 const TOKEN_ADDRESSES = {
   POLYGON: {
-    USDT: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
-    USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+    USDT: '0xC2132D05D31c914a87C6611C10748AEb04B58E8F', // Official USDT on Polygon
+    USDC: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Official native Circle USDC on Polygon
     WETH: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
     WMATIC: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
-    BNL: '0x24d84aB1fd4159920084deB1D1B8F129AfF97505', // BNLCoin on Polygon
+    BNL: '0x24d84aB1fd4159920084deB1D1B8F129AfF97505', // Official BNL on Polygon
   },
   ETH_MAINNET: {
-    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC on Ethereum
+    USDT: '0xdAC17F958D2ee523a2206206994597c13D831ec7', // Official USDT on Ethereum
+    USDC: '0xA0b86991c6218b36c1d19d4a2e9Eb0cE3606eB48', // Official USDC on Ethereum
     WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     // Note: BNL token is only available on Polygon, not on Ethereum mainnet
     BNL: '0x0000000000000000000000000000000000000000', // Not available on Ethereum
