@@ -22,8 +22,6 @@ const TOKEN_ADDRESSES = {
     USDT: '0xdAC17F958D2ee523a2206206994597c13D831ec7', // Official USDT on Ethereum
     USDC: '0xA0b86991c6218b36c1d19d4a2e9Eb0cE3606eB48', // Official USDC on Ethereum
     WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-    // Note: BNL token is only available on Polygon, not on Ethereum mainnet
-    BNL: '0x0000000000000000000000000000000000000000', // Not available on Ethereum
   }
 } as const;
 
@@ -95,7 +93,7 @@ async function checkBalances() {
     };
 
     // Define the order of tokens to display
-    const tokenOrder = ['USDT', 'USDC', 'WETH', 'WMATIC', 'BNL'] as const;
+    const tokenOrder = ['USDT', 'USDC', 'BNL'] as const;
 
     for (const tokenName of tokenOrder) {
       const tokenAddress = networkTokens[tokenName as keyof typeof networkTokens];
@@ -144,7 +142,7 @@ async function checkBalances() {
     console.log(`Network: ${NETWORK} (${chainId})`);
     console.log(`Native Token: ${nativeTokenName}`);
     console.log(`Total Native Balance: ${ethers.formatEther(aliceNativeBalance + carolNativeBalance)} ${nativeTokenName}`);
-    console.log(`Tokens Checked: ETH/MATIC, USDT, USDC, WETH, WMATIC, BNL`);
+    console.log(`Tokens Checked: ETH/MATIC, USDT, USDC, BNL`);
 
     // Check for low balances
     const minNativeBalance = ethers.parseEther('0.01');
