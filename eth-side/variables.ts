@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Core environment variables
-export const ALICE_PRIVATE_KEY = process.env.ALICE_PRIVATE_KEY ? `0x${process.env.ALICE_PRIVATE_KEY}` : '';
-export const CAROL_PRIVATE_KEY = process.env.CAROL_PRIVATE_KEY ? `0x${process.env.CAROL_PRIVATE_KEY}` : '';
+export const ALICE_PRIVATE_KEY = process.env.ALICE_PRIVATE_KEY || '';
+export const CAROL_PRIVATE_KEY = process.env.CAROL_PRIVATE_KEY || '';
 export const DEV_PORTAL_API_TOKEN = process.env.DEV_PORTAL_API_TOKEN || '';
 
 // Network configuration - only POLYGON or ETH_MAINNET
