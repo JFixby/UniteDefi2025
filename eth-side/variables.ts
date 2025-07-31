@@ -19,12 +19,23 @@ if (NETWORK !== 'POLYGON' && NETWORK !== 'ETH_MAINNET') {
 // RPC URLs - only for supported networks
 export const RPC_URLS = {
   POLYGON: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
-  ETH_MAINNET: process.env.ETH_MAINNET_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/demo',
+  ETH_MAINNET: process.env.ETHEREUM_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/demo',
+} as const;
+
+// Chain IDs for supported networks
+export const CHAIN_IDS = {
+  POLYGON: 137,
+  ETH_MAINNET: 1,
 } as const;
 
 // Get current RPC URL based on network
 export const getRpcUrl = (): string => {
   return RPC_URLS[NETWORK];
+};
+
+// Get current chain ID based on network
+export const getChainId = (): number => {
+  return CHAIN_IDS[NETWORK];
 };
 
 // Validation helpers

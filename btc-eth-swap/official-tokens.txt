@@ -1,0 +1,18 @@
+🟢 Ethereum Mainnet
+
+    USDC (USD Coin): 0xA0b86991c6218b36c1d19d4a2e9Eb0cE3606eB48
+    tether.to+11Ethereum (ETH) Blockchain Explorer+11Circle Developers+11
+
+    USDT (Tether USD): 0xdAC17F958D2ee523a2206206994597c13D831ec7
+    developers.bitgo.com+6Ethereum (ETH) Blockchain Explorer+6ethplorer.io+6
+
+🟣 Polygon PoS (Polygon mainnet)
+
+    USDC (native, Circle‑issued): 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
+    CoinMarketCap+8developers.bitgo.com+8Reddit+8
+
+    USDT (Tether USD): 0xC2132D05D31c914a87C6611C10748AEb04B58E8F
+    developers.bitgo.com
+
+    BNL: 0x24d84aB1fd4159920084deB1D1B8F129AfF97505
+
