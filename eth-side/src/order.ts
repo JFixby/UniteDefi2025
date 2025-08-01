@@ -161,7 +161,7 @@ function createOrderByType(
       dstWithdrawal: orderType === "CANCELLATION" ? 0n : 10n,
       dstPublicWithdrawal: 100n,
       dstCancellation: 101n
-    });
+    }).setDeployedAt(now());
 
     // Common auction settings
     const auction = new AuctionDetails({
@@ -203,8 +203,8 @@ function createOrderByType(
         maker,
         makingAmount: orderType === "ETH_TO_BTC" ? ethAmountWei : btcAmountWei,
         takingAmount: orderType === "ETH_TO_BTC" ? btcAmountWei : ethAmountWei,
-        makerAsset: orderType === "ETH_TO_BTC" ? new Address(nativeToken) : makerAsset,
-        takerAsset: orderType === "ETH_TO_BTC" ? new Address(nativeToken) : takerAsset
+        makerAsset: orderType === "ETH_TO_BTC" ? new Address(nativeToken) : new Address("0x0000000000000000000000000000000000000000"),
+        takerAsset: orderType === "ETH_TO_BTC" ? new Address("0x0000000000000000000000000000000000000000") : new Address(nativeToken)
       },
       {
         hashLock,
@@ -232,13 +232,22 @@ function createOrderByType(
   }
 }
 
+function getOrderDirection(orderType: OrderType): string {
+  if (orderType === "ETH_TO_BTC") {
+    return "evm2btc";
+  } else {
+    return "btc2evm";
+  }
+}
+
 function saveOrderToFile(order: CrossChainOrder, outputDir: string, orderType: OrderType, timestamp: number): void {
   // Ensure output directory exists
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const orderId = `order-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
+  const direction = getOrderDirection(orderType);
+  const orderId = `order-${direction}-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
   const filename = `${orderId}.json`;
   const filepath = path.join(outputDir, filename);
   
@@ -271,7 +280,8 @@ function saveOrderToFile(order: CrossChainOrder, outputDir: string, orderType: O
 }
 
 function printOrderSummary(order: CrossChainOrder, orderType: OrderType, timestamp: number): void {
-  const orderId = `order-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
+  const direction = getOrderDirection(orderType);
+  const orderId = `order-${direction}-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
   
   printSection("Order Summary");
   printKeyValue("Order ID", orderId);
