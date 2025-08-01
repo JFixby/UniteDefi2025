@@ -6,74 +6,20 @@ import * as path from "path";
 import * as crypto from "crypto";
 import { getRpcUrl, getChainId, getAliceAddress, ALICE_PRIVATE_KEY } from "./variables";
 
-// Mock SDK classes for demonstration
-// In a real implementation, these would be imported from the cross-chain SDK
-class MockAddress {
-  constructor(public value: string) {}
-  toString() { return this.value; }
-}
+// Import real SDK classes
+import {
+  CrossChainOrder,
+  HashLock,
+  TimeLocks,
+  Address,
+  AuctionDetails,
+  randBigInt,
+  NetworkEnum,
+  ESCROW_FACTORY
+} from '@1inch/cross-chain-sdk';
 
-class MockHashLock {
-  static forSingleFill(secret: string): MockHashLock {
-    return new MockHashLock("single", secret);
-  }
-  
-  static forMultipleFills(leaves: string[]): MockHashLock {
-    return new MockHashLock("multiple", undefined, leaves);
-  }
-  
-  static getMerkleLeaves(secrets: string[]): string[] {
-    return secrets.map((_, i) => `0x${i.toString().padStart(64, '0')}`);
-  }
-  
-  constructor(
-    public type: "single" | "multiple",
-    public secret?: string,
-    public leaves?: string[]
-  ) {}
-}
-
-class MockTimeLocks {
-  static new(params: any): MockTimeLocks {
-    return new MockTimeLocks(params);
-  }
-  
-  constructor(public params: any) {}
-}
-
-class MockAuctionDetails {
-  constructor(public params: any) {}
-}
-
-class MockCrossChainOrder {
-  static new(
-    escrowFactory: MockAddress,
-    orderInfo: any,
-    escrowParams: any,
-    details: any,
-    extra?: any
-  ): MockCrossChainOrder {
-    return new MockCrossChainOrder(orderInfo, escrowParams, details, extra);
-  }
-  
-  constructor(
-    public orderInfo: any,
-    public escrowParams: any,
-    public details: any,
-    public extra?: any
-  ) {}
-}
-
-// Mock utility functions
-const randBigInt = (max: bigint): bigint => {
-  return BigInt(Math.floor(Math.random() * Number(max)));
-};
-
-const Address = MockAddress;
-const HashLock = MockHashLock;
-const TimeLocks = MockTimeLocks;
-const AuctionDetails = MockAuctionDetails;
-const CrossChainOrder = MockCrossChainOrder;
+// Import now from fusion-sdk
+import { now } from '@1inch/fusion-sdk';
 
 // Order types based on the documentation
 type OrderType = 
@@ -83,63 +29,7 @@ type OrderType =
   | "ETH_TO_BTC"           // Reverse direction swap from Ethereum to Bitcoin
   | "CANCELLATION";         // Order designed for cancellation testing
 
-interface OrderData {
-  orderId: string;
-  timestamp: number;
-  network: string;
-  chainId: number;
-  orderType: OrderType;
-  
-  BTCSeller: {
-    EVMAddress: string;
-    provides: {
-      asset: "BTC" | "ETH";
-      amount: string;
-    };
-    wants: {
-      asset: "ETH" | "BTC";
-      amount: string;
-      token?: string;
-    };
-  };
-  
-  timelock: {
-    withdrawalPeriod: number;
-    cancellationPeriod: number;
-    publicWithdrawalPeriod: number;
-    publicCancellationPeriod: number;
-  };
-  
-  fillOptions: {
-    allowPartialFills: boolean;
-    allowMultipleFills: boolean;
-    fillPercentage?: number; // For partial fills
-  };
-  
-  status: "CREATED" | "FILLED" | "COMPLETED" | "CANCELLED";
-  
-  contracts: {
-    btcEscrowFactory: string;
-    accessToken: string;
-  };
-  
-  // Cross-chain specific fields
-  crossChain?: {
-    srcChainId: number;
-    dstChainId: number;
-    srcSafetyDeposit: string;
-    dstSafetyDeposit: string;
-    hashLock: {
-      type: "SINGLE" | "MULTIPLE";
-      secret?: string;
-      secrets?: string[];
-      merkleLeaves?: string[];
-    };
-  };
 
-  // SDK order data
-  sdkOrder?: any;
-}
 
 function printHeader(title: string) {
   console.log(`\n${title}`);
@@ -256,24 +146,23 @@ function createOrderByType(
   accessTokenAddress: string,
   btcAmount: string,
   ethAmount: string
-): OrderData {
+): CrossChainOrder {
   const timestamp = Date.now();
-  const orderId = `order-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
   
   // Convert amounts to wei/satoshi
   const btcAmountWei = ethers.parseUnits(btcAmount, 8); // BTC has 8 decimals
   const ethAmountWei = ethers.parseUnits(ethAmount, 18); // ETH has 18 decimals
 
   // Create SDK order using CrossChainOrder.new()
-  let sdkOrder: any;
   let secrets: string[] = [];
   let hashLockType: "SINGLE" | "MULTIPLE" = "SINGLE";
 
   try {
     // Common parameters
     const maker = new Address(BTCSeller.address);
-    const makerAsset = new Address(MOCK_TOKENS.BTC);
-    const takerAsset = new Address(MOCK_TOKENS.ETH);
+    const nativeToken = getNativeTokenAddress();
+    const makerAsset = new Address(nativeToken);
+    const takerAsset = new Address(nativeToken);
     const escrowFactory = new Address(factoryAddress);
     
     // Common time locks
@@ -295,16 +184,16 @@ function createOrderByType(
       startTime: BigInt(Math.floor(Date.now() / 1000))
     });
 
-    // Common whitelist
+    // Common whitelist - create a minimal whitelist with the maker address
     const whitelist = [
       {
-        address: new Address("0x1234567890123456789012345678901234567890"), // Mock resolver
+        address: maker,
         allowFrom: 0n
       }
     ];
 
     // Create hash lock based on order type
-    let hashLock: MockHashLock;
+    let hashLock: HashLock;
     
     if (orderType === "SINGLE_FILL" || orderType === "CANCELLATION" || orderType === "ETH_TO_BTC") {
       const secret = generateSecret();
@@ -319,22 +208,22 @@ function createOrderByType(
       hashLockType = "MULTIPLE";
     }
 
-    // Create the SDK order
-    sdkOrder = CrossChainOrder.new(
+    // Create and return the SDK order directly
+    return CrossChainOrder.new(
       escrowFactory,
       {
         salt: randBigInt(1000n),
         maker,
         makingAmount: orderType === "ETH_TO_BTC" ? ethAmountWei : btcAmountWei,
         takingAmount: orderType === "ETH_TO_BTC" ? btcAmountWei : ethAmountWei,
-        makerAsset: orderType === "ETH_TO_BTC" ? new Address(MOCK_TOKENS.ETH) : makerAsset,
-        takerAsset: orderType === "ETH_TO_BTC" ? new Address(MOCK_TOKENS.BTC) : takerAsset
+        makerAsset: orderType === "ETH_TO_BTC" ? new Address(nativeToken) : makerAsset,
+        takerAsset: orderType === "ETH_TO_BTC" ? new Address(nativeToken) : takerAsset
       },
       {
         hashLock,
         timeLocks,
-        srcChainId: chainId as any,
-        dstChainId: (orderType === "ETH_TO_BTC" ? 1 : chainId) as any, // Bitcoin chain ID
+        srcChainId: (orderType === "ETH_TO_BTC" ? chainId : 1) as any, // Bitcoin chain ID for BTC->ETH, EVM chain for ETH->BTC
+        dstChainId: (orderType === "ETH_TO_BTC" ? 1 : chainId) as any, // EVM chain ID for BTC->ETH, Bitcoin chain for ETH->BTC
         srcSafetyDeposit: ethers.parseEther("0.001"),
         dstSafetyDeposit: ethers.parseEther("0.001")
       },
@@ -354,116 +243,83 @@ function createOrderByType(
     console.error("Error creating SDK order:", error);
     throw error;
   }
-
-  // Create the order data structure
-  const order: OrderData = {
-    orderId,
-    timestamp,
-    network: networkName,
-    chainId,
-    orderType,
-    
-    BTCSeller: {
-      EVMAddress: BTCSeller.address,
-      provides: {
-        asset: orderType === "ETH_TO_BTC" ? "ETH" : "BTC",
-        amount: orderType === "ETH_TO_BTC" ? ethAmount : btcAmount
-      },
-      wants: {
-        asset: orderType === "ETH_TO_BTC" ? "BTC" : "ETH",
-        amount: orderType === "ETH_TO_BTC" ? btcAmount : ethAmount
-      }
-    },
-    
-    timelock: {
-      withdrawalPeriod: orderType === "CANCELLATION" ? 0 : 10,
-      cancellationPeriod: 121,
-      publicWithdrawalPeriod: 120,
-      publicCancellationPeriod: 122
-    },
-    
-    fillOptions: {
-      allowPartialFills: orderType.includes("MULTIPLE_FILL"),
-      allowMultipleFills: orderType.includes("MULTIPLE_FILL"),
-      fillPercentage: orderType === "MULTIPLE_FILL_50" ? 50 : undefined
-    },
-    
-    status: "CREATED",
-    
-    contracts: {
-      btcEscrowFactory: factoryAddress,
-      accessToken: accessTokenAddress
-    },
-    
-    crossChain: {
-      srcChainId: chainId,
-      dstChainId: orderType === "ETH_TO_BTC" ? 1 : chainId,
-      srcSafetyDeposit: ethers.formatEther(ethers.parseEther("0.001")),
-      dstSafetyDeposit: ethers.formatEther(ethers.parseEther("0.001")),
-      hashLock: {
-        type: hashLockType,
-        secret: hashLockType === "SINGLE" ? secrets[0] : undefined,
-        secrets: hashLockType === "MULTIPLE" ? secrets : undefined,
-        merkleLeaves: hashLockType === "MULTIPLE" ? HashLock.getMerkleLeaves(secrets) : undefined
-      }
-    },
-
-    sdkOrder
-  };
-
-  return order;
 }
 
-function saveOrderToFile(order: OrderData, outputDir: string): void {
+function saveOrderToFile(order: CrossChainOrder, outputDir: string, orderType: OrderType, timestamp: number): void {
   // Ensure output directory exists
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const filename = `${order.orderId}.json`;
+  const orderId = `order-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
+  const filename = `${orderId}.json`;
   const filepath = path.join(outputDir, filename);
   
-  // Remove SDK order from JSON output to keep it clean
-  const { sdkOrder, ...orderForJson } = order;
+  // Create a simplified order summary for JSON output
+  const orderSummary = {
+    orderId,
+    timestamp,
+    orderType,
+    maker: order.maker.toString(),
+    makerAsset: order.makerAsset.toString(),
+    takerAsset: order.takerAsset.toString(),
+    makingAmount: order.makingAmount.toString(),
+    takingAmount: order.takingAmount.toString(),
+    salt: order.salt.toString(),
+    nonce: order.nonce.toString(),
+    partialFillAllowed: order.partialFillAllowed,
+    multipleFillsAllowed: order.multipleFillsAllowed,
+    dstChainId: order.dstChainId,
+    escrowExtension: {
+      hashLock: order.escrowExtension.hashLockInfo.toString(),
+      dstChainId: order.escrowExtension.dstChainId,
+      dstToken: order.escrowExtension.dstToken.toString(),
+      srcSafetyDeposit: order.escrowExtension.srcSafetyDeposit.toString(),
+      dstSafetyDeposit: order.escrowExtension.dstSafetyDeposit.toString()
+    }
+  };
   
-  fs.writeFileSync(filepath, JSON.stringify(orderForJson, null, 2));
+  fs.writeFileSync(filepath, JSON.stringify(orderSummary, null, 2));
   console.log(`✅ Order saved to: ${filepath}`);
 }
 
-function printOrderSummary(order: OrderData): void {
-  printSection("Order Summary");
-  printKeyValue("Order ID", order.orderId);
-  printKeyValue("Type", order.orderType);
-  printKeyValue("Network", order.network);
-  printKeyValue("Chain ID", order.chainId);
-  printKeyValue("Status", order.status);
+function printOrderSummary(order: CrossChainOrder, orderType: OrderType, timestamp: number): void {
+  const orderId = `order-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
   
-  printSection("Swap Details");
-  printKeyValue("Maker Address", order.BTCSeller.EVMAddress);
-  printKeyValue("Provides", `${order.BTCSeller.provides.amount} ${order.BTCSeller.provides.asset}`);
-  printKeyValue("Wants", `${order.BTCSeller.wants.amount} ${order.BTCSeller.wants.asset}`);
+  printSection("Order Summary");
+  printKeyValue("Order ID", orderId);
+  printKeyValue("Type", orderType);
+  printKeyValue("Timestamp", timestamp);
+  
+  printSection("Order Info");
+  printKeyValue("Maker", order.maker.toString());
+  printKeyValue("Making Amount", order.makingAmount.toString());
+  printKeyValue("Taking Amount", order.takingAmount.toString());
+  printKeyValue("Maker Asset", order.makerAsset.toString());
+  printKeyValue("Taker Asset", order.takerAsset.toString());
+  printKeyValue("Salt", order.salt.toString());
+  
+  printSection("Escrow Parameters");
+  printKeyValue("Destination Chain ID", order.dstChainId.toString());
+  printKeyValue("Source Safety Deposit", ethers.formatEther(order.escrowExtension.srcSafetyDeposit));
+  printKeyValue("Destination Safety Deposit", ethers.formatEther(order.escrowExtension.dstSafetyDeposit));
+  printKeyValue("Hash Lock", order.escrowExtension.hashLockInfo.toString());
   
   printSection("Fill Options");
-  printKeyValue("Allow Partial Fills", order.fillOptions.allowPartialFills.toString());
-  printKeyValue("Allow Multiple Fills", order.fillOptions.allowMultipleFills.toString());
-  if (order.fillOptions.fillPercentage) {
-    printKeyValue("Fill Percentage", `${order.fillOptions.fillPercentage}%`);
-  }
+  printKeyValue("Allow Partial Fills", order.partialFillAllowed.toString());
+  printKeyValue("Allow Multiple Fills", order.multipleFillsAllowed.toString());
   
   printSection("Time Locks");
-  printKeyValue("Withdrawal Period", `${order.timelock.withdrawalPeriod}s`);
-  printKeyValue("Public Withdrawal", `${order.timelock.publicWithdrawalPeriod}s`);
-  printKeyValue("Cancellation Period", `${order.timelock.cancellationPeriod}s`);
-  printKeyValue("Public Cancellation", `${order.timelock.publicCancellationPeriod}s`);
-  
-  if (order.crossChain) {
-    printSection("Cross-Chain Details");
-    printKeyValue("Source Chain ID", order.crossChain.srcChainId);
-    printKeyValue("Destination Chain ID", order.crossChain.dstChainId);
-    printKeyValue("Source Safety Deposit", `${order.crossChain.srcSafetyDeposit} ETH`);
-    printKeyValue("Destination Safety Deposit", `${order.crossChain.dstSafetyDeposit} ETH`);
-    printKeyValue("Hash Lock Type", order.crossChain.hashLock.type);
-  }
+  const timeLocks = order.escrowExtension.timeLocks;
+  const srcTimeLocks = timeLocks.toSrcTimeLocks();
+  const dstTimeLocks = timeLocks.toDstTimeLocks();
+  printKeyValue("Source Private Withdrawal", `${srcTimeLocks.privateWithdrawal}s`);
+  printKeyValue("Source Public Withdrawal", `${srcTimeLocks.publicWithdrawal}s`);
+  printKeyValue("Source Private Cancellation", `${srcTimeLocks.privateCancellation}s`);
+  printKeyValue("Source Public Cancellation", `${srcTimeLocks.publicCancellation}s`);
+  printKeyValue("Destination Private Withdrawal", `${dstTimeLocks.privateWithdrawal}s`);
+  printKeyValue("Destination Public Withdrawal", `${dstTimeLocks.publicWithdrawal}s`);
+  printKeyValue("Destination Private Cancellation", `${dstTimeLocks.privateCancellation}s`);
 }
 
 async function main() {
@@ -526,19 +382,20 @@ async function main() {
     for (const orderType of orderTypes) {
       printSection(`Creating ${orderType} Order`);
       
+      const timestamp = Date.now();
       const order = createOrderByType(
         orderType,
         BTCSeller,
         chainId,
         process.env.NETWORK || "POLYGON",
-        MOCK_CONTRACTS.escrowFactory,
-        MOCK_CONTRACTS.accessToken,
+        getEscrowFactoryAddress().toString(),
+        "", // accessToken not needed for order creation
         args.btcAmount,
         args.ethAmount
       );
 
-      printOrderSummary(order);
-      saveOrderToFile(order, args.outputDir);
+      printOrderSummary(order, orderType, timestamp);
+      saveOrderToFile(order, args.outputDir, orderType, timestamp);
     }
 
     printHeader("✅ Order Creation Complete");
@@ -555,4 +412,4 @@ if (require.main === module) {
   main();
 }
 
-export { createOrderByType, saveOrderToFile, printOrderSummary };
+export { createOrderByType, saveOrderToFile, printOrderSummary, CrossChainOrder };
