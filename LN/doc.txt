@@ -1,0 +1,282 @@
+
+Skip to main content
+Lightning Labs Logo
+Lightning Labs API Reference
+LND
+Loop
+Pool
+Faraday
+Taproot Assets Protocol
+LiT
+Feedback
+⌘
+K
+
+    API Reference
+
+LND
+Autopilot Service
+ChainKit Service
+ChainNotifier Service
+Dev Service
+Invoices Service
+
+    AddHoldInvoice
+    CancelInvoice
+    HtlcModifier
+    LookupInvoiceV2
+    SettleInvoice
+    SubscribeSingleInvoice
+
+Lightning Service
+NeutrinoKit Service
+Peers Service
+Router Service
+Signer Service
+State Service
+Versioner Service
+WalletKit Service
+WalletUnlocker Service
+Watchtower Service
+WatchtowerClient Service
+
+    REST Endpoints
+
+Loop
+Faraday
+Pool
+Taproot Assets Protocol
+Lightning Terminal (LiT)
+
+    API ReferenceLNDInvoices ServiceAddHoldInvoice
+
+AddHoldInvoice
+
+AddHoldInvoice creates a hold invoice. It ties the invoice to the hash supplied in the request.
+
+Source: invoicesrpc/invoices.proto
+gRPC
+
+rpc AddHoldInvoice (AddHoldInvoiceRequest) returns (AddHoldInvoiceResp);
+
+REST
+HTTP Method	Path
+POST 	/v2/invoices/hodl
+Code Samples
+
+    gRPC
+    REST
+    Shell
+
+    Javascript
+    Python
+
+import base64, codecs, json, requests
+
+REST_HOST = 'localhost:8080'
+MACAROON_PATH = 'LND_DIR/data/chain/bitcoin/regtest/admin.macaroon'
+TLS_PATH = 'LND_DIR/tls.cert'
+
+url = f'https://{REST_HOST}/v2/invoices/hodl'
+macaroon = codecs.encode(open(MACAROON_PATH, 'rb').read(), 'hex')
+headers = {'Grpc-Metadata-macaroon': macaroon}
+data = {
+  'memo': <string>,
+  'hash': base64.b64encode(<bytes>),
+  'value': <int64>,
+  'value_msat': <int64>,
+  'description_hash': base64.b64encode(<bytes>),
+  'expiry': <int64>,
+  'fallback_addr': <string>,
+  'cltv_expiry': <uint64>,
+  'route_hints': <RouteHint>,
+  'private': <bool>,
+}
+r = requests.post(url, headers=headers, data=json.dumps(data), verify=TLS_PATH)
+print(r.json())
+# {
+#    "payment_request": <string>,
+#    "add_index": <uint64>,
+#    "payment_addr": <bytes>,
+# }
+
+Messages
+invoicesrpc.AddHoldInvoiceRequest
+
+Source: invoicesrpc/invoices.proto
+Field	gRPC Type	REST Type	REST Placement
+memo
+An optional memo to attach along with the invoice. Used for record keeping purposes for the invoice's creator, and will also be set in the description field of the encoded payment request if the description_hash field is not being used.
+	string	string	body
+hash
+The hash of the preimage
+	bytes	string	body
+value
+The value of this invoice in satoshis The fields value and value_msat are mutually exclusive.
+	int64	string	body
+value_msat
+The value of this invoice in millisatoshis The fields value and value_msat are mutually exclusive.
+	int64	string	body
+description_hash
+Hash (SHA-256) of a description of the payment. Used if the description of payment (memo) is too long to naturally fit within the description field of an encoded payment request.
+	bytes	string	body
+expiry
+Payment request expiry time in seconds. Default is 86400 (24 hours).
+	int64	string	body
+fallback_addr
+Fallback on-chain address.
+	string	string	body
+cltv_expiry
+Delta to use for the time-lock of the CLTV extended to the final hop.
+	uint64	string	body
+route_hints
+Route hints that can each be individually used to assist in reaching the invoice's destination.
+	RouteHint[]	array	body
+private
+Whether this invoice should include routing hints for private channels.
+	bool	boolean	body
+invoicesrpc.AddHoldInvoiceResp
+
+Source: invoicesrpc/invoices.proto
+Field	gRPC Type	REST Type
+payment_request
+A bare-bones invoice for a payment within the Lightning Network. With the details of the invoice, the sender has all the data necessary to send a payment to the recipient.
+	string	string
+add_index
+The "add" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one.
+	uint64	string
+payment_addr
+The payment address of the generated invoice. This is also called the payment secret in specifications (e.g. BOLT 11). This value should be used in all payments for this invoice as we require it for end to end security.
+	bytes	string
+Nested Messages
+lnrpc.HopHint
+Field	gRPC Type	REST Type
+node_id
+The public key of the node at the start of the channel.
+	string	string
+chan_id
+The unique identifier of the channel.
+	uint64	string
+fee_base_msat
+The base fee of the channel denominated in millisatoshis.
+	uint32	integer
+fee_proportional_millionths
+The fee rate of the channel for sending one satoshi across it denominated in millionths of a satoshi.
+	uint32	integer
+cltv_expiry_delta
+The time-lock delta of the channel.
+	uint32	integer
+lnrpc.RouteHint
+Field	gRPC Type	REST Type
+hop_hints
+A list of hop hints that when chained together can assist in reaching a specific destination.
+	HopHint[]	array
+---------------------------------------------
+
+Skip to main content
+Lightning Labs Logo
+Lightning Labs API Reference
+LND
+Loop
+Pool
+Faraday
+Taproot Assets Protocol
+LiT
+Feedback
+⌘
+K
+
+    API Reference
+
+LND
+Autopilot Service
+ChainKit Service
+ChainNotifier Service
+Dev Service
+Invoices Service
+
+    AddHoldInvoice
+    CancelInvoice
+    HtlcModifier
+    LookupInvoiceV2
+    SettleInvoice
+    SubscribeSingleInvoice
+
+Lightning Service
+NeutrinoKit Service
+Peers Service
+Router Service
+Signer Service
+State Service
+Versioner Service
+WalletKit Service
+WalletUnlocker Service
+Watchtower Service
+WatchtowerClient Service
+
+    REST Endpoints
+
+Loop
+Faraday
+Pool
+Taproot Assets Protocol
+Lightning Terminal (LiT)
+
+    API ReferenceLNDInvoices ServiceSettleInvoice
+
+SettleInvoice
+
+SettleInvoice settles an accepted invoice. If the invoice is already settled, this call will succeed.
+
+Source: invoicesrpc/invoices.proto
+gRPC
+
+rpc SettleInvoice (SettleInvoiceMsg) returns (SettleInvoiceResp);
+
+REST
+HTTP Method	Path
+POST 	/v2/invoices/settle
+Code Samples
+
+    gRPC
+    REST
+    Shell
+
+    Javascript
+    Python
+
+import base64, codecs, json, requests
+
+REST_HOST = 'localhost:8080'
+MACAROON_PATH = 'LND_DIR/data/chain/bitcoin/regtest/admin.macaroon'
+TLS_PATH = 'LND_DIR/tls.cert'
+
+url = f'https://{REST_HOST}/v2/invoices/settle'
+macaroon = codecs.encode(open(MACAROON_PATH, 'rb').read(), 'hex')
+headers = {'Grpc-Metadata-macaroon': macaroon}
+data = {
+  'preimage': base64.b64encode(<bytes>),
+}
+r = requests.post(url, headers=headers, data=json.dumps(data), verify=TLS_PATH)
+print(r.json())
+# {
+# }
+
+Messages
+invoicesrpc.SettleInvoiceMsg
+
+Source: invoicesrpc/invoices.proto
+Field	gRPC Type	REST Type	REST Placement
+preimage
+Externally discovered pre-image that should be used to settle the hold invoice.
+	bytes	string	body
+invoicesrpc.SettleInvoiceResp
+
+Source: invoicesrpc/invoices.proto
+note
+
+This response has no parameters.
+Edit this page
+Previous
+LookupInvoiceV2
+Next
