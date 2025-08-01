@@ -148,14 +148,13 @@ def verify_htlc_hash(secret_hex: str, expected_hash_base64: str) -> bool:
         print_colored(f"[ERROR] Failed to verify hash: {e}", RED)
         return False
 
-def save_invoice_data(invoice_data: Dict[str, Any], secret_hex: str, amount_satoshis: int) -> None:
+def save_invoice_data(invoice_data: Dict[str, Any], amount_satoshis: int) -> None:
     """Save invoice and secret data to invoice.json"""
     output_data = {
         "invoice": invoice_data,
         "htlc_secret": {
-            "preimage_base64": invoice_data.get('r_preimage', 'NOT_AVAILABLE_YET'),
-            "preimage_hex": secret_hex,
-            "hash_base64": invoice_data.get('r_hash', ''),
+            "secret": "HIDDEN",
+            "secret_hash": invoice_data.get('r_hash', ''),
             "verification": {
                 "hash_verified": "PENDING_PAYMENT",
                 "timestamp": invoice_data.get('creation_date', ''),
@@ -238,6 +237,8 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
     amount_satoshis = args.amount
+    args.secret = "0000000000000000000000000000000000000000000000000000000000000000"
+    secret_hex = args.secret
     
     print_header(amount_satoshis)
     
@@ -262,7 +263,7 @@ def main():
     secret_hex = "PENDING_PAYMENT"  # Placeholder until payment
     
     # Save invoice data
-    save_invoice_data(invoice_data, secret_hex, amount_satoshis)
+    save_invoice_data(invoice_data, amount_satoshis)
     
     # Print summary
     print_invoice_summary(invoice_data, secret_hex, amount_satoshis)

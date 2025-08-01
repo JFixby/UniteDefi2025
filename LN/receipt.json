@@ -1,65 +1,64 @@
 {
   "payment_receipt": {
-    "payment_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-    "payment_preimage_base64": "Xhqjg5aFNiE/UOdCWlzUCp2On6+UYY5fGvWAlrFMZyQ=",
-    "payment_preimage_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724",
-    "payment_timestamp": "2025-07-31T07:41:10.356460",
+    "payment_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
+    "payment_preimage_base64": "",
+    "payment_preimage_hex": "",
+    "payment_timestamp": "2025-08-01T06:13:59.871100",
     "payment_status": "FAILED"
   },
   "hash_verification": {
-    "invoice_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-    "payment_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-    "secret_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "invoice_hash_base64": "",
+    "payment_hash_base64": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
+    "secret_hash_base64": "",
     "verification_flags": {
-      "invoice_vs_payment_hash_match": true,
+      "invoice_vs_payment_hash_match": false,
       "invoice_vs_secret_hash_match": true,
-      "preimage_verifies": true,
-      "correct_length": true,
-      "overall_verification": true
+      "preimage_verifies": false,
+      "correct_length": false,
+      "overall_verification": false
     },
     "comprehensive_verification": {
-      "overall_verification": true,
-      "hash_match_check": true,
+      "overall_verification": false,
+      "hash_match_check": false,
       "hash_verification": {
-        "verified": true,
-        "calculated_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-        "expected_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-        "secret_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724",
-        "secret_length_bytes": 32
+        "verified": false,
+        "calculated_hash_base64": "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
+        "expected_hash_base64": "",
+        "secret_hex": "",
+        "secret_length_bytes": 0
       },
-      "preimage_length_check": true,
-      "original_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-      "payment_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-      "payment_preimage_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724"
+      "preimage_length_check": false,
+      "original_hash_base64": "",
+      "payment_hash_base64": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
+      "payment_preimage_hex": ""
     },
-    "verification_timestamp": "2025-07-31T07:41:10.356460"
+    "verification_timestamp": "2025-08-01T06:13:59.871100"
   },
   "htlc_secret": {
-    "preimage_base64": "Xhqjg5aFNiE/UOdCWlzUCp2On6+UYY5fGvWAlrFMZyQ=",
-    "preimage_hex": "5E1AA383968536213F50E7425A5CD40A9D8E9FAF94618E5F1AF58096B14C6724",
-    "invoice_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-    "secret_hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "preimage_base64": "",
+    "preimage_hex": "",
+    "invoice_hash_base64": "",
+    "secret_hash_base64": "",
     "verification": {
-      "hash_verified": true,
+      "hash_verified": false,
       "invoice_vs_secret_hash_match": true,
-      "calculated_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-      "expected_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-      "secret_length_bytes": 32,
-      "timestamp": "2025-07-31T07:41:10.356460",
+      "calculated_hash": "",
+      "expected_hash": "",
+      "secret_length_bytes": 0,
+      "timestamp": "2025-08-01T06:13:59.871100",
       "status": "PAYMENT_COMPLETED_SECRET_REVEALED"
     }
   },
   "original_invoice": {
     "invoice": {
-      "r_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-      "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
-      "add_index": "30",
-      "payment_addr": "EOyMorU/VU8qjZvem0j5Ba2swRiRONraPcRdkgsTVvk="
+      "r_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
+      "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
+      "add_index": "38",
+      "payment_addr": "8RTtIEj1X03pJUxjybL5I8xJsmirop1dO98ZM71+4Zc="
     },
     "htlc_secret": {
-      "preimage_base64": "NOT_AVAILABLE_YET",
-      "preimage_hex": "PENDING_PAYMENT",
-      "hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+      "secret": "HIDDEN",
+      "secret_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
       "verification": {
         "hash_verified": "PENDING_PAYMENT",
         "timestamp": "",
@@ -70,7 +69,7 @@
     "metadata": {
       "amount_satoshis": 13,
       "memo": "Demo invoice from Carol to Alice - 13 satoshis",
-      "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
+      "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
       "created_by": "Carol",
       "created_for": "Alice",
       "invoice_status": "UNPAID"
@@ -79,7 +78,7 @@
   "metadata": {
     "amount_satoshis": 13,
     "memo": "Demo invoice from Carol to Alice - 13 satoshis",
-    "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
+    "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
     "paid_by": "Alice",
     "paid_to": "Carol",
     "payment_status": "COMPLETED"

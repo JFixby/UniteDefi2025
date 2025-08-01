@@ -1,14 +1,13 @@
 {
   "invoice": {
-    "r_hash": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
-    "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
-    "add_index": "30",
-    "payment_addr": "EOyMorU/VU8qjZvem0j5Ba2swRiRONraPcRdkgsTVvk="
+    "r_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
+    "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
+    "add_index": "38",
+    "payment_addr": "8RTtIEj1X03pJUxjybL5I8xJsmirop1dO98ZM71+4Zc="
   },
   "htlc_secret": {
-    "preimage_base64": "NOT_AVAILABLE_YET",
-    "preimage_hex": "PENDING_PAYMENT",
-    "hash_base64": "na3SAuuWiHLvry9WZhcnyqKg+gNYJsT/Ixma0Sh4Sd8=",
+    "secret": "HIDDEN",
+    "secret_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
     "verification": {
       "hash_verified": "PENDING_PAYMENT",
       "timestamp": "",
@@ -19,7 +18,7 @@
   "metadata": {
     "amount_satoshis": 13,
     "memo": "Demo invoice from Carol to Alice - 13 satoshis",
-    "payment_request": "lnbcrt130n1p5gkjpupp5nkkayqhtj6y89ma09atxv9e8e232p7srtqnvflerrxddz2rcf80sdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp5zrkgeg448a25725dn00fkj8eqkk6esgcjyud4k3ac3weyzcn2mus9qxpqysgq8pm9q320f909p0xqa5hedsvpfjdud4l3hy39tk48a89nl7jc45a80q5xep8909znu52g230tuxmk4adzae8hh62c7whhssvca6nyc8sqgxklka",
+    "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
     "created_by": "Carol",
     "created_for": "Alice",
     "invoice_status": "UNPAID"
