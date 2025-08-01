@@ -169,7 +169,7 @@ def main():
             failed_count += 1
     
     print()
-    print_colored(f"🎉 Summary: {canceled_count} canceled, {failed_count} failed", GREEN)
+    print_colored(f"🎉 Summary: {canceled_count} canceled, {skipped_count} skipped, {failed_count} failed", GREEN)
 
 if __name__ == "__main__":
     main() 
