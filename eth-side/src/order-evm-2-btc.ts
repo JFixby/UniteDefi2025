@@ -158,17 +158,17 @@ async function main() {
   console.log(`   ORDER_ID=${orderId} npm run ethseller:lightning:invoice`);
   console.log("\n2. [ETH Seller] Create EVM escrow with ETH (using invoice secret):");
   console.log(`   ORDER_ID=${orderId} npm run ethseller:escrow`);
-  console.log("\n3. [BTC Buyer] Pay Lightning invoice (reveals secret):");
+  console.log("\n3. [ETH Buyer] Pay Lightning invoice (reveals secret):");
   console.log(`   ORDER_ID=${orderId} npm run btcbuyer:lightning:pay`);
-  console.log("\n4. [BTC Buyer] Claim ETH from escrow (using revealed secret):");
+  console.log("\n4. [ETH Buyer] Claim ETH from escrow (using revealed secret):");
   console.log(`   ORDER_ID=${orderId} npm run btcbuyer:claim`);
   
   printSection("✅ ORDER SUMMARY");
   console.log(`Trade: ${ethers.formatEther(order.ETHSeller.provides.amount)} ETH → ${order.ETHSeller.wants.amount} BTC`);
   console.log("ETH Seller provides: ETH (via EVM escrow)");
-  console.log("BTC Buyer provides: BTC (via Lightning Network)");
+  console.log("ETH Buyer provides: BTC (via Lightning Network)");
   console.log("Lightning invoice secret used for escrow");
-  console.log("Withdrawal: Immediate (0 seconds)");
+  console.log("Withdrawal: (0 seconds)");
   console.log("Cancellation: 1 hour safety period");
   
   return order;
