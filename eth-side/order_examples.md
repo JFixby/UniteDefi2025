@@ -21,10 +21,10 @@ All examples use these shared parameters:
 const commonParams = {
     salt: Sdk.randBigInt(1000n),
     maker: new Address(await srcChainUser.getAddress()),
-    makingAmount: parseUnits('100', 6),        // 100 USDC
-    takingAmount: parseUnits('99', 6),         // 99 USDC (1% fee)
-    makerAsset: new Address(config.chain.source.tokens.USDC.address),
-    takerAsset: new Address(config.chain.destination.tokens.USDC.address)
+    makingAmount: parseUnits('1', 8),          // 1 BTC
+    takingAmount: parseUnits('15', 18),        // 15 ETH (approximate rate)
+    makerAsset: new Address(config.chain.source.tokens.BTC.address),
+    takerAsset: new Address(config.chain.destination.tokens.ETH.address)
 }
 
 // Common time locks
@@ -58,7 +58,7 @@ const commonWhitelist = [
 ## Example 1: Single Fill Order (100% Fill)
 
 **Use Case**: Simple atomic swap with single execution
-**Test**: "should swap Ethereum USDC -> Bsc USDC. Single fill only"
+**Test**: "should swap Bitcoin -> Ethereum. Single fill only"
 
 ```typescript
 const secret = uint8ArrayToHex(randomBytes(32))
@@ -67,10 +67,10 @@ const order = Sdk.CrossChainOrder.new(
     {
         salt: Sdk.randBigInt(1000n),
         maker: new Address(await srcChainUser.getAddress()),
-        makingAmount: parseUnits('100', 6),
-        takingAmount: parseUnits('99', 6),
-        makerAsset: new Address(config.chain.source.tokens.USDC.address),
-        takerAsset: new Address(config.chain.destination.tokens.USDC.address)
+        makingAmount: parseUnits('1', 8),          // 1 BTC
+        takingAmount: parseUnits('15', 18),        // 15 ETH
+        makerAsset: new Address(config.chain.source.tokens.BTC.address),
+        takerAsset: new Address(config.chain.destination.tokens.ETH.address)
     },
     {
         hashLock: Sdk.HashLock.forSingleFill(secret),
@@ -120,7 +120,7 @@ const order = Sdk.CrossChainOrder.new(
 ## Example 2: Multiple Fill Order (100% Fill)
 
 **Use Case**: Order that can be filled multiple times, filled completely
-**Test**: "should swap Ethereum USDC -> Bsc USDC. Multiple fills. Fill 100%"
+**Test**: "should swap Bitcoin -> Ethereum. Multiple fills. Fill 100%"
 
 ```typescript
 // Generate 11 secrets for multiple fills
@@ -133,10 +133,10 @@ const order = Sdk.CrossChainOrder.new(
     {
         salt: Sdk.randBigInt(1000n),
         maker: new Address(await srcChainUser.getAddress()),
-        makingAmount: parseUnits('100', 6),
-        takingAmount: parseUnits('99', 6),
-        makerAsset: new Address(config.chain.source.tokens.USDC.address),
-        takerAsset: new Address(config.chain.destination.tokens.USDC.address)
+        makingAmount: parseUnits('1', 8),          // 1 BTC
+        takingAmount: parseUnits('15', 18),        // 15 ETH
+        makerAsset: new Address(config.chain.source.tokens.BTC.address),
+        takerAsset: new Address(config.chain.destination.tokens.ETH.address)
     },
     {
         hashLock: Sdk.HashLock.forMultipleFills(leaves),
@@ -186,7 +186,7 @@ const order = Sdk.CrossChainOrder.new(
 ## Example 3: Multiple Fill Order (50% Partial Fill)
 
 **Use Case**: Order that can be filled multiple times, filled partially
-**Test**: "should swap Ethereum USDC -> Bsc USDC. Multiple fills. Fill 50%"
+**Test**: "should swap Bitcoin -> Ethereum. Multiple fills. Fill 50%"
 
 ```typescript
 // Generate 11 secrets for multiple fills
@@ -199,10 +199,10 @@ const order = Sdk.CrossChainOrder.new(
     {
         salt: Sdk.randBigInt(1000n),
         maker: new Address(await srcChainUser.getAddress()),
-        makingAmount: parseUnits('100', 6),
-        takingAmount: parseUnits('99', 6),
-        makerAsset: new Address(config.chain.source.tokens.USDC.address),
-        takerAsset: new Address(config.chain.destination.tokens.USDC.address)
+        makingAmount: parseUnits('1', 8),          // 1 BTC
+        takingAmount: parseUnits('15', 18),        // 15 ETH
+        makerAsset: new Address(config.chain.source.tokens.BTC.address),
+        takerAsset: new Address(config.chain.destination.tokens.ETH.address)
     },
     {
         hashLock: Sdk.HashLock.forMultipleFills(leaves),
@@ -253,10 +253,72 @@ const idx = Number((BigInt(secrets.length - 1) * (fillAmount - 1n)) / order.maki
 - Calculates appropriate secret index for partial amount
 - Pro-rata calculation for destination amount
 
-## Example 4: Cancellation Order
+## Example 4: ETH to BTC Swap
+
+**Use Case**: Reverse direction swap from Ethereum to Bitcoin
+**Test**: "should swap Ethereum -> Bitcoin. Single fill only"
+
+```typescript
+const secret = uint8ArrayToHex(randomBytes(32))
+const order = Sdk.CrossChainOrder.new(
+    new Address(src.escrowFactory),
+    {
+        salt: Sdk.randBigInt(1000n),
+        maker: new Address(await srcChainUser.getAddress()),
+        makingAmount: parseUnits('15', 18),        // 15 ETH
+        takingAmount: parseUnits('1', 8),          // 1 BTC
+        makerAsset: new Address(config.chain.source.tokens.ETH.address),
+        takerAsset: new Address(config.chain.destination.tokens.BTC.address)
+    },
+    {
+        hashLock: Sdk.HashLock.forSingleFill(secret),
+        timeLocks: Sdk.TimeLocks.new({
+            srcWithdrawal: 10n,           // 10s finality lock
+            srcPublicWithdrawal: 120n,    // 2m for private withdrawal
+            srcCancellation: 121n,        // 1s after public withdrawal
+            srcPublicCancellation: 122n,  // 1s after private cancellation
+            dstWithdrawal: 10n,           // 10s finality lock
+            dstPublicWithdrawal: 100n,    // 100s private withdrawal
+            dstCancellation: 101n         // 1s after public withdrawal
+        }),
+        srcChainId,
+        dstChainId,
+        srcSafetyDeposit: parseEther('0.001'),
+        dstSafetyDeposit: parseEther('0.001')
+    },
+    {
+        auction: new Sdk.AuctionDetails({
+            initialRateBump: 0,
+            points: [],
+            duration: 120n,
+            startTime: srcTimestamp
+        }),
+        whitelist: [
+            {
+                address: new Address(src.resolver),
+                allowFrom: 0n
+            }
+        ],
+        resolvingStartTime: 0n
+    },
+    {
+        nonce: Sdk.randBigInt(UINT_40_MAX),
+        allowPartialFills: false,
+        allowMultipleFills: false
+    }
+)
+```
+
+**Key Features**:
+- `makerAsset: ETH` and `takerAsset: BTC` - Reverse direction swap
+- `makingAmount: parseUnits('15', 18)` - 15 ETH (18 decimals)
+- `takingAmount: parseUnits('1', 8)` - 1 BTC (8 decimals)
+- Same security features as BTC to ETH swaps
+
+## Example 5: Cancellation Order
 
 **Use Case**: Order designed for cancellation testing
-**Test**: "should cancel swap Ethereum USDC -> Bsc USDC"
+**Test**: "should cancel swap Bitcoin -> Ethereum"
 
 ```typescript
 const hashLock = Sdk.HashLock.forSingleFill(uint8ArrayToHex(randomBytes(32)))
@@ -265,10 +327,10 @@ const order = Sdk.CrossChainOrder.new(
     {
         salt: Sdk.randBigInt(1000n),
         maker: new Address(await srcChainUser.getAddress()),
-        makingAmount: parseUnits('100', 6),
-        takingAmount: parseUnits('99', 6),
-        makerAsset: new Address(config.chain.source.tokens.USDC.address),
-        takerAsset: new Address(config.chain.destination.tokens.USDC.address)
+        makingAmount: parseUnits('1', 8),          // 1 BTC
+        takingAmount: parseUnits('15', 18),        // 15 ETH
+        makerAsset: new Address(config.chain.source.tokens.BTC.address),
+        takerAsset: new Address(config.chain.destination.tokens.ETH.address)
     },
     {
         hashLock,
@@ -319,10 +381,10 @@ const order = Sdk.CrossChainOrder.new(
 ### Order Details
 - `salt`: Random number for order uniqueness
 - `maker`: Address of the order creator
-- `makingAmount`: Amount of source asset to swap
-- `takingAmount`: Amount of destination asset to receive
-- `makerAsset`: Source chain token address
-- `takerAsset`: Destination chain token address
+- `makingAmount`: Amount of source asset to swap (e.g., 1 BTC = parseUnits('1', 8))
+- `takingAmount`: Amount of destination asset to receive (e.g., 15 ETH = parseUnits('15', 18))
+- `makerAsset`: Source chain token address (BTC or ETH)
+- `takerAsset`: Destination chain token address (ETH or BTC)
 
 ### Cross-Chain Configuration
 - `hashLock`: Single secret or Merkle tree of secrets
@@ -353,6 +415,24 @@ const order = Sdk.CrossChainOrder.new(
 
 ## Usage Patterns
 
+### BTC to ETH Swap Pattern
+```typescript
+// For Bitcoin to Ethereum swaps
+makingAmount: parseUnits('1', 8),          // 1 BTC (8 decimals)
+takingAmount: parseUnits('15', 18),        // 15 ETH (18 decimals)
+makerAsset: new Address(config.chain.source.tokens.BTC.address),
+takerAsset: new Address(config.chain.destination.tokens.ETH.address)
+```
+
+### ETH to BTC Swap Pattern
+```typescript
+// For Ethereum to Bitcoin swaps
+makingAmount: parseUnits('15', 18),        // 15 ETH (18 decimals)
+takingAmount: parseUnits('1', 8),          // 1 BTC (8 decimals)
+makerAsset: new Address(config.chain.source.tokens.ETH.address),
+takerAsset: new Address(config.chain.destination.tokens.BTC.address)
+```
+
 ### Single Fill Pattern
 ```typescript
 // For one-time atomic swaps
@@ -382,12 +462,15 @@ dstWithdrawal: 0n
 ## Best Practices
 
 1. **Security**: Use cryptographically secure random numbers for secrets
-2. **Time Locks**: Set appropriate timeouts based on chain finality
-3. **Safety Deposits**: Ensure sufficient ETH for gas fees
+2. **Time Locks**: Set appropriate timeouts based on chain finality (Bitcoin has longer block times)
+3. **Safety Deposits**: Ensure sufficient ETH for gas fees on both chains
 4. **Whitelisting**: Restrict order filling to trusted resolvers
 5. **Testing**: Use shorter timeouts for testing, longer for production
 6. **Partial Fills**: Consider whether partial fills are needed for your use case
 7. **Multiple Fills**: Use Merkle trees for orders that may be filled multiple times
+8. **Decimal Precision**: Use correct decimal places (8 for BTC, 18 for ETH)
+9. **Exchange Rates**: Monitor BTC/ETH exchange rates for accurate pricing
+10. **Chain Finality**: Account for different finality times between Bitcoin and Ethereum
 
 ## Error Handling
 
