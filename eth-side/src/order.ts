@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
-import { getRpcUrl, getChainId, getAliceAddress, ALICE_PRIVATE_KEY } from "./variables";
+import { getRpcUrl, getChainId, getAliceAddress, ALICE_PRIVATE_KEY, getNativeTokenAddress, getEscrowFactoryAddress } from "./variables";
 
 // Import real SDK classes
 import {
@@ -123,19 +123,6 @@ function generateSecret(): string {
 function generateMultipleSecrets(count: number): string[] {
   return Array.from({ length: count }, () => generateSecret());
 }
-
-// Mock token addresses - in real implementation these would come from config
-const MOCK_TOKENS = {
-  BTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", // WBTC on Ethereum
-  ETH: "0x0000000000000000000000000000000000000000", // Native ETH
-  WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" // WETH on Ethereum
-};
-
-// Mock contract addresses - in real implementation these would come from config
-const MOCK_CONTRACTS = {
-  escrowFactory: "0x1234567890123456789012345678901234567890",
-  accessToken: "0x0987654321098765432109876543210987654321"
-};
 
 function createOrderByType(
   orderType: OrderType,

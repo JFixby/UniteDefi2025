@@ -63,4 +63,20 @@ export const getAliceAddress = (): string => {
   }
   const aliceWallet = new ethers.Wallet(ALICE_PRIVATE_KEY);
   return aliceWallet.address;
+};
+
+// Get native token address (ETH address for EVM chains)
+export const getNativeTokenAddress = (): string => {
+  return '0x0000000000000000000000000000000000000000'; // Native ETH address
+};
+
+// Get escrow factory address based on network
+export const getEscrowFactoryAddress = (): string => {
+  // Mock addresses - in real implementation these would come from deployment configs
+  const ESCROW_FACTORIES = {
+    POLYGON: '0x1234567890123456789012345678901234567890',
+    ETH_MAINNET: '0x0987654321098765432109876543210987654321',
+  } as const;
+  
+  return ESCROW_FACTORIES[NETWORK];
 }; 
