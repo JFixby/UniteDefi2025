@@ -1,0 +1,14 @@
+BTC to ETH Order lifecycle:
+1) BTC Seller Creates order
+2) BTC Buyer issues invoice on lightning network, the invoice contains hashed secret
+3) BTC Buyer creates escrow contract on EVN network and deposits ETH, the contracket is HTLC locked with the hash secret from the LN invoice
+4) BTC Seller pays invoice, the secret is revealed
+5) BTC Seller claims escrow ETH using the secret
+
+ETH to BTC Order lifecycle:
+1) ETH Seller Creates order
+2) ETH Seller issues invoice on lightning network, the invoice contains hashed secret
+3) ETH Seller creates escrow contract on EVN network and deposits ETH, the contracket is HTLC locked with the hash secret from the LN invoice
+4) ETH Buyer pays invoice, the secret is revealed
+5) ETH Buyer claims escrow ETH using the secret
+

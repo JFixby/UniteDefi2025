@@ -8,7 +8,21 @@
     "deploy": "hardhat run scripts/deploy.js --network polygon",
     "test": "hardhat test",
     "deposit": "ts-node run_deposit.ts deposit",
-    "deposit:custom": "ts-node run_deposit.ts custom"
+    "deposit:custom": "ts-node run_deposit.ts custom",
+    "order:btc2evm": "ts-node src/order-btc-2-evm.ts --",
+    "order:evm2btc": "ts-node src/order-evm-2-btc.ts --",
+    "order:btc2evm:single": "ts-node src/order-btc-2-evm.ts -- single-fill",
+    "order:btc2evm:multiple": "ts-node src/order-btc-2-evm.ts -- multiple-fill-100",
+    "order:btc2evm:partial": "ts-node src/order-btc-2-evm.ts -- multiple-fill-50",
+    "order:btc2evm:reverse": "ts-node src/order-btc-2-evm.ts -- eth-to-btc",
+    "order:btc2evm:cancel": "ts-node src/order-btc-2-evm.ts -- cancellation",
+    "order:btc2evm:all": "ts-node src/order-btc-2-evm.ts -- all",
+    "order:evm2btc:single": "ts-node src/order-evm-2-btc.ts -- single-fill",
+    "order:evm2btc:multiple": "ts-node src/order-evm-2-btc.ts -- multiple-fill-100",
+    "order:evm2btc:partial": "ts-node src/order-evm-2-btc.ts -- multiple-fill-50",
+    "order:evm2btc:reverse": "ts-node src/order-evm-2-btc.ts -- btc-to-eth",
+    "order:evm2btc:cancel": "ts-node src/order-evm-2-btc.ts -- cancellation",
+    "order:evm2btc:all": "ts-node src/order-evm-2-btc.ts -- all"
   },
   "dependencies": {
     "ethers": "^6.15.0",
