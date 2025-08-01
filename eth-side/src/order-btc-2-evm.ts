@@ -68,7 +68,7 @@ async function main() {
   console.log("🏭 Factory:", factoryAddress);
   console.log("🎫 Access Token:", accessTokenAddress);
   
-  // Create BTC to EVM order with IMMEDIATE withdrawal
+  // Create BTC to EVM order with  withdrawal
   const orderId = `order-btc2evm-${Date.now()}`;
   const timestamp = Date.now();
   
@@ -91,7 +91,7 @@ async function main() {
         },
     
     timelock: {
-      withdrawalPeriod: 0,     // 🎯 IMMEDIATE WITHDRAWAL!
+      withdrawalPeriod: 0,     // 🎯  WITHDRAWAL!
       cancellationPeriod: 3600 // 1 hour cancellation period
     },
     
@@ -126,25 +126,22 @@ async function main() {
   
   console.log("\n🎯 NEXT STEPS (BTC to EVM FLOW):");
   console.log("=============================");
-  console.log("1. BTCSeller creates Bitcoin HTLC with BTC:");
-  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcseller:htlc");
-  console.log("2. BTCSeller funds Bitcoin HTLC:");
-  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcseller:fund");
-  console.log("3. BTC Buyer creates EVM escrow with ETH:");
+  console.log("1. BTC Buyer creates lightning invoice with secret: ");
+  console.log("   ORDER_ID=" + orderId + " npm run btcbuyer:lightning:invoice");
+  console.log("3. BTC Buyer creates EVM escrow with ETH using the secret from the lightning invoice:");
   console.log("   ORDER_ID=" + orderId + " npm run reverse:btcbuyer:escrow");
-  console.log("4. BTCSeller claims ETH (reveals secret):");
+  console.log("4. BTCSeller pays lightning invoice and (reveals secret):");
+  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcseller:payln");
+  console.log("5. BTC Seller claims ETH from escrow (using revealed secret):");
   console.log("   ORDER_ID=" + orderId + " npm run reverse:btcseller:claim");
-  console.log("5. BTC Buyer claims BTC (using revealed secret):");
-  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcbuyer:claim");
   
   console.log("\n🔄 BTC to EVM ATOMIC SWAP READY!");
   console.log("==============================");
-  // console.log("Trade:", order.BTCSeller.provides.amount, "BTC → ", ethers.formatEther(order.BTCSeller.wants.amount), "ETH");
+  console.log("Trade:", order.BTCSeller.provides.amount, "BTC → ", ethers.formatEther(order.BTCSeller.wants.amount), "ETH");
   console.log("BTCSeller provides: BTC");
   console.log("BTC Buyer provides: ETH");
-  console.log("Withdrawal: IMMEDIATE (0 seconds)");
-  console.log("Cancellation: 1 hour safety period");
-  console.log("Perfect for btc to evm atomic swap testing!");
+  console.log("Withdrawal:  (0 seconds)");
+
   
   return order;
 }

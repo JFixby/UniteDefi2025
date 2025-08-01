@@ -80,7 +80,7 @@ async function main() {
   console.log("=============");
 
   
-  // Create ETH to BTC order with IMMEDIATE withdrawal
+  // Create ETH to BTC order with  withdrawal
   const orderId = `order-evm2btc-${Date.now()}`;
   const timestamp = Date.now();
   
@@ -113,7 +113,7 @@ async function main() {
     hashlock,
     
     timelock: {
-      withdrawalPeriod: 0,     // 🎯 IMMEDIATE WITHDRAWAL!
+      withdrawalPeriod: 0,     // 🎯  WITHDRAWAL!
       cancellationPeriod: 3600 // 1 hour cancellation period
     },
     
@@ -127,7 +127,7 @@ async function main() {
   console.log("👤 ETHSeller (EVM):", order.ETHSeller.EVMAddress);
   console.log("💰 ETHSeller provides:", ethers.formatEther(order.ETHSeller.provides.amount), "ETH");
   console.log("🪙 ETHSeller wants:", order.ETHSeller.wants.amount, "BTC");
-  console.log("⏰ Withdrawal period:", order.timelock.withdrawalPeriod, "seconds (IMMEDIATE!)");
+  console.log("⏰ Withdrawal period:", order.timelock.withdrawalPeriod, "seconds (!)");
   console.log("⏰ Cancellation period:", order.timelock.cancellationPeriod, "seconds");
   
   // Save order to file
@@ -154,8 +154,6 @@ async function main() {
   console.log("   ORDER_ID=" + orderId + " npm run ethseller:escrow");
   console.log("3. BTC Buyer pays Lightning invoice (reveals secret):");
   console.log("   ORDER_ID=" + orderId + " npm run btcbuyer:lightning:pay");
-  console.log("4. ETHSeller claims BTC from Lightning (using revealed secret):");
-  console.log("   ORDER_ID=" + orderId + " npm run ethseller:lightning:claim");
   console.log("5. BTC Buyer claims ETH from escrow (using revealed secret):");
   console.log("   ORDER_ID=" + orderId + " npm run btcbuyer:claim");
   
@@ -165,7 +163,7 @@ async function main() {
   console.log("ETHSeller provides: ETH (via EVM escrow)");
   console.log("BTC Buyer provides: BTC (via Lightning Network)");
   console.log("Lightning invoice secret used for escrow");
-  console.log("Withdrawal: IMMEDIATE (0 seconds)");
+  console.log("Withdrawal:  (0 seconds)");
   console.log("Cancellation: 1 hour safety period");
   console.log("Perfect for eth to btc via lightning atomic swap testing!");
   
