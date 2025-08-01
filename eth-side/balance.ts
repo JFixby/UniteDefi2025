@@ -6,7 +6,7 @@ import {
   getRpcUrl,
   getChainId,
   hasValidPrivateKeys,
-} from './variables';
+} from './src/variables';
 
 // Token addresses for the specific tokens you want to check
 // Updated with official addresses from official-tokens.txt

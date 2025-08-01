@@ -7,7 +7,7 @@ import {
   getChainId, 
   hasValidCarolPrivateKey,
   getAliceAddress
-} from './variables';
+} from './src/variables';
 
 // Contract addresses - will be populated after deployment
 const CONTRACT_ADDRESSES = {
