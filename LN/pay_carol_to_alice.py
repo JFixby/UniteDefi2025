@@ -16,6 +16,9 @@ import argparse
 from typing import Dict, Any
 from datetime import datetime, timezone
 
+# API timeout constant (in seconds)
+API_TIMEOUT = 15
+
 # ANSI color codes for terminal output
 RED = '\033[0;31m'
 GREEN = '\033[0;32m'
@@ -160,7 +163,7 @@ def pay_invoice(alice_config: Dict[str, Any], payment_request: str) -> Dict[str,
             json=payment_data,
             headers=headers,
             verify=False,  # Skip SSL verification for local development
-            timeout=60
+            timeout=API_TIMEOUT
         )
         response.raise_for_status()
         payment_response = response.json()
@@ -206,7 +209,7 @@ def get_node_balance(node_config: Dict[str, Any], node_name: str) -> Dict[str, A
             url,
             headers=headers,
             verify=False,
-            timeout=15
+            timeout=API_TIMEOUT
         )
         response.raise_for_status()
         balance_data = response.json()
@@ -217,7 +220,7 @@ def get_node_balance(node_config: Dict[str, Any], node_name: str) -> Dict[str, A
             channel_url,
             headers=headers,
             verify=False,
-            timeout=15
+            timeout=API_TIMEOUT
         )
         channel_response.raise_for_status()
         channel_data = channel_response.json()
@@ -282,7 +285,7 @@ def settle_hodl_invoice(carol_config: Dict[str, Any], secret_hex: str) -> Dict[s
             json=settlement_data,
             headers=headers,
             verify=False,  # Skip SSL verification for local development
-            timeout=60
+            timeout=API_TIMEOUT
         )
         response.raise_for_status()
         settlement_response = response.json()
