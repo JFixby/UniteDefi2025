@@ -38,37 +38,51 @@ interface OrderBTC2EVM {
   };
 }
 
+function printHeader(title: string) {
+  console.log(`\n${title}`);
+  console.log("=".repeat(title.length));
+}
+
+function printSection(title: string) {
+  console.log(`\n${title}`);
+  console.log("-".repeat(title.length));
+}
+
+function printKeyValue(key: string, value: string | number) {
+  console.log(`${key}: ${value}`);
+}
+
 async function main() {
-  console.log("🔄 CREATING ATOMIC SWAP ORDER (BTC → ETH)");
-  console.log("=================================================");
+  printHeader("🔄 CREATING ATOMIC SWAP ORDER (BTC → ETH)");
   
   // Get network info from variables.ts
   const rpcUrl = getRpcUrl();
   const chainId = getChainId();
   const networkName = chainId === 137 ? "polygon" : chainId === 1 ? "ethereum" : "unknown";
   
-  console.log("🌐 Network:", networkName);
-  console.log("🔗 Chain ID:", chainId);
+  printSection("🌐 NETWORK CONFIGURATION");
+  printKeyValue("Network", networkName);
+  printKeyValue("Chain ID", chainId);
   
   // Setup provider and BTCSeller account
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const BTCSeller = new ethers.Wallet(ALICE_PRIVATE_KEY, provider);
-  console.log("👤 BTCSeller (EVM Address):", BTCSeller.address);
+  
+  printSection("👤 BTC SELLER DETAILS");
+  printKeyValue("EVM Address", BTCSeller.address);
   
   const BTCSellerBalance = await provider.getBalance(BTCSeller.address);
-  console.log("💰 BTCSeller ETH Balance:", ethers.formatEther(BTCSellerBalance), "ETH");
-  
+  printKeyValue("ETH Balance", `${ethers.formatEther(BTCSellerBalance)} ETH`);
   
   // Get deployed contracts
   const factoryAddress = "0x";
   const accessTokenAddress = "0x";
   
-  console.log("\n📋 CONTRACTS:");
-  console.log("=============");
-  console.log("🏭 Factory:", factoryAddress);
-  console.log("🎫 Access Token:", accessTokenAddress);
+  printSection("📋 CONTRACT ADDRESSES");
+  printKeyValue("Factory", factoryAddress);
+  printKeyValue("Access Token", accessTokenAddress);
   
-  // Create BTC to EVM order with  withdrawal
+  // Create BTC to EVM order with withdrawal
   const orderId = `order-btc2evm-${Date.now()}`;
   const timestamp = Date.now();
   
@@ -88,7 +102,7 @@ async function main() {
         asset: "ETH",
         amount: ethers.parseEther("0.02").toString() // 0.02 ETH
       }
-        },
+    },
     
     timelock: {
       withdrawalPeriod: 0,     // 🎯  WITHDRAWAL!
@@ -103,12 +117,12 @@ async function main() {
     }
   };
   
-  console.log("\n📋 BTC to EVM ORDER DETAILS:");
-  console.log("=========================");
-  console.log("📄 Order ID:", orderId);
-  console.log("👤 BTCSeller (EVM):", order.BTCSeller.EVMAddress);
-  console.log("🪙 BTCSeller provides:", order.BTCSeller.provides.amount, "BTC");
-  console.log("💰 BTCSeller wants:", ethers.formatEther(order.BTCSeller.wants.amount), "ETH");
+  printSection("📋 ORDER DETAILS");
+  printKeyValue("Order ID", orderId);
+  printKeyValue("BTC Amount", `${order.BTCSeller.provides.amount} BTC`);
+  printKeyValue("ETH Amount", `${ethers.formatEther(order.BTCSeller.wants.amount)} ETH`);
+  printKeyValue("Withdrawal Period", `${order.timelock.withdrawalPeriod} seconds`);
+  printKeyValue("Cancellation Period", `${order.timelock.cancellationPeriod} seconds`);
   
   // Save order to file
   const ordersDir = path.join(__dirname, "../orders");
@@ -119,29 +133,24 @@ async function main() {
   const orderPath = path.join(ordersDir, `${orderId}.json`);
   fs.writeFileSync(orderPath, JSON.stringify(order, null, 2));
   
-  console.log("\n✅ BTC to EVM ORDER CREATED SUCCESSFULLY!");
-  console.log("=====================================");
-  console.log("📄 Order ID:", orderId);
-  console.log("💾 Order saved to:", orderPath);
+  printSection("💾 ORDER SAVED");
+  printKeyValue("File Path", orderPath);
   
-  console.log("\n🎯 NEXT STEPS (BTC to EVM FLOW):");
-  console.log("=============================");
-  console.log("1. BTC Buyer creates lightning invoice with secret: ");
-  console.log("   ORDER_ID=" + orderId + " npm run btcbuyer:lightning:invoice");
-  console.log("3. BTC Buyer creates EVM escrow with ETH using the secret from the lightning invoice:");
-  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcbuyer:escrow");
-  console.log("4. BTCSeller pays lightning invoice and (reveals secret):");
-  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcseller:payln");
-  console.log("5. BTC Seller claims ETH from escrow (using revealed secret):");
-  console.log("   ORDER_ID=" + orderId + " npm run reverse:btcseller:claim");
+  printSection("🎯 NEXT STEPS (BTC to EVM FLOW)");
+  console.log("1. [BTC Buyer] Create lightning invoice with secret:");
+  console.log(`   ORDER_ID=${orderId} npm run btcbuyer:lightning:invoice`);
+  console.log("\n2. [BTC Buyer] Create EVM escrow with ETH using the secret:");
+  console.log(`   ORDER_ID=${orderId} npm run reverse:btcbuyer:escrow`);
+  console.log("\n3. [BTC Seller] Pay lightning invoice (reveals secret):");
+  console.log(`   ORDER_ID=${orderId} npm run reverse:btcseller:payln`);
+  console.log("\n4. [BTC Seller] Claim ETH from escrow (using revealed secret):");
+  console.log(`   ORDER_ID=${orderId} npm run reverse:btcseller:claim`);
   
-  console.log("\n🔄 BTC to EVM ATOMIC SWAP READY!");
-  console.log("==============================");
-  console.log("Trade:", order.BTCSeller.provides.amount, "BTC → ", ethers.formatEther(order.BTCSeller.wants.amount), "ETH");
+  printSection("✅ ORDER SUMMARY");
+  console.log(`Trade: ${order.BTCSeller.provides.amount} BTC → ${ethers.formatEther(order.BTCSeller.wants.amount)} ETH`);
   console.log("BTCSeller provides: BTC");
   console.log("BTC Buyer provides: ETH");
-  console.log("Withdrawal:  (0 seconds)");
-
+  console.log("Withdrawal: Immediate (0 seconds)");
   
   return order;
 }
