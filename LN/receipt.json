@@ -1,9 +1,9 @@
 {
   "payment_receipt": {
-    "payment_hash": "hBJtDdhQGZvikCGq267mjLkZkEexy37JiU3bHjVieDw=",
+    "payment_hash": "",
     "payment_preimage_base64": "",
     "payment_preimage_hex": "",
-    "payment_timestamp": "2025-08-01T07:15:46.063597",
+    "payment_timestamp": "2025-08-01T11:19:33.005934",
     "payment_status": "FAILED"
   },
   "balance_changes": {
@@ -11,36 +11,36 @@
       "before_payment": {
         "onchain_balance_sat": "395654",
         "channel_balance_sat": {
-          "sat": "494625",
-          "msat": "494625000"
+          "sat": "494623",
+          "msat": "494623000"
         },
         "remote_balance_sat": {
-          "sat": "494950",
-          "msat": "494950000"
+          "sat": "494952",
+          "msat": "494952000"
         },
         "pending_open_balance_sat": {
           "sat": "0",
           "msat": "0"
         },
         "pending_close_balance_sat": "0",
-        "timestamp": "2025-08-01T07:15:43.748472"
+        "timestamp": "2025-08-01T11:19:31.905259"
       },
       "after_payment": {
         "onchain_balance_sat": "395654",
         "channel_balance_sat": {
-          "sat": "494625",
-          "msat": "494625000"
+          "sat": "494623",
+          "msat": "494623000"
         },
         "remote_balance_sat": {
-          "sat": "494950",
-          "msat": "494950000"
+          "sat": "494952",
+          "msat": "494952000"
         },
         "pending_open_balance_sat": {
           "sat": "0",
           "msat": "0"
         },
         "pending_close_balance_sat": "0",
-        "timestamp": "2025-08-01T07:15:45.632868"
+        "timestamp": "2025-08-01T11:19:32.742773"
       },
       "change": {
         "channel_delta": 0,
@@ -51,36 +51,36 @@
       "before_payment": {
         "onchain_balance_sat": "1995929",
         "channel_balance_sat": {
-          "sat": "594937",
-          "msat": "594937998"
+          "sat": "594939",
+          "msat": "594939998"
         },
         "remote_balance_sat": {
-          "sat": "594637",
-          "msat": "594637002"
+          "sat": "594635",
+          "msat": "594635002"
         },
         "pending_open_balance_sat": {
           "sat": "0",
           "msat": "0"
         },
         "pending_close_balance_sat": "0",
-        "timestamp": "2025-08-01T07:15:44.378106"
+        "timestamp": "2025-08-01T11:19:32.036798"
       },
       "after_payment": {
         "onchain_balance_sat": "1995929",
         "channel_balance_sat": {
-          "sat": "594937",
-          "msat": "594937998"
+          "sat": "594939",
+          "msat": "594939998"
         },
         "remote_balance_sat": {
-          "sat": "594637",
-          "msat": "594637002"
+          "sat": "594635",
+          "msat": "594635002"
         },
         "pending_open_balance_sat": {
           "sat": "0",
           "msat": "0"
         },
         "pending_close_balance_sat": "0",
-        "timestamp": "2025-08-01T07:15:46.062035"
+        "timestamp": "2025-08-01T11:19:33.003487"
       },
       "change": {
         "channel_delta": 0,
@@ -90,10 +90,10 @@
   },
   "hash_verification": {
     "invoice_hash_base64": "",
-    "payment_hash_base64": "hBJtDdhQGZvikCGq267mjLkZkEexy37JiU3bHjVieDw=",
+    "payment_hash_base64": "",
     "secret_hash_base64": "",
     "verification_flags": {
-      "invoice_vs_payment_hash_match": false,
+      "invoice_vs_payment_hash_match": true,
       "invoice_vs_secret_hash_match": true,
       "preimage_verifies": false,
       "correct_length": false,
@@ -103,18 +103,18 @@
       "overall_verification": false,
       "hash_match_check": false,
       "hash_verification": {
-        "verified": false,
-        "calculated_hash_base64": "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
-        "expected_hash_base64": "",
-        "secret_hex": "",
-        "secret_length_bytes": 0
+        "verified": true,
+        "calculated_hash_base64": "sz8spOIDI8ceBuw4P+xcevMW/jr1yDkBFU5jimzxFQc=",
+        "expected_hash_base64": "sz8spOIDI8ceBuw4P+xcevMW/jr1yDkBFU5jimzxFQc=",
+        "secret_hex": "4022374ec39f3ba60dca8966c8a6f97974143d96a5f9ffeea95de6b60e9d3552",
+        "secret_length_bytes": 32
       },
-      "preimage_length_check": false,
-      "original_hash_base64": "",
-      "payment_hash_base64": "hBJtDdhQGZvikCGq267mjLkZkEexy37JiU3bHjVieDw=",
-      "payment_preimage_hex": ""
+      "preimage_length_check": true,
+      "original_hash_base64": "sz8spOIDI8ceBuw4P+xcevMW/jr1yDkBFU5jimzxFQc=",
+      "payment_hash_base64": "",
+      "payment_preimage_hex": "4022374ec39f3ba60dca8966c8a6f97974143d96a5f9ffeea95de6b60e9d3552"
     },
-    "verification_timestamp": "2025-08-01T07:15:46.063597"
+    "verification_timestamp": "2025-08-01T11:19:33.005934"
   },
   "htlc_secret": {
     "preimage_base64": "",
@@ -127,44 +127,56 @@
       "calculated_hash": "",
       "expected_hash": "",
       "secret_length_bytes": 0,
-      "timestamp": "2025-08-01T07:15:46.063597",
+      "timestamp": "2025-08-01T11:19:33.005934",
       "status": "PAYMENT_COMPLETED_SECRET_REVEALED"
     }
   },
   "original_invoice": {
     "invoice": {
-      "payment_request": "lnbcrt20n1p5geymxpp5ssfx6rwc2qvehc5syx4dhthx3ju3nyz8k89hajvffhd3udtz0q7qdzsg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxgs8xct5daeks6tncqzzsxqyz5vqsp5z0canc7chelfan3ewd6qv48tcw28rrzyez6qh5rchy3849g49zuq9qxpqysgq2983z86pz20mwme7k9m8wqcg4cj3plc8r69z6ta62z5rkup9t99xe4uka5ft5v2xqfv8y8j73ha2rv3zeldc99cjxx057a28389q4zcprux4cs",
-      "add_index": "50",
-      "payment_addr": "E/HZ49i+fp7OOXN0BlTrw5RxjETItAvQeLkiepUVKLg="
+      "payment_request": "lnbcrt150n1p5genydpp5kvljef8zqv3uw8sxasurlmzu0te3dl367hyrjqg4fe3c5m83z5rsdzjg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxy6jqumpw3hhx6rfwvcqzzsxqzjcsp5l6rx5qckz2j39fprckmj3z2cx0zdh0czgz8gl4qtxrfw0t7j9cfs9qxpqysgq7u0a57x78h7lpryqnstlh37msh4tay0hlt9d48rplaav97ccpxx9jjlj00ekdwwu2pm6r04axuu4v94jx3n7sj8c6gf5nvx37x9g9lqpkj6zq6",
+      "add_index": "67",
+      "payment_addr": "/oZqAxYSpRKkI8W3KIlYM8TbvwJAjo/UCzDS56/SLhM="
     },
     "htlc_secret": {
       "secret": "HIDDEN",
-      "secret_hash": "hBJtDdhQGZvikCGq267mjLkZkEexy37JiU3bHjVieDw=",
+      "secret_hash": "sz8spOIDI8ceBuw4P+xcevMW/jr1yDkBFU5jimzxFQc=",
       "verification": {
         "hash_verified": true,
-        "timestamp": "50",
-        "expiry": 86400,
+        "timestamp": "67",
+        "expiry_seconds": 600,
         "status": "HODL_INVOICE_CREATED_AWAITING_PAYMENT"
       }
     },
+    "secret_debug": {
+      "secret_hex": "4022374ec39f3ba60dca8966c8a6f97974143d96a5f9ffeea95de6b60e9d3552",
+      "generated_at": "invoice_creation",
+      "note": "This field is for debugging purposes only - contains the actual secret"
+    },
     "hash_verification": {
-      "calculated_hash": "hBJtDdhQGZvikCGq267mjLkZkEexy37JiU3bHjVieDw=",
+      "calculated_hash": "sz8spOIDI8ceBuw4P+xcevMW/jr1yDkBFU5jimzxFQc=",
+      "calculated_hash_hex": "b33f2ca4e20323c71e06ec383fec5c7af316fe3af5c83901154e638a6cf11507",
       "verification_status": "VERIFIED"
     },
     "metadata": {
-      "amount_satoshis": 2,
-      "memo": "Demo hodl invoice from Carol to Alice - 2 satoshis",
-      "payment_request": "lnbcrt20n1p5geymxpp5ssfx6rwc2qvehc5syx4dhthx3ju3nyz8k89hajvffhd3udtz0q7qdzsg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxgs8xct5daeks6tncqzzsxqyz5vqsp5z0canc7chelfan3ewd6qv48tcw28rrzyez6qh5rchy3849g49zuq9qxpqysgq2983z86pz20mwme7k9m8wqcg4cj3plc8r69z6ta62z5rkup9t99xe4uka5ft5v2xqfv8y8j73ha2rv3zeldc99cjxx057a28389q4zcprux4cs",
+      "amount_satoshis": 15,
+      "memo": "Demo hodl invoice from Carol to Alice - 15 satoshis",
+      "payment_request": "lnbcrt150n1p5genydpp5kvljef8zqv3uw8sxasurlmzu0te3dl367hyrjqg4fe3c5m83z5rsdzjg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxy6jqumpw3hhx6rfwvcqzzsxqzjcsp5l6rx5qckz2j39fprckmj3z2cx0zdh0czgz8gl4qtxrfw0t7j9cfs9qxpqysgq7u0a57x78h7lpryqnstlh37msh4tay0hlt9d48rplaav97ccpxx9jjlj00ekdwwu2pm6r04axuu4v94jx3n7sj8c6gf5nvx37x9g9lqpkj6zq6",
       "created_by": "Carol",
       "created_for": "Alice",
       "invoice_type": "HODL_INVOICE",
       "invoice_status": "UNPAID"
+    },
+    "timing": {
+      "created_at": "2025-08-01T14:17:49.192712Z",
+      "expires_at": "2025-08-01T14:27:49.192712Z",
+      "expiry_seconds": 600,
+      "timezone": "UTC"
     }
   },
   "metadata": {
-    "amount_satoshis": 2,
-    "memo": "Demo hodl invoice from Carol to Alice - 2 satoshis",
-    "payment_request": "lnbcrt20n1p5geymxpp5ssfx6rwc2qvehc5syx4dhthx3ju3nyz8k89hajvffhd3udtz0q7qdzsg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxgs8xct5daeks6tncqzzsxqyz5vqsp5z0canc7chelfan3ewd6qv48tcw28rrzyez6qh5rchy3849g49zuq9qxpqysgq2983z86pz20mwme7k9m8wqcg4cj3plc8r69z6ta62z5rkup9t99xe4uka5ft5v2xqfv8y8j73ha2rv3zeldc99cjxx057a28389q4zcprux4cs",
+    "amount_satoshis": 15,
+    "memo": "Demo hodl invoice from Carol to Alice - 15 satoshis",
+    "payment_request": "lnbcrt150n1p5genydpp5kvljef8zqv3uw8sxasurlmzu0te3dl367hyrjqg4fe3c5m83z5rsdzjg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxy6jqumpw3hhx6rfwvcqzzsxqzjcsp5l6rx5qckz2j39fprckmj3z2cx0zdh0czgz8gl4qtxrfw0t7j9cfs9qxpqysgq7u0a57x78h7lpryqnstlh37msh4tay0hlt9d48rplaav97ccpxx9jjlj00ekdwwu2pm6r04axuu4v94jx3n7sj8c6gf5nvx37x9g9lqpkj6zq6",
     "paid_by": "Alice",
     "paid_to": "Carol",
     "payment_status": "COMPLETED"
