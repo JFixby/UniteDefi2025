@@ -1,0 +1,22 @@
+{
+  "orderId": "order-evm2btc-eth_to_btc-1754078788380",
+  "timestamp": 1754078788380,
+  "orderType": "ETH_TO_BTC",
+  "maker": "0x77dc617963ed624289d143c7dde9d30255eab593",
+  "makerAsset": "0x0000000000000000000000000000000000000000",
+  "takerAsset": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "makingAmount": "40000000000000000",
+  "takingAmount": "400000",
+  "salt": "894998274291425332340655658150577327881654255055687",
+  "nonce": "859736257514",
+  "partialFillAllowed": false,
+  "multipleFillsAllowed": false,
+  "dstChainId": 1,
+  "escrowExtension": {
+    "hashLock": "0xff0a935eecff4d3b76c2aa845e269adfc3fa718b98b8b04bdb4f922a31c26c95",
+    "dstChainId": 1,
+    "dstToken": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "srcSafetyDeposit": "1000000000000000",
+    "dstSafetyDeposit": "1000000000000000"
+  }
+}

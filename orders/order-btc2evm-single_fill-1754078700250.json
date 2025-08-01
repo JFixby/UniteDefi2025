@@ -1,0 +1,22 @@
+{
+  "orderId": "order-btc2evm-single_fill-1754078700250",
+  "timestamp": 1754078700250,
+  "orderType": "SINGLE_FILL",
+  "maker": "0x77dc617963ed624289d143c7dde9d30255eab593",
+  "makerAsset": "0x0000000000000000000000000000000000000000",
+  "takerAsset": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "makingAmount": "300000",
+  "takingAmount": "30000000000000000",
+  "salt": "388740550416097905438598590408784958739662345678638",
+  "nonce": "829704534705",
+  "partialFillAllowed": false,
+  "multipleFillsAllowed": false,
+  "dstChainId": 137,
+  "escrowExtension": {
+    "hashLock": "0x3cf07be7ec1fc6b5bc0bb0a74b4dbd649f1cf5d10b95f670457fc443b64e5231",
+    "dstChainId": 137,
+    "dstToken": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "srcSafetyDeposit": "1000000000000000",
+    "dstSafetyDeposit": "1000000000000000"
+  }
+}

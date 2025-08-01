@@ -67,7 +67,7 @@ export const getAliceAddress = (): string => {
 
 // Get native token address (ETH address for EVM chains)
 export const getNativeTokenAddress = (): string => {
-  return '0x0000000000000000000000000000000000000000'; // Native ETH address
+  return '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // Native ETH address for 1inch SDK
 };
 
 // Get escrow factory address based on network

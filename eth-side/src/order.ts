@@ -29,6 +29,36 @@ type OrderType =
   | "ETH_TO_BTC"           // Reverse direction swap from Ethereum to Bitcoin
   | "CANCELLATION";         // Order designed for cancellation testing
 
+// Order data type for CLI output
+interface OrderData {
+  orderId: string;
+  direction: "btc2evm" | "evm2btc";
+  btcAmount: string;
+  ethAmount: string;
+  ethAddressReceiver?: string;
+  hashedSecret?: string;
+  timestamp: number;
+  orderType: OrderType;
+  // Additional SDK order data
+  maker: string;
+  makerAsset: string;
+  takerAsset: string;
+  makingAmount: string;
+  takingAmount: string;
+  salt: string;
+  nonce: string;
+  partialFillAllowed: boolean;
+  multipleFillsAllowed: boolean;
+  dstChainId: number;
+  escrowExtension: {
+    hashLock: string;
+    dstChainId: number;
+    dstToken: string;
+    srcSafetyDeposit: string;
+    dstSafetyDeposit: string;
+  };
+}
+
 
 
 function printHeader(title: string) {
@@ -50,31 +80,37 @@ function printUsage() {
 🔄 Cross-Chain Order Creator CLI
 
 Usage:
-  npm run order [orderType] [options]
+  npm run order [direction] [orderType] [options]
+
+Directions:
+  btc2evm             Bitcoin to EVM (BTC → ETH)
+  evm2btc             EVM to Bitcoin (ETH → BTC)
 
 Order Types:
   single-fill          Create a single fill order (100% fill)
   multiple-fill-100    Create a multiple fill order (100% fill)
   multiple-fill-50     Create a multiple fill order (50% partial fill)
-  eth-to-btc          Create an ETH to BTC reverse order
   cancellation        Create a cancellation test order
   all                 Create all order types
 
 Options:
   --help, -h          Show this help message
-  --amount <value>    Specify asset amount (BTC for BTC→ETH, ETH for ETH→BTC)
-  --eth-amount <value> Specify ETH amount (for BTC→ETH orders)
-  --btc-amount <value> Specify BTC amount (for ETH→BTC orders)
+  --btc-amount <value> Specify BTC amount
+  --eth-amount <value> Specify ETH amount
   --output <path>     Specify output directory (default: ../orders)
+  --order-type <type> Specify order type (single-fill, multiple-fill-100, multiple-fill-50, cancellation)
 
 Examples:
-  npm run order single-fill --amount 0.001 --eth-amount 0.01
-  npm run order multiple-fill-50 --amount 0.01 --btc-amount 0.001
-  npm run order all --output ./my-orders
+  npm run order btc2evm single-fill --btc-amount 0.001 --eth-amount 0.01
+  npm run order evm2btc single-fill --btc-amount 0.001 --eth-amount 0.01
+  npm run order btc2evm multiple-fill-50 --btc-amount 0.01 --eth-amount 0.1
+  npm run order evm2btc all --output ./my-orders
+  npm run order btc2evm --order-type single-fill --btc-amount 0.001 --eth-amount 0.01
 `);
 }
 
 function parseArgs(): {
+  direction: string;
   orderType: string;
   btcAmount: string;
   ethAmount: string;
@@ -83,6 +119,7 @@ function parseArgs(): {
 } {
   const args = process.argv.slice(2);
   const result = {
+    direction: "btc2evm",
     orderType: "single-fill",
     btcAmount: "0.001",
     ethAmount: "0.01",
@@ -95,21 +132,21 @@ function parseArgs(): {
     
     if (arg === "--help" || arg === "-h") {
       result.help = true;
-    } else if (arg === "--amount" && i + 1 < args.length) {
-      const amount = args[++i];
-      if (result.orderType.includes("btc")) {
-        result.btcAmount = amount;
-      } else {
-        result.ethAmount = amount;
-      }
     } else if (arg === "--eth-amount" && i + 1 < args.length) {
       result.ethAmount = args[++i];
     } else if (arg === "--btc-amount" && i + 1 < args.length) {
       result.btcAmount = args[++i];
+    } else if (arg === "--order-type" && i + 1 < args.length) {
+      result.orderType = args[++i];
     } else if (arg === "--output" && i + 1 < args.length) {
       result.outputDir = args[++i];
     } else if (!arg.startsWith("--")) {
-      result.orderType = arg;
+      // First non-flag argument is direction, second is order type
+      if (result.direction === "btc2evm" && (arg === "btc2evm" || arg === "evm2btc")) {
+        result.direction = arg;
+      } else {
+        result.orderType = arg;
+      }
     }
   }
 
@@ -126,6 +163,7 @@ function generateMultipleSecrets(count: number): string[] {
 
 function createOrderByType(
   orderType: OrderType,
+  direction: string,
   BTCSeller: ethers.Wallet,
   chainId: number,
   networkName: string,
@@ -133,7 +171,7 @@ function createOrderByType(
   accessTokenAddress: string,
   btcAmount: string,
   ethAmount: string
-): CrossChainOrder {
+): { order: CrossChainOrder; hashedSecret: string } {
   const timestamp = Date.now();
   
   // Convert amounts to wei/satoshi
@@ -148,7 +186,6 @@ function createOrderByType(
     // Common parameters
     const maker = new Address(BTCSeller.address);
     const nativeToken = getNativeTokenAddress();
-    const makerAsset = new Address(nativeToken);
     const takerAsset = new Address(nativeToken);
     const escrowFactory = new Address(factoryAddress);
     
@@ -195,22 +232,22 @@ function createOrderByType(
       hashLockType = "MULTIPLE";
     }
 
-    // Create and return the SDK order directly
-    return CrossChainOrder.new(
+    // Create the SDK order
+    const order = CrossChainOrder.new(
       escrowFactory,
       {
         salt: randBigInt(1000n),
         maker,
         makingAmount: orderType === "ETH_TO_BTC" ? ethAmountWei : btcAmountWei,
         takingAmount: orderType === "ETH_TO_BTC" ? btcAmountWei : ethAmountWei,
-        makerAsset: orderType === "ETH_TO_BTC" ? new Address(nativeToken) : new Address("0x0000000000000000000000000000000000000000"),
-        takerAsset: orderType === "ETH_TO_BTC" ? new Address("0x0000000000000000000000000000000000000000") : new Address(nativeToken)
+        makerAsset: direction === "evm2btc" ? new Address(nativeToken) : new Address("0x0000000000000000000000000000000000000000"),
+        takerAsset: direction === "evm2btc" ? new Address("0x0000000000000000000000000000000000000000") : new Address(nativeToken)
       },
       {
         hashLock,
         timeLocks,
-        srcChainId: (orderType === "ETH_TO_BTC" ? chainId : 1) as any, // Bitcoin chain ID for BTC->ETH, EVM chain for ETH->BTC
-        dstChainId: (orderType === "ETH_TO_BTC" ? 1 : chainId) as any, // EVM chain ID for BTC->ETH, Bitcoin chain for ETH->BTC
+        srcChainId: (orderType === "ETH_TO_BTC" ? chainId : 0) as any, // Bitcoin chain ID for BTC->ETH, EVM chain for ETH->BTC
+        dstChainId: (orderType === "ETH_TO_BTC" ? 0 : chainId) as any, // EVM chain ID for BTC->ETH, Bitcoin chain for ETH->BTC
         srcSafetyDeposit: ethers.parseEther("0.001"),
         dstSafetyDeposit: ethers.parseEther("0.001")
       },
@@ -226,6 +263,11 @@ function createOrderByType(
       }
     );
 
+    // Get the hashed secret for single fill orders
+    const hashedSecret = secrets.length > 0 ? secrets[0] : undefined;
+
+    return { order, hashedSecret: hashedSecret || "" };
+
   } catch (error) {
     console.error("Error creating SDK order:", error);
     throw error;
@@ -240,20 +282,33 @@ function getOrderDirection(orderType: OrderType): string {
   }
 }
 
-function saveOrderToFile(order: CrossChainOrder, outputDir: string, orderType: OrderType, timestamp: number): void {
+function saveOrderToFile(
+  order: CrossChainOrder, 
+  outputDir: string, 
+  orderType: OrderType, 
+  direction: string,
+  btcAmount: string,
+  ethAmount: string,
+  timestamp: number,
+  hashedSecret?: string
+): void {
   // Ensure output directory exists
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const direction = getOrderDirection(orderType);
   const orderId = `order-${direction}-${orderType.toLowerCase().replace(/_/g, '_')}-${timestamp}`;
   const filename = `${orderId}.json`;
   const filepath = path.join(outputDir, filename);
   
-  // Create a simplified order summary for JSON output
-  const orderSummary = {
+  // Create order data with required fields
+  const orderData: OrderData = {
     orderId,
+    direction: direction as "btc2evm" | "evm2btc",
+    btcAmount,
+    ethAmount,
+    ethAddressReceiver: order.maker.toString(), // Maker address as receiver
+    hashedSecret,
     timestamp,
     orderType,
     maker: order.maker.toString(),
@@ -275,7 +330,7 @@ function saveOrderToFile(order: CrossChainOrder, outputDir: string, orderType: O
     }
   };
   
-  fs.writeFileSync(filepath, JSON.stringify(orderSummary, null, 2));
+  fs.writeFileSync(filepath, JSON.stringify(orderData, null, 2));
   console.log(`✅ Order saved to: ${filepath}`);
 }
 
@@ -347,6 +402,7 @@ async function main() {
 
     printHeader("Cross-Chain Order Creator CLI");
     printSection("Configuration");
+    printKeyValue("Direction", args.direction);
     printKeyValue("Network", process.env.NETWORK || "POLYGON");
     printKeyValue("Chain ID", chainId);
     printKeyValue("RPC URL", rpcUrl);
@@ -356,18 +412,35 @@ async function main() {
     const orderTypes: OrderType[] = [];
     
     if (args.orderType === "all") {
-      orderTypes.push("SINGLE_FILL", "MULTIPLE_FILL_100", "MULTIPLE_FILL_50", "ETH_TO_BTC", "CANCELLATION");
+      if (args.direction === "evm2btc") {
+        orderTypes.push("ETH_TO_BTC", "CANCELLATION");
+      } else {
+        orderTypes.push("SINGLE_FILL", "MULTIPLE_FILL_100", "MULTIPLE_FILL_50", "CANCELLATION");
+      }
     } else {
-      // Map CLI order types to internal types
-      const orderTypeMap: Record<string, OrderType> = {
-        "single-fill": "SINGLE_FILL",
-        "multiple-fill-100": "MULTIPLE_FILL_100",
-        "multiple-fill-50": "MULTIPLE_FILL_50",
-        "eth-to-btc": "ETH_TO_BTC",
-        "cancellation": "CANCELLATION"
-      };
+      // Map CLI order types to internal types based on direction
+      let orderType: OrderType;
       
-      const orderType = orderTypeMap[args.orderType];
+      if (args.direction === "evm2btc") {
+        // For evm2btc direction, map to ETH_TO_BTC for all order types
+        const orderTypeMap: Record<string, OrderType> = {
+          "single-fill": "ETH_TO_BTC",
+          "multiple-fill-100": "ETH_TO_BTC",
+          "multiple-fill-50": "ETH_TO_BTC",
+          "cancellation": "CANCELLATION"
+        };
+        orderType = orderTypeMap[args.orderType];
+      } else {
+        // For btc2evm direction, use normal mapping
+        const orderTypeMap: Record<string, OrderType> = {
+          "single-fill": "SINGLE_FILL",
+          "multiple-fill-100": "MULTIPLE_FILL_100",
+          "multiple-fill-50": "MULTIPLE_FILL_50",
+          "cancellation": "CANCELLATION"
+        };
+        orderType = orderTypeMap[args.orderType];
+      }
+      
       if (!orderType) {
         throw new Error(`Unknown order type: ${args.orderType}\nUse --help to see available options`);
       }
@@ -380,8 +453,9 @@ async function main() {
       printSection(`Creating ${orderType} Order`);
       
       const timestamp = Date.now();
-      const order = createOrderByType(
+      const { order, hashedSecret } = createOrderByType(
         orderType,
+        args.direction,
         BTCSeller,
         chainId,
         process.env.NETWORK || "POLYGON",
@@ -392,7 +466,7 @@ async function main() {
       );
 
       printOrderSummary(order, orderType, timestamp);
-      saveOrderToFile(order, args.outputDir, orderType, timestamp);
+      saveOrderToFile(order, args.outputDir, orderType, args.direction, args.btcAmount, args.ethAmount, timestamp, hashedSecret);
     }
 
     printHeader("✅ Order Creation Complete");
