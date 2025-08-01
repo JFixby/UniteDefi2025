@@ -160,7 +160,7 @@ def pay_invoice(alice_config: Dict[str, Any], payment_request: str) -> Dict[str,
             json=payment_data,
             headers=headers,
             verify=False,  # Skip SSL verification for local development
-            timeout=30
+            timeout=60
         )
         response.raise_for_status()
         payment_response = response.json()
@@ -206,7 +206,7 @@ def get_node_balance(node_config: Dict[str, Any], node_name: str) -> Dict[str, A
             url,
             headers=headers,
             verify=False,
-            timeout=10
+            timeout=15
         )
         response.raise_for_status()
         balance_data = response.json()
@@ -217,7 +217,7 @@ def get_node_balance(node_config: Dict[str, Any], node_name: str) -> Dict[str, A
             channel_url,
             headers=headers,
             verify=False,
-            timeout=10
+            timeout=15
         )
         channel_response.raise_for_status()
         channel_data = channel_response.json()
@@ -282,7 +282,7 @@ def settle_hodl_invoice(carol_config: Dict[str, Any], secret_hex: str) -> Dict[s
             json=settlement_data,
             headers=headers,
             verify=False,  # Skip SSL verification for local development
-            timeout=30
+            timeout=60
         )
         response.raise_for_status()
         settlement_response = response.json()

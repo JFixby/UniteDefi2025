@@ -1,26 +1,42 @@
 {
   "invoice": {
-    "r_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
-    "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
-    "add_index": "38",
-    "payment_addr": "8RTtIEj1X03pJUxjybL5I8xJsmirop1dO98ZM71+4Zc="
+    "payment_request": "lnbcrt130n1p5ge2lgpp59stwjg7hd67l2rlynq7jssh7cuqmn0hcy32mgdwxm8p7lchqc4lsdzjg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqp0sp5j2n7jx5swygk2kuzwhmavy4ce22k3awmfjsaymavaerl4aw80naq9qxpqysgqge3779dytvsvwjfnlr378tj0a8y6j3laxzmynssgjjp9pjv4te4q7vdgd28y0ct9ssj7mnl0qa6ff9rjsfhqzc5hkj7z0zvvlvvu6lqqnlk8xa",
+    "add_index": "61",
+    "payment_addr": "kqfpGpBxEWVbgnX31hK4ypVo9dtModJvrO5H+vXHfPo="
   },
   "htlc_secret": {
     "secret": "HIDDEN",
-    "secret_hash": "RmTwLhYRZ2iRsZ9jatqwckCz6/htYEXzlfvwjGKESBQ=",
+    "secret_hash": "LBbpI9duvfUP5Jg9KEL+xwG5vvgkVbQ1xtnD7+LgxX8=",
     "verification": {
-      "hash_verified": "PENDING_PAYMENT",
-      "timestamp": "",
-      "expiry": "",
-      "status": "INVOICE_CREATED_AWAITING_PAYMENT"
+      "hash_verified": true,
+      "timestamp": "61",
+      "expiry_seconds": 15,
+      "status": "HODL_INVOICE_CREATED_AWAITING_PAYMENT"
     }
+  },
+  "secret_debug": {
+    "secret_hex": "2011500a0cb5b830be3f60b61b8d57940d790f90339efc8eb53e7f92fb1df39f",
+    "generated_at": "invoice_creation",
+    "note": "This field is for debugging purposes only - contains the actual secret"
+  },
+  "hash_verification": {
+    "calculated_hash": "LBbpI9duvfUP5Jg9KEL+xwG5vvgkVbQ1xtnD7+LgxX8=",
+    "calculated_hash_hex": "2c16e923d76ebdf50fe4983d2842fec701b9bef82455b435c6d9c3efe2e0c57f",
+    "verification_status": "VERIFIED"
   },
   "metadata": {
     "amount_satoshis": 13,
-    "memo": "Demo invoice from Carol to Alice - 13 satoshis",
-    "payment_request": "lnbcrt130n1p5gepfupp5gej0qtskz9nk3yd3na3k4k4swfqt86lcd4sytuu4l0cgcc5yfq2qdz2g3jk6meqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqyz5vqsp57y2w6gzg7405m6f9f33unvhey0xynvng4w3f6hfmmuvn80t7uxts9qxpqysgqyyzpevq8vdcmn5qjtx6uy5p6k5vz9e0qa86etrt2hp38czn8r46qrzy2yuer0k38plnv4gs2m4jqha5eysgwcuvr0uz2lww30nqhkdsq9uu6mu",
+    "memo": "Demo hodl invoice from Carol to Alice - 13 satoshis",
+    "payment_request": "lnbcrt130n1p5ge2lgpp59stwjg7hd67l2rlynq7jssh7cuqmn0hcy32mgdwxm8p7lchqc4lsdzjg3jk6meqdphkgmpqd9h8vmmfvdjjqenjdakjqsmpwfhkcgr5dusyzmrfvdjjqtfqxyejqumpw3hhx6rfwvcqzzsxqp0sp5j2n7jx5swygk2kuzwhmavy4ce22k3awmfjsaymavaerl4aw80naq9qxpqysgqge3779dytvsvwjfnlr378tj0a8y6j3laxzmynssgjjp9pjv4te4q7vdgd28y0ct9ssj7mnl0qa6ff9rjsfhqzc5hkj7z0zvvlvvu6lqqnlk8xa",
     "created_by": "Carol",
     "created_for": "Alice",
+    "invoice_type": "HODL_INVOICE",
     "invoice_status": "UNPAID"
+  },
+  "timing": {
+    "created_at": "2025-08-01T11:58:32.179219Z",
+    "expires_at": "2025-08-01T11:58:47.179219Z",
+    "expiry_seconds": 15,
+    "timezone": "UTC"
   }
 }

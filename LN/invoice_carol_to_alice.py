@@ -307,8 +307,8 @@ Examples:
     parser.add_argument(
         '-e', '--expiry',
         type=int,
-        default=30,
-        help='Invoice expiry time in seconds (default: 30)'
+        default=60,
+        help='Invoice expiry time in seconds (default: 60)'
     )
     return parser.parse_args()
 
