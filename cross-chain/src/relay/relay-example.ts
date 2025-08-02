@@ -1,6 +1,8 @@
 import { Relay } from './relay';
 import { OrderBTC2EVM, OrderEVM2BTC } from '../api/order';
 import { issueLightningInvoice } from '../utils/lightning';
+import { depositETH } from '../utils/evm';
+import { ALICE_PRIVATE_KEY, getCarolAddress } from '../variables';
 
 // Example usage of the Relay class methods
 export async function btcToEvmExample() {
@@ -20,21 +22,57 @@ export async function btcToEvmExample() {
 }
 
 export async function evmToBtcExample() {
+  const amountBtc = 0.0005;
+  const amountEth = 0.015;
+  
+  console.log('\n🚀 === EVM to BTC Order Example ===');
+  console.log(`💰 Amount BTC: ${amountBtc}`);
+  console.log(`💰 Amount ETH: ${amountEth}`);
+  
+  // Step 1: Generate Lightning Network invoice for BTC
+  console.log('\n📋 Step 1: Generating Lightning Network invoice...');
+  const invoiceData = await issueLightningInvoice(amountBtc, 'alice', "Alice selling BTC for ETH");
+  const hashedSecret = invoiceData.r_hash;
+  const btcLightningNetInvoice = invoiceData.payment_request;
+  
+  console.log(`⚡ Lightning Invoice: ${btcLightningNetInvoice.substring(0, 25)}...`);
+  console.log(`🔐 Hashed Secret: ${hashedSecret}`);
+  
+  // Step 2: Deposit ETH into escrow with HTLC
+  console.log('\n📋 Step 2: Depositing ETH into escrow...');
+  const expirationSeconds = 10; // 10 seconds for demo purposes
+  
+  const transactionInfo = await depositETH({
+    amountEth: amountEth,
+    hashedSecret: hashedSecret,
+    expirationSeconds: expirationSeconds,
+    depositorPrivateKey: ALICE_PRIVATE_KEY,
+    claimerAddress: getCarolAddress()
+  });
+  
+  // Print transaction info for debug
+  console.log('\n📋 Transaction Information:');
+  console.log(`🆔 Deposit ID: ${transactionInfo.depositId}`);
+  console.log(`🔗 Transaction Hash: ${transactionInfo.txHash}`);
+  console.log(`🌐 Explorer URL: ${transactionInfo.explorerUrl}`);
+  console.log(`📦 Escrow Address: ${transactionInfo.escrowAddress}`);
+  console.log(`💰 Amount (Wei): ${transactionInfo.amountWei}`);
+  console.log(`⏰ Expiration Time: ${new Date(transactionInfo.expirationTime * 1000).toISOString()}`);
 
-  const btcLightningNetInvoice = await issueLightningInvoice(0.01, 'alice',"Alice selling BTC for ETH");
-
+  // Step 3: Process EVM to BTC order through relay
+  console.log('\n📋 Step 3: Processing order through relay...');
   const relay = new Relay();
   
-  // Example 2: Process EVM to BTC order
-  console.log('\n🚀 === EVM to BTC Order Example ===');
   const evmToBtcOrder = new OrderEVM2BTC(
-    0.001, // amountBtc
-    btcLightningNetInvoice,
-    0.015 // amountEth
+    amountBtc, // amountBtc
+    btcLightningNetInvoice, // btcLightningNetInvoice
+    amountEth // amountEth
   );
   
-  const evmToBtcResponse = relay.processOrderEVM2BTC(evmToBtcOrder);
+  const evmToBtcResponse = await relay.processOrderEVM2BTC(evmToBtcOrder);
   console.log('📋 EVM to BTC Response:', evmToBtcResponse);
+  
+  console.log('\n✅ EVM to BTC example completed!');
 }
 
 export async function runBothExamples() {

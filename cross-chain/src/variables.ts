@@ -94,6 +94,15 @@ export const getAliceAddress = (): string => {
   return aliceWallet.address;
 };
 
+// Get Carol's address from her private key
+export const getCarolAddress = (): string => {
+  if (!hasValidCarolPrivateKey()) {
+    throw new Error('CAROL_PRIVATE_KEY is not set or invalid');
+  }
+  const carolWallet = new ethers.Wallet(CAROL_PRIVATE_KEY);
+  return carolWallet.address;
+};
+
 // Get native token address (ETH address for EVM chains)
 export const getNativeTokenAddress = (): string => {
   return '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // Native ETH address for 1inch SDK

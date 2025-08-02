@@ -6,6 +6,14 @@ export class OrderBTC2EVM {
   ) {}
 }
 
+
+export class OrderBTC2EVMResponse {
+  constructor(
+    public lightningNetworkInvoice: string
+  ) {}
+}
+
+
 export class OrderEVM2BTC {
   constructor(
     public amountBtc: number,
@@ -14,12 +22,8 @@ export class OrderEVM2BTC {
   ) {}
 }
 
-export class OrderBTC2EVMResponse {
-  constructor(
-    public lightningNetworkInvoice: string
-  ) {}
-}
-
 export class OrderEVM2BTCResponse {
-  constructor() {}
+  constructor(
+    public ethAddress: string,
+  ) {}
 }
