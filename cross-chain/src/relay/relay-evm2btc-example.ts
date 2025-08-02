@@ -154,7 +154,7 @@ export async function evmToBtcExample() {
   await pause('Press Enter to continue to final step: Waiting for resolver to claim deposit...');
 
   // wait for resolver to claim deposit...
-  await waitResolverClaimDeposit(hashedSecret, 60, 10, transactionInfo.escrowAddress); // hashedSecret is deposit_id
+  await waitResolverClaimDeposit(hashedSecretHex, 60, 10, transactionInfo.escrowAddress); // Use hex format for contract
 
   console.log('\n✅ EVM to BTC example completed!');
 }
