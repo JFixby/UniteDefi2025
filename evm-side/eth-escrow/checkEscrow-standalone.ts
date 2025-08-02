@@ -58,7 +58,7 @@ async function main() {
     // Test configuration
     const depositAmount = ethers.parseEther("0.0033").toString();
     const expirationTime = Math.floor(Date.now() / 1000) + 10; // 10 seconds from now
-    const secret = "mysecret123"; // Mock secret
+    const secret = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); // Random secret
     const hashlock = "0x" + SHA256(secret).toString(Hex); // Generate SHA256 hashlock from secret (Lightning compatible)
 
     console.log("\n" + "=".repeat(60));
