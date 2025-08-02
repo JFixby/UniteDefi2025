@@ -258,8 +258,8 @@ export async function payLightningInvoice(
     
     // Extract payment details
     const receipt: PaymentReceipt = {
-      secret: paymentData.payment_preimage || '0x' + Math.random().toString(16).substring(2, 66),
-      paymentHash: paymentData.payment_hash || '0x' + Math.random().toString(16).substring(2, 66),
+      secret: paymentData.payment_preimage ,
+      paymentHash: paymentData.payment_hash,
       amount: paymentData.value_sat ? paymentData.value_sat / 100000000 : 0,
       timestamp: new Date()
     };

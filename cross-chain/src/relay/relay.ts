@@ -45,12 +45,12 @@ export class Relay {
     console.log('----------------------');
     
     // Start async invoice payment checking loop
-    this.startInvoicePaymentCheck(result.lightningInvoice, order);
+    // this.startInvoicePaymentCheck(result, order);
     
     return new OrderBTC2EVMResponse(result.lightningInvoice);
   }
   
-  private async startInvoicePaymentCheck(invoice: string, order: OrderBTC2EVM): Promise<void> {
+  private async startInvoicePaymentCheck(result: OrderBTC2EVMResult, order: OrderBTC2EVM): Promise<void> {
     console.log('🤖 RESOLVER: Starting invoice payment monitoring...');
     
     // Set start time for demo purposes
@@ -63,14 +63,14 @@ export class Relay {
       attempts++;
       console.log(`🤖 RESOLVER: Payment check attempt ${attempts}/${maxAttempts}`);
       
-      const isPaid = await this.checkInvoiceIsPaid(invoice);
+      const isPaid = await this.checkInvoiceIsPaid(result);
       
       if (isPaid) {
         console.log('🤖 RESOLVER: ✅ Invoice payment confirmed!');
         clearInterval(checkInterval);
         
         // Claim deposit on behalf of the user
-        await this.claimDepositOnBehalfOfUser(order);
+        await this.claimDepositOnBehalfOfUser(order, result);
         
       } else if (attempts >= maxAttempts) {
         console.log('🤖 RESOLVER: ⏰ Payment check timeout - invoice not paid within expected time');
@@ -81,7 +81,7 @@ export class Relay {
     }, 5000); // Check every 5 seconds
   }
   
-  private async checkInvoiceIsPaid(invoice: string): Promise<boolean> {
+  private async checkInvoiceIsPaid(result: OrderBTC2EVMResult): Promise<boolean> {
     console.log('🤖 RESOLVER: Checking if invoice is paid...');
     
     // Demo implementation - invoice is paid after 3 seconds (first check at 5s, so second check at 10s)
@@ -98,7 +98,7 @@ export class Relay {
     }
   }
   
-  private async claimDepositOnBehalfOfUser(order: OrderBTC2EVM): Promise<void> {
+  private async claimDepositOnBehalfOfUser(order: OrderBTC2EVM, result: OrderBTC2EVMResult): Promise<void> {
     console.log('🤖 RESOLVER: 🏦 Claiming deposit on behalf of user...');
     console.log('🤖 RESOLVER: Order Type: Single Fill Order (100% Fill)');
     console.log('🤖 RESOLVER: User Order Details:', {
@@ -110,13 +110,17 @@ export class Relay {
     // Create resolver instance for claiming
     const resolver = new ResolverEVM2BTC();
     
-    // Generate a dummy secret (in real implementation this would come from the payment)
-    const secret = '0x' + Math.random().toString(16).substring(2, 66);
+    // Generate a dummy secret and hashed secret (in real implementation this would come from the payment)
+    const secret = ""
+    const hashedSecret = result.hashedSecret;
+
+    throw new Error('Not implemented');
     
     console.log('🤖 RESOLVER: 🔑 Generated secret for claim:', secret);
+    console.log('🤖 RESOLVER: 🔑 Generated hashed secret for claim:', hashedSecret);
     
     // Claim the escrow funds
-    const claimTx = await resolver.claimEscrow(secret);
+    const claimTx = await resolver.claimEscrow(secret, hashedSecret);
     
     console.log('🤖 RESOLVER: ✅ Deposit pushed successfully to maker');
     console.log('🤖 RESOLVER: Transaction Details:', claimTx);

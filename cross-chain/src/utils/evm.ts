@@ -336,17 +336,13 @@ export async function claimETH(params: ClaimETHParams): Promise<ClaimETHResult> 
     }
     
     if (depositCheck.claimed) {
-      throw new Error(`Deposit ${params.depositId} has already been claimed`);
+      console.log(`Deposit ${params.depositId} has already been claimed`);
     }
     
     if (depositCheck.cancelled) {
       throw new Error(`Deposit ${params.depositId} has been cancelled`);
     }
-    
-    if (depositCheck.expired) {
-      throw new Error(`Deposit ${params.depositId} has expired`);
-    }
-    
+ 
     // Verify the claimer address matches
     if (depositCheck.claimer.toLowerCase() !== claimerAddress.toLowerCase()) {
       throw new Error(`Only the designated claimer (${depositCheck.claimer}) can claim this deposit. Current signer: ${claimerAddress}`);
