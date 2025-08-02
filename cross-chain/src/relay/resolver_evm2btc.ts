@@ -2,7 +2,7 @@ import * as bolt11 from 'bolt11';
 import * as fs from 'fs';
 import { ethers } from 'ethers';
 import { OrderEVM2BTC } from '../api/order';
-import { getCarolAddress, getTransactionUrl, CAROL_PRIVATE_KEY, getRpcUrl, NETWORK } from '../variables';
+import { getCarolAddress, getTransactionUrl, getAddressUrl, CAROL_PRIVATE_KEY, getRpcUrl, NETWORK, getEscrowContractAddress } from '../variables';
 import { checkDepositEVM, claimETH } from '../utils/evm';
 import { payLightningInvoice } from '../utils/lightning';
 
@@ -217,12 +217,7 @@ export class ResolverEVM2BTC {
       throw error;
     }
   }
-  
-  calculateRate(btcAmount: number, ethAmount: number): number {
-    // Dummy conversion rate calculation
-    // In a real implementation, this would fetch current exchange rates
-    return btcAmount * 15000; // 1 BTC = 15000 ETH (dummy rate)
-  }
+
 
   /**
    * Check if a deposit exists in the escrow contract with the correct amount
@@ -232,10 +227,6 @@ export class ResolverEVM2BTC {
    * @returns true if deposit exists with correct amount, false otherwise
    */
    async checkDeposit(invoice: string, hashedSecret: string, expectedAmount: number): Promise<boolean> {
-    console.log('🤖 RESOLVER: 🔍 Checking escrow deposit...');
-    console.log(`🤖 RESOLVER:    Deposit ID (hashed secret): ${hashedSecret}`);
-    console.log(`🤖 RESOLVER:    Expected amount: ${expectedAmount} ETH`);
-    
     try {
       // Make real API call to the escrow contract
       const depositResult = await checkDepositEVM(hashedSecret, expectedAmount);
@@ -248,14 +239,9 @@ export class ResolverEVM2BTC {
         console.log(`🤖 RESOLVER:    Claimer: ${depositResult.claimer}`);
         return true;
       } else {
-        console.log('🤖 RESOLVER: ❌ No valid deposit found');
-        if (!depositResult.exists) {
-          console.log(`🤖 RESOLVER:    Reason: Deposit does not exist`);
-        } else if (depositResult.claimed) {
-          console.log(`🤖 RESOLVER:    Reason: Deposit already claimed`);
-        } else if (depositResult.cancelled) {
-          console.log(`🤖 RESOLVER:    Reason: Deposit already cancelled`);
-        }
+        const escrowContractAddress = getEscrowContractAddress();
+        const explorerUrl = getAddressUrl(escrowContractAddress);
+        console.log(`🤖 RESOLVER: still waiting for escrow (${explorerUrl})`);
         return false;
       }
     } catch (error) {
@@ -269,10 +255,12 @@ export class ResolverEVM2BTC {
     console.log(`🤖 RESOLVER:    Monitoring for deposit of ${ethAmount} ETH`);
     console.log(`🤖 RESOLVER:    Hashed Secret: ${hashedSecret}`);
     
+    // Get the escrow contract address for the explorer link
+    const escrowContractAddress = getEscrowContractAddress();
+    const explorerUrl = getAddressUrl(escrowContractAddress);
+    
     // Simulate checking for escrow deposit in a loop
     const checkInterval = setInterval(async () => {
-      console.log('🤖 RESOLVER: 🔍 Checking escrow contract for deposit...');
-      
       // In a real implementation, this would check the blockchain
       // For now, we simulate finding the deposit after a random delay
       const hasDeposit = await this.checkDeposit(invoice, hashedSecret, ethAmount)
@@ -284,9 +272,9 @@ export class ResolverEVM2BTC {
         // Process the Lightning payment
         await this.processLightningPayment(invoice, hashedSecret);
       } else {
-        console.log('🤖 RESOLVER: ⏳ No deposit found yet, continuing to monitor...');
+        console.log(`🤖 RESOLVER: still waiting for escrow (${explorerUrl})`);
       }
-    }, 1000); // Check every 1 second
+    }, 10000); // Check every 10 seconds
     
     // Set a timeout to stop monitoring after 5 minutes
     setTimeout(() => {
@@ -311,11 +299,16 @@ export class ResolverEVM2BTC {
       
       console.log('🤖 RESOLVER: 🎉 Cross-chain swap completed successfully!');
       console.log('🤖 RESOLVER:    ETH → BTC swap finished');
-      console.log('🤖 RESOLVER:    Resolver profit: ~0.001 ETH');
+
       
     } catch (error) {
       throw error
     }
+  }
+  
+  calculateRate(btcAmount: number, ethAmount: number): number {
+    // Dummy conversion rate - in a real implementation this would use an oracle
+    return ethAmount;
   }
   
   async printBalance(): Promise<void> {

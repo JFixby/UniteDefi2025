@@ -9,12 +9,14 @@ import { pause, confirm } from '../utils/pause';
  * Waits for the resolver to claim the deposit from the escrow contract
  * @param hashedSecret - The deposit ID (hashed secret) to monitor
  * @param maxWaitTimeSeconds - Maximum time to wait in seconds (default: 60)
- * @param checkIntervalSeconds - Interval between checks in seconds (default: 5)
+ * @param checkIntervalSeconds - Interval between checks in seconds (default: 10)
+ * @param escrowAddress - The escrow contract address (optional)
  */
 async function waitResolverClaimDeposit(
   hashedSecret: string, 
   maxWaitTimeSeconds: number = 60, 
-  checkIntervalSeconds: number = 5
+  checkIntervalSeconds: number = 10,
+  escrowAddress?: string
 ): Promise<void> {
   console.log('\n⏳ Waiting for resolver to claim deposit...');
   console.log(`🔍 Monitoring deposit ID: ${hashedSecret}`);
@@ -67,7 +69,8 @@ async function waitResolverClaimDeposit(
           return;
         }
         
-        console.log('⏳ Deposit still unclaimed, waiting...');
+        const contractLink = escrowAddress ? `🌐 Contract: ${escrowAddress}` : '';
+        console.log(`⏳ Still waiting for deposit... ${contractLink}`);
         
         // Check if we've exceeded max wait time
         if (elapsedMs >= maxWaitTimeMs) {
@@ -126,9 +129,14 @@ export async function evmToBtcExample() {
   console.log('\n📋 Step 2: Depositing ETH into escrow...');
   const expirationSeconds = 10; // 10 seconds for demo purposes
   
+  // Convert base64 hashed secret to hex format for EVM contract
+  const hashedSecretHex = '0x' + Buffer.from(hashedSecret, 'base64').toString('hex');
+  console.log(`🔐 Original hashed secret (base64): ${hashedSecret}`);
+  console.log(`🔐 Converted hashed secret (hex): ${hashedSecretHex}`);
+  
   const transactionInfo = await depositETH({
     amountEth: amountEth,
-    hashedSecret: hashedSecret,
+    hashedSecret: hashedSecretHex,
     expirationSeconds: expirationSeconds,
     depositorPrivateKey: ALICE_PRIVATE_KEY,
     claimerAddress: evmToBtcResponse.ethAddress
@@ -146,7 +154,7 @@ export async function evmToBtcExample() {
   await pause('Press Enter to continue to final step: Waiting for resolver to claim deposit...');
 
   // wait for resolver to claim deposit...
-  await waitResolverClaimDeposit(hashedSecret); // hashedSecret is deposit_id
+  await waitResolverClaimDeposit(hashedSecret, 60, 10, transactionInfo.escrowAddress); // hashedSecret is deposit_id
 
   console.log('\n✅ EVM to BTC example completed!');
 }
