@@ -43,7 +43,7 @@ export class Relay {
     console.log('✅ BTC to EVM order processing completed');
     
     console.log('----------------------');
-    console.log('🤖 RESOLVER AUTOMATION STARTED');
+    console.log('🤖 RESOLVER PUSH AUTOMATION STARTED');
     console.log('----------------------');
     
     // Start async invoice payment checking loop
@@ -120,14 +120,14 @@ export class Relay {
     // Claim the escrow funds
     const claimTx = resolver.claimEscrow(secret);
     
-    console.log('🤖 RESOLVER: ✅ Deposit claimed successfully on behalf of user');
+    console.log('🤖 RESOLVER: ✅ Deposit pushed successfully to maker');
     console.log('🤖 RESOLVER: Transaction Details:', claimTx);
     
     // Print updated balance
     resolver.printBalance();
     
     console.log('----------------------');
-    console.log('🤖 RESOLVER AUTOMATION COMPLETED');
+    console.log('🤖 RESOLVER PUSH AUTOMATION COMPLETED');
     console.log('🎉 Cross-chain swap completed successfully!');
     console.log('----------------------');
   }
