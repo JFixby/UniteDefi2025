@@ -50,26 +50,24 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
   // Get contract factory
   const EscrowFactory: ContractFactory = await ethers.getContractFactory("Escrow");
   
-  // Prepare deployment transaction
-  const deploymentData = EscrowFactory.interface.encodeDeploy();
-  const deploymentTx: any = {
-    data: deploymentData,
+  // Prepare deployment overrides
+  const deploymentOverrides: any = {
     gasLimit: config.gasLimit || 2000000,
   };
 
   // Add gas price if specified
   if (config.gasPrice) {
-    deploymentTx.gasPrice = ethers.parseUnits(config.gasPrice, "gwei");
+    deploymentOverrides.gasPrice = ethers.parseUnits(config.gasPrice, "gwei");
   }
 
-  console.log(`⛽ Gas limit: ${deploymentTx.gasLimit}`);
+  console.log(`⛽ Gas limit: ${deploymentOverrides.gasLimit}`);
   if (config.gasPrice) {
     console.log(`💰 Gas price: ${config.gasPrice} gwei`);
   }
 
   // Deploy contract
   console.log(`📦 Deploying contract...`);
-  const escrow = await EscrowFactory.connect(signer).deploy(deploymentTx);
+  const escrow = await EscrowFactory.connect(signer).deploy(deploymentOverrides);
   
   // Wait for deployment
   console.log(`⏳ Waiting for deployment confirmation...`);
