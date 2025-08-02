@@ -1,10 +1,25 @@
-import { CrossChainOrder } from '@1inch/cross-chain-sdk'
-
-export class OrderWrapper {
-    public crossChainOrder: CrossChainOrder
-
-    constructor(crossChainOrder: CrossChainOrder) {
-        this.crossChainOrder = crossChainOrder
-    }
+export class OrderBTC2EVM {
+  constructor(
+    public amountBtc: number,
+    public amountEth: number,
+    public ethAddress: string
+  ) {}
 }
 
+export class OrderEVM2BTC {
+  constructor(
+    public amountBtc: number,
+    public btcLightningNetInvoice: string,
+    public amountEth: number
+  ) {}
+}
+
+export class OrderBTC2EVMResponse {
+  constructor(
+    public lightningNetworkInvoice: string
+  ) {}
+}
+
+export class OrderEVM2BTCResponse {
+  constructor() {}
+}
