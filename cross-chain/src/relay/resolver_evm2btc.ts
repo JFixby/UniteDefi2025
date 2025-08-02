@@ -22,7 +22,7 @@ export interface DecodedInvoice {
   paymentHash: string;
 }
 
-export class Resolver {
+export class ResolverEVM2BTC {
   
   sendToResolver(order: OrderEVM2BTC): void {
     // here we simulate relay operations by 1inch of processing the order

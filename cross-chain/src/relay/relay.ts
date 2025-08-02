@@ -1,7 +1,9 @@
 import { OrderBTC2EVM, OrderEVM2BTC, OrderBTC2EVMResponse, OrderEVM2BTCResponse } from '../api/order';
-import { Resolver } from './resolver';
+import { ResolverBTC2EVM, OrderBTC2EVMResult } from './resolver_btc2evm';
+import { ResolverEVM2BTC } from './resolver_evm2btc';
 
-const resolver = new Resolver();
+const resolverEVM2BTC = new ResolverEVM2BTC();
+const resolverBTC2EVM = new ResolverBTC2EVM();
 
 export class Relay {
   private invoiceStartTime: number = 0;
@@ -19,7 +21,7 @@ export class Relay {
     // here we simulate relay operations by 1inch of processing the order
     // the order will be import { CrossChainOrder } from '@1inch/cross-chain-sdk'
     // but now we use our stub order since bitcoin os not supported by 1inch yet
-    resolver.sendToResolver(order);
+    resolverEVM2BTC.sendToResolver(order);
     
     console.log('✅ EVM to BTC order processing completed');
     
@@ -37,9 +39,7 @@ export class Relay {
     });
     
     // Generate Lightning Network invoice
-    const lightningInvoice = "lnbc100u1p5guy6ypp5eeyft8ntelam75uvpnz8lcx46qpp5aa6a4rrvc2qtc74qaz8776scqzyssp5us7lxaq6xny2e85sjfxa6dttua7v0ag32q2huzue5m67czzj5nes9q7sqqqqqqqqqqqqqqqqqqqsqqqqqysgqdqqmqz9gxqyjw5qrzjqwryaup9lh50kkranzgcdnn2fgvx390wgj5jd07rwr3vxeje0glcllmqlf20lk5u3sqqqqlgqqqqqeqqjqr4dqnmedj6pz9jvh2ufw0v0grfa27khg7tfwvun8u9fcxg952ua5zed68d2naa6whng33z7qnvt8x5x07lzf6lchegvr70xsrjmk8uqpsjef9k";
-    
-    console.log('⚡ Generated Lightning Network invoice:', lightningInvoice.substring(0, 25) + '...');
+    const result: OrderBTC2EVMResult = resolverBTC2EVM.sendToResolver(order);
     console.log('✅ BTC to EVM order processing completed');
     
     console.log('----------------------');
@@ -47,9 +47,9 @@ export class Relay {
     console.log('----------------------');
     
     // Start async invoice payment checking loop
-    this.startInvoicePaymentCheck(lightningInvoice, order);
+    this.startInvoicePaymentCheck(result.lightningInvoice, order);
     
-    return new OrderBTC2EVMResponse(lightningInvoice);
+    return new OrderBTC2EVMResponse(result.lightningInvoice);
   }
   
   private async startInvoicePaymentCheck(invoice: string, order: OrderBTC2EVM): Promise<void> {
@@ -110,7 +110,7 @@ export class Relay {
     });
     
     // Create resolver instance for claiming
-    const resolver = new Resolver();
+    const resolver = new ResolverEVM2BTC();
     
     // Generate a dummy secret (in real implementation this would come from the payment)
     const secret = '0x' + Math.random().toString(16).substring(2, 66);
