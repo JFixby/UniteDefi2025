@@ -1,6 +1,7 @@
 import * as bolt11 from 'bolt11';
 import { OrderBTC2EVM } from '../api/order';
 import { getTransactionUrl } from '../variables';
+import { issueLightningInvoice } from '../utils/lightning';
 
 export interface PaymentReceipt {
   secret: string;
@@ -34,14 +35,14 @@ export interface OrderBTC2EVMResult {
 
 export class ResolverBTC2EVM {
   
-  sendToResolver(order: OrderBTC2EVM): OrderBTC2EVMResult {
+  async sendToResolver(order: OrderBTC2EVM): Promise<OrderBTC2EVMResult> {
     console.log('----------------------');
     console.log('🤖 RESOLVER PROCESSING STARTED');
     console.log('🤖 RESOLVER: Order Type: Single Fill Order (100% Fill)');
     console.log('----------------------');
     
     // Step 1: Issue Lightning Network invoice using helper
-    const lightningInvoice = this.issueLightningInvoice(order.amountBtc);
+    const lightningInvoice = await this.issueLightningInvoice(order.amountBtc);
     console.log('🤖 RESOLVER: ⚡ Generated Lightning Network invoice:', lightningInvoice.substring(0, 25) + '...');
     
     // Step 2: Extract hashed secret from the invoice
@@ -94,11 +95,17 @@ export class ResolverBTC2EVM {
   }
   
   // Helper function to issue Lightning Network invoice
-  private issueLightningInvoice(amountBtc: number): string {
+  private async issueLightningInvoice(amountBtc: number): Promise<string> {
     console.log('🤖 RESOLVER: 📝 Issuing Lightning Network invoice...');
-  
-    console.log('🤖 RESOLVER: ✅ Lightning Network invoice issued successfully');
-    return "lnbc100u1p5guy6ypp5eeyft8ntelam75uvpnz8lcx46qpp5aa6a4rrvc2qtc74qaz8776scqzyssp5us7lxaq6xny2e85sjfxa6dttua7v0ag32q2huzue5m67czzj5nes9q7sqqqqqqqqqqqqqqqqqqqsqqqqqysgqdqqmqz9gxqyjw5qrzjqwryaup9lh50kkranzgcdnn2fgvx390wgj5jd07rwr3vxeje0glcllmqlf20lk5u3sqqqqlgqqqqqeqqjqr4dqnmedj6pz9jvh2ufw0v0grfa27khg7tfwvun8u9fcxg952ua5zed68d2naa6whng33z7qnvt8x5x07lzf6lchegvr70xsrjmk8uqpsjef9k";
+    
+    try {
+      const invoice = await issueLightningInvoice(amountBtc, 'alice', `Cross-chain swap payment for ${amountBtc} BTC`);
+      console.log('🤖 RESOLVER: ✅ Lightning Network invoice issued successfully');
+      return invoice;
+    } catch (error) {
+      console.error('🤖 RESOLVER: ❌ Failed to issue Lightning invoice:', error);
+      throw error;
+    }
   }
   
   // Helper function to deposit ETH to escrow

@@ -29,7 +29,7 @@ export class Relay {
     return new OrderEVM2BTCResponse();
   }
   
-  processOrderBTC2EVM(order: OrderBTC2EVM): OrderBTC2EVMResponse {
+  async processOrderBTC2EVM(order: OrderBTC2EVM): Promise<OrderBTC2EVMResponse> {
     console.log('🔄 Processing BTC to EVM order...');
     console.log('📋 Order Type: Single Fill Order (100% Fill)');
     console.log('Order Details:', {
@@ -39,7 +39,7 @@ export class Relay {
     });
     
     // Generate Lightning Network invoice
-    const result: OrderBTC2EVMResult = resolverBTC2EVM.sendToResolver(order);
+    const result: OrderBTC2EVMResult = await resolverBTC2EVM.sendToResolver(order);
     console.log('✅ BTC to EVM order processing completed');
     
     console.log('----------------------');
