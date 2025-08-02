@@ -1,5 +1,6 @@
 import * as bolt11 from 'bolt11';
 import { OrderBTC2EVM } from '../api/order';
+import { getTransactionUrl } from '../variables';
 
 export interface PaymentReceipt {
   secret: string;
@@ -63,7 +64,7 @@ export class ResolverBTC2EVM {
     console.log(`🤖 RESOLVER:    Gas Used: ${depositResult.gasUsed}`);
     
     // Step 6: Print link to the transaction
-    const transactionLink = `https://etherscan.io/tx/${depositResult.txHash}`;
+    const transactionLink = getTransactionUrl(depositResult.txHash);
     console.log('🤖 RESOLVER: 🔗 Transaction Link:', transactionLink);
     
     // Step 7: Create and return the result

@@ -29,6 +29,12 @@ export const CHAIN_IDS = {
   ETH_MAINNET: 1,
 } as const;
 
+// Block explorer URLs for supported networks
+export const BLOCK_EXPLORERS = {
+  POLYGON: 'https://polygonscan.com',
+  ETH_MAINNET: 'https://etherscan.io',
+} as const;
+
 // Get current RPC URL based on network
 export const getRpcUrl = (): string => {
   return RPC_URLS[NETWORK];
@@ -37,6 +43,29 @@ export const getRpcUrl = (): string => {
 // Get current chain ID based on network
 export const getChainId = (): number => {
   return CHAIN_IDS[NETWORK];
+};
+
+// Get current block explorer URL based on network
+export const getBlockExplorerUrl = (): string => {
+  return BLOCK_EXPLORERS[NETWORK];
+};
+
+// Get block explorer URL for a specific transaction hash
+export const getTransactionUrl = (txHash: string): string => {
+  const baseUrl = getBlockExplorerUrl();
+  return `${baseUrl}/tx/${txHash}`;
+};
+
+// Get block explorer URL for a specific address
+export const getAddressUrl = (address: string): string => {
+  const baseUrl = getBlockExplorerUrl();
+  return `${baseUrl}/address/${address}`;
+};
+
+// Get block explorer URL for a specific block
+export const getBlockUrl = (blockNumber: string | number): string => {
+  const baseUrl = getBlockExplorerUrl();
+  return `${baseUrl}/block/${blockNumber}`;
 };
 
 // Validation helpers
