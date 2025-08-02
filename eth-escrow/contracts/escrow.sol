@@ -1,22 +1,11 @@
 // SPDX-License-Identifier: MIT 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-/**
- * @title SHA256 Library
- * @dev Simple SHA256 implementation for Lightning Network compatibility
- */
-library SHA256 {
-    function sha256(bytes memory data) internal pure returns (bytes32) {
-        bytes32 hash;
-        assembly {
-            hash := sha256(data, mload(data))
-        }
-        return hash;
-    }
-}
+
 
 /**
  * @title Escrow Contract
@@ -24,7 +13,6 @@ library SHA256 {
  */
 contract Escrow is ReentrancyGuard {
     using ECDSA for bytes32;
-    using SHA256 for bytes;
 
     struct Deposit {
         address depositor;
@@ -109,26 +97,26 @@ contract Escrow is ReentrancyGuard {
      * @param secret The secret that hashes to the hashlock (from Lightning Network)
      */
     function claim(bytes32 depositId, bytes memory secret) external nonReentrant {
-        Deposit storage deposit = deposits[depositId];
+        Deposit storage depositInfo = deposits[depositId];
         
-        require(deposit.depositor != address(0), "Deposit does not exist");
-        require(!deposit.claimed, "Deposit already claimed");
-        require(!deposit.cancelled, "Deposit already cancelled");
-        require(msg.sender == deposit.claimer, "Only claimer can claim");
-        require(block.timestamp <= deposit.expirationTime, "Deposit expired");
+        require(depositInfo.depositor != address(0), "Deposit does not exist");
+        require(!depositInfo.claimed, "Deposit already claimed");
+        require(!depositInfo.cancelled, "Deposit already cancelled");
+        require(msg.sender == depositInfo.claimer, "Only claimer can claim");
+        require(block.timestamp <= depositInfo.expirationTime, "Deposit expired");
         
         // Verify the secret matches the hashlock using SHA256 (Lightning Network compatible)
-        bytes32 computedHashlock = SHA256.sha256(secret);
-        require(deposit.hashlock == computedHashlock, "Invalid secret");
+        bytes32 computedHashlock = sha256(secret);
+        require(depositInfo.hashlock == computedHashlock, "Invalid secret");
 
         // Mark as claimed
-        deposit.claimed = true;
+        depositInfo.claimed = true;
 
         // Transfer funds to claimer
-        (bool success, ) = deposit.claimer.call{value: deposit.amount}("");
+        (bool success, ) = depositInfo.claimer.call{value: depositInfo.amount}("");
         require(success, "Transfer to claimer failed");
 
-        emit DepositClaimed(depositId, deposit.claimer, secret);
+        emit DepositClaimed(depositId, depositInfo.claimer, secret);
     }
 
     /**
@@ -136,22 +124,22 @@ contract Escrow is ReentrancyGuard {
      * @param depositId The ID of the deposit to cancel
      */
     function cancelDeposit(bytes32 depositId) external nonReentrant {
-        Deposit storage deposit = deposits[depositId];
+        Deposit storage depositInfo = deposits[depositId];
         
-        require(deposit.depositor != address(0), "Deposit does not exist");
-        require(!deposit.claimed, "Deposit already claimed");
-        require(!deposit.cancelled, "Deposit already cancelled");
-        require(msg.sender == deposit.depositor, "Only depositor can cancel");
-        require(block.timestamp > deposit.expirationTime, "Deposit not yet expired");
+        require(depositInfo.depositor != address(0), "Deposit does not exist");
+        require(!depositInfo.claimed, "Deposit already claimed");
+        require(!depositInfo.cancelled, "Deposit already cancelled");
+        require(msg.sender == depositInfo.depositor, "Only depositor can cancel");
+        require(block.timestamp > depositInfo.expirationTime, "Deposit not yet expired");
 
         // Mark as cancelled
-        deposit.cancelled = true;
+        depositInfo.cancelled = true;
 
         // Transfer funds back to depositor
-        (bool success, ) = deposit.depositor.call{value: deposit.amount}("");
+        (bool success, ) = depositInfo.depositor.call{value: depositInfo.amount}("");
         require(success, "Transfer to depositor failed");
 
-        emit DepositCancelled(depositId, deposit.depositor);
+        emit DepositCancelled(depositId, depositInfo.depositor);
     }
 
     /**
@@ -174,15 +162,15 @@ contract Escrow is ReentrancyGuard {
         bool claimed,
         bool cancelled
     ) {
-        Deposit storage deposit = deposits[depositId];
+        Deposit storage depositInfo = deposits[depositId];
         return (
-            deposit.depositor,
-            deposit.claimer,
-            deposit.amount,
-            deposit.expirationTime,
-            deposit.hashlock,
-            deposit.claimed,
-            deposit.cancelled
+            depositInfo.depositor,
+            depositInfo.claimer,
+            depositInfo.amount,
+            depositInfo.expirationTime,
+            depositInfo.hashlock,
+            depositInfo.claimed,
+            depositInfo.cancelled
         );
     }
 
@@ -192,8 +180,8 @@ contract Escrow is ReentrancyGuard {
      * @return True if deposit is expired
      */
     function isExpired(bytes32 depositId) external view returns (bool) {
-        Deposit storage deposit = deposits[depositId];
-        return block.timestamp > deposit.expirationTime;
+        Deposit storage depositInfo = deposits[depositId];
+        return block.timestamp > depositInfo.expirationTime;
     }
 
     /**

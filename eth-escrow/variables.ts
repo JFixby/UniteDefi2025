@@ -72,5 +72,5 @@ export const getNativeTokenAddress = (): string => {
 
 // Get escrow contract address
 export const getEscrowContractAddress = (): string => {
-  return '0x3263E127895604c001615D42DC301B780AEEF2d5';
+  return '0xCC8BA0a823A44cEBd0463C26Ee3fbB7974D546dB';
 };
