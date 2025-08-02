@@ -3,6 +3,7 @@ import { OrderEVM2BTC } from '../api/order';
 import { issueLightningInvoice } from '../utils/lightning';
 import { depositETH, checkDepositEVM } from '../utils/evm';
 import { ALICE_PRIVATE_KEY } from '../variables';
+import { pause, confirm } from '../utils/pause';
 
 /**
  * Waits for the resolver to claim the deposit from the escrow contract
@@ -93,6 +94,8 @@ export async function evmToBtcExample() {
   console.log(`💰 Amount BTC: ${amountBtc}`);
   console.log(`💰 Amount ETH: ${amountEth}`);
   
+  await pause('Press Enter to start Step 1: Generating Lightning Network invoice...');
+  
   // Step 1: Generate Lightning Network invoice for BTC
   console.log('\n📋 Step 1: Generating Lightning Network invoice...');
   const invoiceData = await issueLightningInvoice(amountBtc, 'alice', "Alice selling BTC for ETH");
@@ -102,6 +105,7 @@ export async function evmToBtcExample() {
   console.log(`⚡ Lightning Invoice: ${btcLightningNetInvoice.substring(0, 25)}...`);
   console.log(`🔐 Hashed Secret: ${hashedSecret}`);
   
+  await pause('Press Enter to continue to Step 3: Processing order through relay...');
   
   // Step 3: Process EVM to BTC order through relay
   console.log('\n📋 Step 3: Processing order through relay...');
@@ -115,6 +119,8 @@ export async function evmToBtcExample() {
   
   const evmToBtcResponse = await relay.processOrderEVM2BTC(evmToBtcOrder);
   console.log('📋 EVM to BTC Response:', evmToBtcResponse);
+
+  await pause('Press Enter to continue to Step 2: Depositing ETH into escrow...');
 
   // Step 2: Deposit ETH into escrow with HTLC
   console.log('\n📋 Step 2: Depositing ETH into escrow...');
@@ -137,6 +143,8 @@ export async function evmToBtcExample() {
   console.log(`💰 Amount (Wei): ${transactionInfo.amountWei}`);
   console.log(`⏰ Expiration Time: ${new Date(transactionInfo.expirationTime * 1000).toISOString()}`);
 
+  await pause('Press Enter to continue to final step: Waiting for resolver to claim deposit...');
+
   // wait for resolver to claim deposit...
   await waitResolverClaimDeposit(hashedSecret); // hashedSecret is deposit_id
 
@@ -150,5 +158,16 @@ if (require.main === module) {
     .then(() => {
       console.log('\n🎉 EVM to BTC demo completed successfully!');
     })
-    .catch(console.error);
+    .catch(async (error) => {
+      console.error('\n❌ Error occurred:', error.message);
+      console.error('Full error:', error);
+      
+      const shouldContinue = await confirm('Do you want to continue despite the error? (y/n): ');
+      if (shouldContinue) {
+        console.log('Continuing...');
+      } else {
+        console.log('Exiting...');
+        process.exit(1);
+      }
+    });
 } 
