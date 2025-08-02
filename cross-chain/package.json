@@ -24,6 +24,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@1inch/cross-chain-sdk": "^0.1.15",
     "dotenv": "^17.2.1",
     "ethers": "^6.15.0"
   }
