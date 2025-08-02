@@ -1,9 +1,9 @@
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 import {
   createEscrowManager,
   EscrowContractManager,
   EscrowManagerConfig
-} from "./deposit";
+} from "./deposit-standalone";
 import {
   ALICE_PRIVATE_KEY,
   CAROL_PRIVATE_KEY,
@@ -11,7 +11,8 @@ import {
   getRpcUrl,
   getChainId,
   hasValidAlicePrivateKey,
-  hasValidCarolPrivateKey
+  hasValidCarolPrivateKey,
+  getEscrowContractAddress
 } from "./variables";
 
 async function main() {
@@ -39,7 +40,7 @@ async function main() {
     };
 
     // Create escrow manager
-    const escrowManager = await createEscrowManager(config);
+    const escrowManager = await createEscrowManager(config, getEscrowContractAddress());
     
     // Display contract information
     await escrowManager.displayContractInfo();
@@ -53,10 +54,10 @@ async function main() {
     console.log(`👤 Carol initial balance: ${ethers.formatEther(carolInitialBalance)} native tokens`);
 
     // Test configuration
-    const depositAmount = ethers.parseEther("0.03").toString();
+    const depositAmount = ethers.parseEther("0.033").toString();
     const expirationTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-    const hashlock = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"; // Mock hashlock
     const secret = "mysecret123"; // Mock secret
+    const hashlock = ethers.keccak256(ethers.toUtf8Bytes(secret)); // Generate hashlock from secret
 
     console.log("\n" + "=".repeat(60));
     console.log("🧪 ESCROW CONTRACT TEST");

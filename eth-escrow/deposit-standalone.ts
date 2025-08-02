@@ -1,9 +1,10 @@
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 import { Contract, Signer, Provider, Wallet, JsonRpcProvider } from "ethers";
-import {
-  getEscrowContract,
-  loadDeploymentInfo
-} from "./deployEscrowContractHelpers";
+
+// Load contract ABI directly from artifacts
+const ESCROW_ABI = require("./artifacts/contracts/escrow.sol/Escrow.json").abi;
+
+
 
 export interface DepositParams {
   claimer: string;
@@ -56,9 +57,9 @@ export class EscrowContractManager {
 
   /**
    * Initialize the contract manager
-   * @param escrowAddress Optional contract address, will load from deployment info if not provided
+   * @param escrowAddress Contract address
    */
-  async initialize(escrowAddress?: string): Promise<void> {
+  async initialize(escrowAddress: string): Promise<void> {
     // Validate private keys
     if (!this.aliceSigner) {
       throw new Error("Alice signer is not initialized");
@@ -71,21 +72,12 @@ export class EscrowContractManager {
     this.aliceAddress = await this.aliceSigner.getAddress();
     this.carolAddress = await this.carolSigner.getAddress();
 
-    // Load contract address if not provided
-    if (!escrowAddress) {
-      try {
-        const deploymentInfo = loadDeploymentInfo();
-        escrowAddress = deploymentInfo.address;
-      } catch (error) {
-        throw new Error("No deployment info found. Please deploy the contract first.");
-      }
-    }
-
     if (!escrowAddress) {
       throw new Error("Escrow address is required");
     }
 
-    this.contract = await getEscrowContract(escrowAddress, this.aliceSigner);
+    // Create contract instance using ABI
+    this.contract = new Contract(escrowAddress, ESCROW_ABI, this.aliceSigner);
   }
 
   /**
@@ -103,92 +95,99 @@ export class EscrowContractManager {
   }
 
   /**
-   * Get the contract address
+   * Get contract address
    */
   getContractAddress(): string {
     return this.contract.target as string;
   }
 
   /**
-   * Create a new deposit
+   * Create a deposit
+   * @param params Deposit parameters
+   * @returns Transaction hash and deposit ID
    */
   async createDeposit(params: DepositParams): Promise<{ txHash: string; depositId: string }> {
-    const amount = ethers.parseEther(params.amount);
+    console.log(`📥 Creating deposit for ${ethers.formatEther(params.amount)} native tokens...`);
     
-    const tx = await (this.contract as any).connect(this.aliceSigner).deposit(
+    const tx = await this.contract.deposit(
       params.claimer,
       params.expirationTime,
       params.hashlock,
-      { value: amount }
+      { value: params.amount }
     );
-
-    console.log(`📦 Creating deposit...`);
-    console.log(`🔗 Transaction hash: ${tx.hash}`);
     
+    console.log(`⏳ Waiting for transaction confirmation...`);
     const receipt = await tx.wait();
     
-    // Find the DepositCreated event
-    const depositEvent = receipt?.logs.find((log: any) => {
+    // Extract deposit ID from event
+    const depositCreatedEvent = receipt?.logs.find((log: any) => {
       try {
-        const parsedLog = this.contract.interface.parseLog(log);
-        return parsedLog?.name === "DepositCreated";
+        const parsed = this.contract.interface.parseLog(log);
+        return parsed?.name === 'DepositCreated';
       } catch {
         return false;
       }
     });
-
-    if (!depositEvent) {
-      throw new Error("DepositCreated event not found in transaction receipt");
+    
+    let depositId = '';
+    if (depositCreatedEvent) {
+      const parsed = this.contract.interface.parseLog(depositCreatedEvent);
+      depositId = parsed?.args?.[0] || '';
     }
-
-    const parsedEvent = this.contract.interface.parseLog(depositEvent);
-    const depositId = parsedEvent?.args?.[0];
-
+    
     console.log(`✅ Deposit created successfully!`);
+    console.log(`🔗 Transaction: ${receipt?.hash}`);
     console.log(`🆔 Deposit ID: ${depositId}`);
     
     return {
-      txHash: tx.hash,
+      txHash: receipt?.hash || '',
       depositId: depositId
     };
   }
 
   /**
-   * Claim a deposit using the secret
+   * Claim a deposit
+   * @param params Claim parameters
+   * @returns Transaction hash
    */
   async claimDeposit(params: ClaimParams): Promise<{ txHash: string }> {
-    const tx = await (this.contract as any).connect(this.carolSigner).claim(
-      params.depositId,
-      params.secret
-    );
-
-    console.log(`🔓 Claiming deposit...`);
-    console.log(`🔗 Transaction hash: ${tx.hash}`);
+    console.log(`📤 Claiming deposit ${params.depositId}...`);
     
-    await tx.wait();
+    // Use Carol's signer for claiming
+    const contractWithCarolSigner = this.contract.connect(this.carolSigner) as any;
+    const tx = await contractWithCarolSigner.claim(params.depositId, params.secret);
+    
+    console.log(`⏳ Waiting for transaction confirmation...`);
+    const receipt = await tx.wait();
     
     console.log(`✅ Deposit claimed successfully!`);
+    console.log(`🔗 Transaction: ${receipt?.hash}`);
     
     return {
-      txHash: tx.hash
+      txHash: receipt?.hash || ''
     };
   }
 
   /**
-   * Cancel a deposit (only by depositor after expiration)
+   * Cancel a deposit
+   * @param depositId Deposit ID
+   * @returns Transaction hash
    */
   async cancelDeposit(depositId: string): Promise<{ txHash: string }> {
-    const tx = await (this.contract as any).connect(this.aliceSigner).cancelDeposit(depositId);
+    console.log(`❌ Cancelling deposit ${depositId}...`);
     
-    console.log(`❌ Cancelling deposit...`);
-    console.log(`🔗 Transaction hash: ${tx.hash}`);
+    // Use Alice's signer for cancelling (depositor)
+    const contractWithAliceSigner = this.contract.connect(this.aliceSigner) as any;
+    const tx = await contractWithAliceSigner.cancelDeposit(depositId);
     
-    await tx.wait();
+    console.log(`⏳ Waiting for transaction confirmation...`);
+    const receipt = await tx.wait();
     
     console.log(`✅ Deposit cancelled successfully!`);
+    console.log(`🔗 Transaction: ${receipt?.hash}`);
     
     return {
-      txHash: tx.hash
+      txHash: receipt?.hash || ''
     };
   }
 
@@ -198,13 +197,13 @@ export class EscrowContractManager {
    * @returns Deposit information
    */
   async getDepositInfo(depositId: string): Promise<DepositInfo> {
-    const deposit = await this.contract.getDeposit(depositId);
+    const deposit = await this.contract.deposits(depositId);
     
     return {
       depositor: deposit.depositor,
       claimer: deposit.claimer,
       amount: deposit.amount.toString(),
-      expirationTime: deposit.expirationTime,
+      expirationTime: Number(deposit.expirationTime),
       hashlock: deposit.hashlock,
       claimed: deposit.claimed,
       cancelled: deposit.cancelled
@@ -217,21 +216,21 @@ export class EscrowContractManager {
    * @returns True if expired
    */
   async isDepositExpired(depositId: string): Promise<boolean> {
-    return await this.contract.isExpired(depositId);
+    const deposit = await this.getDepositInfo(depositId);
+    return Date.now() / 1000 > deposit.expirationTime;
   }
 
   /**
    * Get contract balance
-   * @returns Contract balance in wei
+   * @returns Balance in wei
    */
   async getContractBalance(): Promise<string> {
-    const balance = await this.contract.getBalance();
-    return balance.toString();
+    return (await this.provider.getBalance(this.getContractAddress())).toString();
   }
 
   /**
-   * Get contract balance formatted in native tokens
-   * @returns Contract balance formatted
+   * Get contract balance formatted
+   * @returns Balance formatted in native tokens
    */
   async getContractBalanceFormatted(): Promise<string> {
     const balance = await this.getContractBalance();
@@ -329,7 +328,7 @@ export class EscrowContractManager {
 }
 
 // Export a factory function for easy usage
-export async function createEscrowManager(config: EscrowManagerConfig, escrowAddress?: string): Promise<EscrowContractManager> {
+export async function createEscrowManager(config: EscrowManagerConfig, escrowAddress: string): Promise<EscrowContractManager> {
   const manager = new EscrowContractManager(config);
   await manager.initialize(escrowAddress);
   return manager;

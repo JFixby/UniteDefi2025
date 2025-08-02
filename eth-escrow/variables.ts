@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { ethers } from 'hardhat';
+import { ethers } from 'ethers';
 
 // Load environment variables
 dotenv.config();
@@ -68,4 +68,9 @@ export const getAliceAddress = (): string => {
 // Get native token address (ETH address for EVM chains)
 export const getNativeTokenAddress = (): string => {
   return '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'; // Native ETH address for 1inch SDK
+};
+
+// Get escrow contract address
+export const getEscrowContractAddress = (): string => {
+  return '0x3263E127895604c001615D42DC301B780AEEF2d5';
 };
