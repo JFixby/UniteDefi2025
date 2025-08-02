@@ -1,6 +1,8 @@
 import * as bolt11 from 'bolt11';
+import * as fs from 'fs';
+import { ethers } from 'ethers';
 import { OrderEVM2BTC } from '../api/order';
-import { getCarolAddress, getTransactionUrl, CAROL_PRIVATE_KEY } from '../variables';
+import { getCarolAddress, getTransactionUrl, CAROL_PRIVATE_KEY, getRpcUrl, NETWORK } from '../variables';
 import { checkDepositEVM, claimETH } from '../utils/evm';
 import { payLightningInvoice } from '../utils/lightning';
 
@@ -312,15 +314,27 @@ export class ResolverEVM2BTC {
       console.log('🤖 RESOLVER:    Resolver profit: ~0.001 ETH');
       
     } catch (error) {
-      console.error('🤖 RESOLVER: ❌ Error processing Lightning payment:', error);
+      throw error
     }
   }
   
-  printBalance(): void {
+  async printBalance(): Promise<void> {
     console.log('🤖 RESOLVER: 💳 Current Balance Report:');
-    console.log('🤖 RESOLVER:    ETH Balance: 0.985 ETH');
-    console.log('🤖 RESOLVER:    BTC Balance: 0.001 BTC');
-    console.log('🤖 RESOLVER:    USDC Balance: 150.00 USDC');
-    console.log('🤖 RESOLVER:    Last Updated: ' + new Date().toISOString());
+    
+    try {
+      const provider = new ethers.JsonRpcProvider(getRpcUrl());
+      const carolAddress = getCarolAddress();
+      const carolBalance = await provider.getBalance(carolAddress);
+      const carolBalanceFormatted = ethers.formatEther(carolBalance);
+      
+      console.log(`🤖 RESOLVER:    Resolver Balance: ${carolBalanceFormatted} ETH`);
+      console.log(`🤖 RESOLVER:    Resolver Address: ${carolAddress}`);
+      console.log('🤖 RESOLVER:    Last Updated: ' + new Date().toISOString());
+      
+    } catch (error) {
+      console.error('🤖 RESOLVER: ❌ Error checking balance:', error);
+      console.log('🤖 RESOLVER:    Carol Balance: 0.985 ETH (fallback)');
+      console.log('🤖 RESOLVER:    Last Updated: ' + new Date().toISOString());
+    }
   }
 } 
