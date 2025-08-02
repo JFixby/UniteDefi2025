@@ -1,0 +1,10 @@
+Read Readme.md in the root
+now this project eth-side is a typescript projec
+use cross-chain-sdk/
+
+project files:
+variables.ts - is where you get all required variables for the rest of the code
+all other .ts files must use this file helpers
+
+produce files:
+create_order.ts - must include 2 functions: create order for btc to eth and from eth to btc

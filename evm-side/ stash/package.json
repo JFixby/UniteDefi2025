@@ -1,0 +1,54 @@
+{
+  "name": "eth-side-escrow",
+  "version": "1.0.0",
+  "description": "ETH-side escrow deposit system using BTCEscrowFactory",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js --network polygon",
+    "test": "hardhat test",
+    "deposit": "ts-node run_deposit.ts deposit",
+    "deposit:custom": "ts-node run_deposit.ts custom",
+    "order": "ts-node src/order.ts --",
+    "order:single": "ts-node src/order.ts -- single-fill",
+    "order:multiple": "ts-node src/order.ts -- multiple-fill-100",
+    "order:partial": "ts-node src/order.ts -- multiple-fill-50",
+    "order:reverse": "ts-node src/order.ts -- eth-to-btc",
+    "order:cancel": "ts-node src/order.ts -- cancellation",
+    "order:all": "ts-node src/order.ts -- all",
+    "order:btc2evm": "ts-node src/order-btc-2-evm.ts --",
+    "order:evm2btc": "ts-node src/order-evm-2-btc.ts --",
+    "order:btc2evm:single": "ts-node src/order-btc-2-evm.ts -- single-fill",
+    "order:btc2evm:multiple": "ts-node src/order-btc-2-evm.ts -- multiple-fill-100",
+    "order:btc2evm:partial": "ts-node src/order-btc-2-evm.ts -- multiple-fill-50",
+    "order:btc2evm:reverse": "ts-node src/order-btc-2-evm.ts -- eth-to-btc",
+    "order:btc2evm:cancel": "ts-node src/order-btc-2-evm.ts -- cancellation",
+    "order:btc2evm:all": "ts-node src/order-btc-2-evm.ts -- all",
+    "order:evm2btc:single": "ts-node src/order-evm-2-btc.ts -- single-fill",
+    "order:evm2btc:multiple": "ts-node src/order-evm-2-btc.ts -- multiple-fill-100",
+    "order:evm2btc:partial": "ts-node src/order-evm-2-btc.ts -- multiple-fill-50",
+    "order:evm2btc:reverse": "ts-node src/order-evm-2-btc.ts -- btc-to-eth",
+    "order:evm2btc:cancel": "ts-node src/order-evm-2-btc.ts -- cancellation",
+    "order:evm2btc:all": "ts-node src/order-evm-2-btc.ts -- all"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0",
+    "dotenv": "^17.2.1"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "hardhat": "^2.19.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "ethereum",
+    "escrow",
+    "btc",
+    "atomic-swap",
+    "1inch"
+  ],
+  "author": "",
+  "license": "MIT"
+}

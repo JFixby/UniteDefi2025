@@ -1,0 +1,13 @@
+in eth-side we implement the swap on EVM side
+for references look into:
+1) cross-chain-resolver-example
+2) cross-chain-sdk
+3) and optionally hashlocked-cli
+
+Lifecycle is
+1) user creates order
+2) resolver sees order and calls "deploySrc" on their resolver contract
+3) deploySrc function sends the safety deposit the undeployed escrow
+4) the deploySrc function then calls fillOrderArgs on the 1inch aggregation router. 
+5) during the fillOrder call, the maker assets are transferred to the escrow contract via the suffix
+6) the limit order postInteraction is triggered deploying the escrow
