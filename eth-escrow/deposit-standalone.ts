@@ -15,7 +15,7 @@ export interface DepositParams {
 
 export interface ClaimParams {
   depositId: string;
-  secret: string;
+  secret: string | Uint8Array;
 }
 
 export interface DepositInfo {
@@ -156,9 +156,14 @@ export class EscrowContractManager {
   async claimDeposit(params: ClaimParams): Promise<{ txHash: string }> {
     console.log(`📤 Claiming deposit ${params.depositId}...`);
     
+    // Convert secret to bytes if it's a string
+    const secretBytes = typeof params.secret === 'string' 
+      ? ethers.toUtf8Bytes(params.secret)
+      : params.secret;
+    
     // Use Carol's signer for claiming
     const contractWithCarolSigner = this.contract.connect(this.carolSigner) as any;
-    const tx = await contractWithCarolSigner.claim(params.depositId, params.secret);
+    const tx = await contractWithCarolSigner.claim(params.depositId, secretBytes);
     
     console.log(`⏳ Waiting for transaction confirmation...`);
     const receipt = await tx.wait();

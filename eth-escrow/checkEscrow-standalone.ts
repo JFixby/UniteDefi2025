@@ -56,8 +56,8 @@ async function main() {
     console.log(`👤 Carol initial balance: ${ethers.formatEther(carolInitialBalance)} native tokens`);
 
     // Test configuration
-    const depositAmount = ethers.parseEther("0.033").toString();
-    const expirationTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+    const depositAmount = ethers.parseEther("0.0033").toString();
+    const expirationTime = Math.floor(Date.now() / 1000) + 10; // 10 seconds from now
     const secret = "mysecret123"; // Mock secret
     const hashlock = "0x" + SHA256(secret).toString(Hex); // Generate SHA256 hashlock from secret (Lightning compatible)
 

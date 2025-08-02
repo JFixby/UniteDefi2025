@@ -122,6 +122,7 @@ contract Escrow is ReentrancyGuard {
     /**
      * @dev Cancels the deposit and returns funds to depositor after expiration
      * @param depositId The ID of the deposit to cancel
+     * @notice Anyone can cancel an expired deposit, not just the depositor
      */
     function cancelDeposit(bytes32 depositId) external nonReentrant {
         Deposit storage depositInfo = deposits[depositId];
@@ -129,7 +130,6 @@ contract Escrow is ReentrancyGuard {
         require(depositInfo.depositor != address(0), "Deposit does not exist");
         require(!depositInfo.claimed, "Deposit already claimed");
         require(!depositInfo.cancelled, "Deposit already cancelled");
-        require(msg.sender == depositInfo.depositor, "Only depositor can cancel");
         require(block.timestamp > depositInfo.expirationTime, "Deposit not yet expired");
 
         // Mark as cancelled
