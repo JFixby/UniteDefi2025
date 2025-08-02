@@ -76,8 +76,6 @@ export class ResolverEVM2BTC {
       // Decode the Lightning Network invoice using bolt11 library
       const decoded = bolt11.decode(invoice);
       
-      console.log('🤖 RESOLVER:    Raw decoded data:', JSON.stringify(decoded, null, 2));
-      
       // Extract the payment hash (this is the hashed secret)
       const paymentHash = decoded.tags.find(tag => tag.tagName === 'payment_hash')?.data;
       if (!paymentHash) {
