@@ -31,10 +31,10 @@ export async function btcToEvmExample() {
   console.log('📋 BTC to EVM Response:', btcToEvmResponse);
   console.log('⚡ Lightning Invoice:', btcToEvmResponse.lightningNetworkInvoice.substring(0, 25) + '...');
 
-  await pause('[USER] Press Enter to continue to Step 2: Decoding Lightning invoice...');
+  await pause('[USER] Press Enter to continue to Step 2: Paying Lightning invoice...');
 
   // Step 2: Extract and decode the Lightning invoice
-  console.log('\n📋 Step 2: Decoding Lightning invoice...');
+  console.log('\n📋 Step 2: Paying Lightning invoice...');
   const decodedInvoice = bolt11.decode(btcToEvmResponse.lightningNetworkInvoice);
   const paymentHash = decodedInvoice.tags.find(tag => tag.tagName === 'payment_hash')?.data;
   
@@ -48,11 +48,10 @@ export async function btcToEvmExample() {
   console.log(`🔑 Payment Hash: ${paymentHash}`);
   console.log(`🔐 Hashed Secret: ${hashedSecret}`);
 
-  await pause('[USER] Press Enter to continue to Step 3: Paying Lightning invoice...');
-
+  
   // Step 3: Actually pay the Lightning invoice
   console.log('\n📋 Step 3: Paying Lightning invoice...');
-  const paymentReceipt = await payLightningInvoice(btcToEvmResponse.lightningNetworkInvoice, 'alice');
+  const paymentReceipt = await payLightningInvoice(btcToEvmResponse.lightningNetworkInvoice, 'bob');
   const secret = paymentReceipt.secret;
   console.log(`🔓 Payment completed! Secret revealed: ${secret}`);
 

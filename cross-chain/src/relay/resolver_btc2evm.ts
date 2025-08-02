@@ -107,7 +107,7 @@ export class ResolverBTC2EVM {
     console.log('🤖 RESOLVER: 📝 Issuing Lightning Network invoice...');
     
     try {
-      const invoice = await issueLightningInvoice(amountBtc, 'alice', `Cross-chain swap payment for ${amountBtc} BTC`);
+      const invoice = await issueLightningInvoice(amountBtc, 'carol', `Resolver request payment for ${amountBtc} BTC`);
       console.log('🤖 RESOLVER: ✅ Lightning Network invoice issued successfully');
       return invoice;
     } catch (error) {
