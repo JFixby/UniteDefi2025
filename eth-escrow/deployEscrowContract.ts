@@ -14,6 +14,7 @@ import {
   getChainId,
   hasValidAlicePrivateKey
 } from "./variables";
+import * as fs from "fs";
 
 async function main() {
   console.log(`🚀 Starting Escrow contract deployment to ${NETWORK}...`);
@@ -81,7 +82,6 @@ async function main() {
 
     // Save contract address for easy access
     const addressFile = `${NETWORK.toLowerCase()}-escrow-address.txt`;
-    const fs = require("fs");
     fs.writeFileSync(addressFile, result.address);
     console.log(`📍 Contract address saved to: ${addressFile}`);
 

@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Contract, ContractFactory } from "ethers";
+import { Contract, ContractFactory, Provider, Signer, Wallet, JsonRpcProvider } from "ethers";
 
 export interface DeploymentConfig {
   networkName: string;
@@ -28,13 +28,13 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
   console.log(`\n🚀 Deploying Escrow contract to ${config.networkName}...`);
   
   // Setup provider and signer
-  let provider: ethers.Provider;
-  let signer: ethers.Signer;
+  let provider: Provider;
+  let signer: Signer;
   
   if (config.rpcUrl && config.privateKey) {
     // Connect to external network
-    provider = new ethers.JsonRpcProvider(config.rpcUrl);
-    signer = new ethers.Wallet(config.privateKey, provider);
+    provider = new JsonRpcProvider(config.rpcUrl);
+    signer = new Wallet(config.privateKey, provider);
     console.log(`📡 Connected to ${config.networkName} via RPC`);
   } else {
     // Use Hardhat's built-in network
@@ -52,7 +52,7 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
   
   // Prepare deployment transaction
   const deploymentData = EscrowFactory.interface.encodeDeploy();
-  const deploymentTx = {
+  const deploymentTx: any = {
     data: deploymentData,
     gasLimit: config.gasLimit || 2000000,
   };
@@ -73,16 +73,21 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
   
   // Wait for deployment
   console.log(`⏳ Waiting for deployment confirmation...`);
-  const deploymentReceipt = await escrow.waitForDeployment();
+  await escrow.waitForDeployment();
   
   // Get contract address
   const address = await escrow.getAddress();
   
-  // Get deployment transaction hash
-  const deploymentTxHash = deploymentReceipt?.hash || "unknown";
+  // Get deployment transaction hash and gas used
+  const deploymentTxResponse = escrow.deploymentTransaction();
+  const deploymentTxHash = deploymentTxResponse?.hash || "unknown";
   
-  // Get gas used
-  const gasUsed = deploymentReceipt?.gasUsed?.toString() || "unknown";
+  // For gas used, we need to get the receipt
+  let gasUsed = "unknown";
+  if (deploymentTxResponse) {
+    const receipt = await provider.getTransactionReceipt(deploymentTxResponse.hash);
+    gasUsed = receipt?.gasUsed?.toString() || "unknown";
+  }
 
   // Verify deployment
   const code = await provider.getCode(address);
@@ -96,7 +101,7 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
   console.log(`⛽ Gas used: ${gasUsed}`);
 
   const result: DeploymentResult = {
-    contract: escrow,
+    contract: escrow as Contract,
     address: address,
     deployer: deployer,
     network: config.networkName,
@@ -116,7 +121,7 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
  */
 export async function verifyContractDeployment(
   address: string, 
-  provider: ethers.Provider
+  provider: Provider
 ): Promise<boolean> {
   try {
     const code = await provider.getCode(address);
@@ -135,10 +140,10 @@ export async function verifyContractDeployment(
  */
 export async function getEscrowContract(
   address: string, 
-  signer: ethers.Signer
+  signer: Signer
 ): Promise<Contract> {
   const EscrowFactory = await ethers.getContractFactory("Escrow");
-  return EscrowFactory.attach(address).connect(signer);
+  return EscrowFactory.attach(address).connect(signer) as Contract;
 }
 
 /**
@@ -151,7 +156,7 @@ export function saveDeploymentInfo(result: DeploymentResult, filename: string = 
   const path = require("path");
   
   const deploymentInfo = {
-    contract: "Escrow",
+    contractName: "Escrow",
     ...result,
     abi: require("../artifacts/contracts/escrow.sol/Escrow.json").abi
   };
