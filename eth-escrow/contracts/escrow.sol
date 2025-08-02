@@ -64,8 +64,8 @@ contract Escrow is ReentrancyGuard {
         require(expirationTime > block.timestamp, "Expiration time must be in the future");
         require(hashlock != bytes32(0), "Hashlock cannot be empty");
 
-        // Create unique deposit ID using depositor address and hashlock
-        bytes32 depositId = keccak256(abi.encodePacked(msg.sender, hashlock, block.timestamp));
+        // Use the hashlock directly as the deposit ID
+        bytes32 depositId = hashlock;
 
         // Ensure deposit doesn't already exist
         require(deposits[depositId].depositor == address(0), "Deposit already exists");
