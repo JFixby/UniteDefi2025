@@ -339,6 +339,20 @@ Production: Lightning ↔ Polygon ↔ Ethereum Mainnet
 
 ### **Implementation Details**
 
+#### **EVM Escrow Contract**
+Our escrow contract (`evm-side/eth-escrow/contracts/escrow.sol`) simulates 1inch's escrow management logic for cross-chain atomic swaps:
+
+- **1inch Simulation**: While not a production 1inch implementation, this contract respects 1inch's core escrow principles
+- **HTLC Functionality**: Hash Time Locked Contracts ensure atomic execution
+- **Lightning Compatibility**: Uses SHA256 hashlocks compatible with Lightning Network invoices
+- **Demo Purpose**: Simplified implementation for educational and testing purposes
+
+Key features:
+- `deposit()`: Creates escrow with Lightning Network hashlock
+- `claim()`: Claims funds using secret from Lightning payment
+- `cancelDeposit()`: Refunds depositor after expiration
+- Atomic guarantees: Either both chains succeed or both fail
+
 #### **Lightning Network Integration**
 ```typescript
 // Create HTLC invoice

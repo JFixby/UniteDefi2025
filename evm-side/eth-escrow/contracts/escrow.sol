@@ -5,11 +5,24 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-
-
 /**
- * @title Escrow Contract
- * @dev A Hash Time Locked Contract (HTLC) for secure conditional transfers
+ * @title Escrow Contract - 1inch Simulation
+ * @dev This contract simulates 1inch's escrow management logic for cross-chain atomic swaps
+ * 
+ * In a production environment, 1inch would use their sophisticated escrow system with:
+ * - Advanced order routing and aggregation
+ * - Multi-chain liquidity pools
+ * - Complex fee structures and gas optimization
+ * - Professional security audits and formal verification
+ * 
+ * For demo purposes, we use this simplified HTLC (Hash Time Locked Contract) that:
+ * - Handles basic escrow functionality for cross-chain swaps
+ * - Uses Lightning Network compatible hashlocks
+ * - Provides atomic swap capabilities between BTC (Lightning) and ETH
+ * - Demonstrates the core principles of secure conditional transfers
+ * 
+ * This is NOT a production-ready 1inch implementation, but rather a simplified
+ * demonstration of escrow mechanics for educational and testing purposes.
  */
 contract Escrow is ReentrancyGuard {
     using ECDSA for bytes32;
