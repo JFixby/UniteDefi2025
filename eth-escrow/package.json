@@ -13,14 +13,15 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.0"
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^17.2.1"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@types/node": "^20.0.0",
     "hardhat": "^2.19.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
   },
   "keywords": [
     "ethereum",
@@ -31,4 +32,4 @@
   ],
   "author": "",
   "license": "MIT"
-} 
+}

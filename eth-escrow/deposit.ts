@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Contract } from "ethers";
+import { Contract, Signer, Provider, Wallet, JsonRpcProvider } from "ethers";
 import {
   getEscrowContract,
   loadDeploymentInfo
@@ -37,19 +37,19 @@ export interface EscrowManagerConfig {
 }
 
 export class EscrowContractManager {
-  private contract: Contract;
-  private aliceSigner: ethers.Signer;
-  private carolSigner: ethers.Signer;
-  private provider: ethers.Provider;
-  private aliceAddress: string;
-  private carolAddress: string;
+  private contract!: Contract;
+  private aliceSigner: Signer;
+  private carolSigner: Signer;
+  private provider: Provider;
+  private aliceAddress!: string;
+  private carolAddress!: string;
   private networkName: string;
   private chainId: number;
 
   constructor(config: EscrowManagerConfig) {
-    this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
-    this.aliceSigner = new ethers.Wallet(config.alicePrivateKey, this.provider);
-    this.carolSigner = new ethers.Wallet(config.carolPrivateKey, this.provider);
+    this.provider = new JsonRpcProvider(config.rpcUrl);
+    this.aliceSigner = new Wallet(config.alicePrivateKey, this.provider);
+    this.carolSigner = new Wallet(config.carolPrivateKey, this.provider);
     this.networkName = config.networkName || "unknown";
     this.chainId = config.chainId || 1;
   }
@@ -81,6 +81,10 @@ export class EscrowContractManager {
       }
     }
 
+    if (!escrowAddress) {
+      throw new Error("Escrow address is required");
+    }
+
     this.contract = await getEscrowContract(escrowAddress, this.aliceSigner);
   }
 
@@ -99,53 +103,50 @@ export class EscrowContractManager {
   }
 
   /**
-   * Get contract address
+   * Get the contract address
    */
   getContractAddress(): string {
     return this.contract.target as string;
   }
 
   /**
-   * Create a deposit with Alice as depositor
-   * @param params Deposit parameters
-   * @returns Transaction hash and deposit ID
+   * Create a new deposit
    */
   async createDeposit(params: DepositParams): Promise<{ txHash: string; depositId: string }> {
-    console.log(`📥 Creating deposit of ${ethers.formatEther(params.amount)} native tokens...`);
-    console.log(`👤 Claimer: ${params.claimer}`);
-    console.log(`⏰ Expiration: ${new Date(params.expirationTime * 1000).toISOString()}`);
-
-    const tx = await this.contract.connect(this.aliceSigner).deposit(
+    const amount = ethers.parseEther(params.amount);
+    
+    const tx = await (this.contract as any).connect(this.aliceSigner).deposit(
       params.claimer,
       params.expirationTime,
       params.hashlock,
-      { value: params.amount }
+      { value: amount }
     );
 
-    console.log(`⏳ Waiting for transaction confirmation...`);
+    console.log(`📦 Creating deposit...`);
+    console.log(`🔗 Transaction hash: ${tx.hash}`);
+    
     const receipt = await tx.wait();
-
-    // Extract deposit ID from event
-    const depositEvent = receipt?.logs.find(log => {
+    
+    // Find the DepositCreated event
+    const depositEvent = receipt?.logs.find((log: any) => {
       try {
-        const parsed = this.contract.interface.parseLog(log);
-        return parsed?.name === "DepositCreated";
+        const parsedLog = this.contract.interface.parseLog(log);
+        return parsedLog?.name === "DepositCreated";
       } catch {
         return false;
       }
     });
 
     if (!depositEvent) {
-      throw new Error("DepositCreated event not found");
+      throw new Error("DepositCreated event not found in transaction receipt");
     }
 
     const parsedEvent = this.contract.interface.parseLog(depositEvent);
-    const depositId = parsedEvent?.args[0];
+    const depositId = parsedEvent?.args?.[0];
 
     console.log(`✅ Deposit created successfully!`);
-    console.log(`🔗 Transaction: ${this.getExplorerLink(tx.hash)}`);
     console.log(`🆔 Deposit ID: ${depositId}`);
-
+    
     return {
       txHash: tx.hash,
       depositId: depositId
@@ -153,45 +154,39 @@ export class EscrowContractManager {
   }
 
   /**
-   * Claim a deposit with Carol as claimer
-   * @param params Claim parameters
-   * @returns Transaction hash
+   * Claim a deposit using the secret
    */
   async claimDeposit(params: ClaimParams): Promise<{ txHash: string }> {
-    console.log(`📤 Claiming deposit ${params.depositId}...`);
-
-    const tx = await this.contract.connect(this.carolSigner).claim(
+    const tx = await (this.contract as any).connect(this.carolSigner).claim(
       params.depositId,
       params.secret
     );
 
-    console.log(`⏳ Waiting for transaction confirmation...`);
+    console.log(`🔓 Claiming deposit...`);
+    console.log(`🔗 Transaction hash: ${tx.hash}`);
+    
     await tx.wait();
-
+    
     console.log(`✅ Deposit claimed successfully!`);
-    console.log(`🔗 Transaction: ${this.getExplorerLink(tx.hash)}`);
-
+    
     return {
       txHash: tx.hash
     };
   }
 
   /**
-   * Cancel a deposit (Alice can cancel after expiration)
-   * @param depositId Deposit ID to cancel
-   * @returns Transaction hash
+   * Cancel a deposit (only by depositor after expiration)
    */
   async cancelDeposit(depositId: string): Promise<{ txHash: string }> {
-    console.log(`❌ Cancelling deposit ${depositId}...`);
-
-    const tx = await this.contract.connect(this.aliceSigner).cancelDeposit(depositId);
+    const tx = await (this.contract as any).connect(this.aliceSigner).cancelDeposit(depositId);
     
-    console.log(`⏳ Waiting for transaction confirmation...`);
+    console.log(`❌ Cancelling deposit...`);
+    console.log(`🔗 Transaction hash: ${tx.hash}`);
+    
     await tx.wait();
-
+    
     console.log(`✅ Deposit cancelled successfully!`);
-    console.log(`🔗 Transaction: ${this.getExplorerLink(tx.hash)}`);
-
+    
     return {
       txHash: tx.hash
     };
@@ -266,7 +261,7 @@ export class EscrowContractManager {
    * Get provider instance
    * @returns Ethers provider
    */
-  getProvider(): ethers.Provider {
+  getProvider(): Provider {
     return this.provider;
   }
 
