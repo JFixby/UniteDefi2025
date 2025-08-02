@@ -100,15 +100,15 @@ export async function evmToBtcExample() {
   await pause('Press Enter to start Step 1: Generating Lightning Network invoice...');
   
   // Step 1: Generate Lightning Network invoice for BTC
-  console.log('\n📋 Step 1: Generating Lightning Network invoice...');
+  console.log('\n📋[USER] Step 1: Generating Lightning Network invoice...');
   const invoiceData = await issueLightningInvoice(amountBtc, 'alice', "Alice selling BTC for ETH");
   const hashedSecret = invoiceData.r_hash;
   const btcLightningNetInvoice = invoiceData.payment_request;
   
-  console.log(`⚡ Lightning Invoice: ${btcLightningNetInvoice.substring(0, 25)}...`);
-  console.log(`🔐 Hashed Secret: ${hashedSecret}`);
+  console.log(`[USER]⚡ Lightning Invoice: ${btcLightningNetInvoice.substring(0, 25)}...`);
+  console.log(`[USER]🔐 Hashed Secret: ${hashedSecret}`);
   
-  await pause('Press Enter to continue to Step 3: Processing order through relay...');
+  await pause('[USER]Press Enter to continue to Step 3: Processing order through relay...');
   
   // Step 3: Process EVM to BTC order through relay
   console.log('\n📋 Step 3: Processing order through relay...');
@@ -123,10 +123,10 @@ export async function evmToBtcExample() {
   const evmToBtcResponse = await relay.processOrderEVM2BTC(evmToBtcOrder);
   console.log('📋 EVM to BTC Response:', evmToBtcResponse);
 
-  await pause('Press Enter to continue to Step 2: Depositing ETH into escrow...');
+  await pause('[USER] Press Enter to continue to Step 2: Depositing ETH into escrow...');
 
   // Step 2: Deposit ETH into escrow with HTLC
-  console.log('\n📋 Step 2: Depositing ETH into escrow...');
+  console.log('\n📋[USER] Step 2: Depositing ETH into escrow...');
   const expirationSeconds = 10; // 10 seconds for demo purposes
   
   // Convert base64 hashed secret to hex format for EVM contract
@@ -151,7 +151,7 @@ export async function evmToBtcExample() {
   console.log(`💰 Amount (Wei): ${transactionInfo.amountWei}`);
   console.log(`⏰ Expiration Time: ${new Date(transactionInfo.expirationTime * 1000).toISOString()}`);
 
-  await pause('Press Enter to continue to final step: Waiting for resolver to claim deposit...');
+  await pause('[USER] Press Enter to continue to final step: Waiting for resolver to claim deposit...');
 
   // wait for resolver to claim deposit...
   await waitResolverClaimDeposit(hashedSecretHex, 60, 10, transactionInfo.escrowAddress); // Use hex format for contract
