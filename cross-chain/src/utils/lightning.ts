@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as https from 'https';
 
 export interface LightningNode {
   alias: string;
@@ -31,6 +32,11 @@ export interface LightningInvoice {
 export interface LightningConfig {
   nodes: LightningNode[];
 }
+
+// Custom HTTPS agent that ignores SSL certificate verification for local development
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+});
 
 /**
  * Issues a Lightning Network invoice using the LND REST API
@@ -85,7 +91,9 @@ export async function issueLightningInvoice(
         'Content-Type': 'application/json',
         'Grpc-Metadata-macaroon': macaroonHex
       },
-      body: JSON.stringify(requestData)
+      body: JSON.stringify(requestData),
+      // @ts-ignore - Node.js fetch supports agent
+      agent: httpsAgent
     });
     
     if (!response.ok) {
@@ -161,7 +169,9 @@ export async function validateLightningNode(nodeAlias: string = 'alice'): Promis
         'Grpc-Metadata-macaroon': fs.readFileSync(
           node.macaroons.find(m => m.type === 'admin')!.path
         ).toString('hex')
-      }
+      },
+      // @ts-ignore - Node.js fetch supports agent
+      agent: httpsAgent
     });
     
     if (response.ok) {
@@ -234,7 +244,9 @@ export async function payLightningInvoice(
         'Content-Type': 'application/json',
         'Grpc-Metadata-macaroon': macaroonHex
       },
-      body: JSON.stringify(requestData)
+      body: JSON.stringify(requestData),
+      // @ts-ignore - Node.js fetch supports agent
+      agent: httpsAgent
     });
     
     if (!response.ok) {

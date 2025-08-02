@@ -162,12 +162,6 @@ if (require.main === module) {
       console.error('\n❌ Error occurred:', error.message);
       console.error('Full error:', error);
       
-      const shouldContinue = await confirm('Do you want to continue despite the error? (y/n): ');
-      if (shouldContinue) {
-        console.log('Continuing...');
-      } else {
-        console.log('Exiting...');
-        process.exit(1);
-      }
+      process.exit(1);
     });
 } 
