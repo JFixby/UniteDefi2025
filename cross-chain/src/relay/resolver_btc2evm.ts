@@ -42,7 +42,7 @@ export class ResolverBTC2EVM {
     console.log('----------------------');
     
     // Step 1: Issue Lightning Network invoice using helper
-    const lightningInvoiceData = await this.issueLightningInvoice(order.amountBtc);
+    const lightningInvoiceData = await this.issueLightningInvoiceResolver(order.amountBtc);
     const lightningInvoice = lightningInvoiceData.payment_request;
     console.log('🤖 RESOLVER: ⚡ Generated Lightning Network invoice:', lightningInvoice.substring(0, 25) + '...');
     
@@ -96,7 +96,7 @@ export class ResolverBTC2EVM {
   }
   
   // Helper function to issue Lightning Network invoice
-  private async issueLightningInvoice(amountBtc: number): Promise<LightningInvoice> {
+  private async issueLightningInvoiceResolver(amountBtc: number): Promise<LightningInvoice> {
     console.log('🤖 RESOLVER: 📝 Issuing Lightning Network invoice...');
     
     try {

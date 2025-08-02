@@ -175,25 +175,7 @@ export class ResolverEVM2BTC {
       return receipt;
       
     } catch (error) {
-      console.error('🤖 RESOLVER: ❌ Lightning payment failed:', error);
-      
-      // For demo purposes, return a mock receipt if real payment fails
-      console.log('🤖 RESOLVER: 💡 Falling back to mock payment for demo purposes...');
-      
-      const mockReceipt: PaymentReceipt = {
-        secret: '0x' + Math.random().toString(16).substring(2, 66),
-        paymentHash: '0x' + Math.random().toString(16).substring(2, 66),
-        amount: 0.001,
-        timestamp: new Date()
-      };
-      
-      console.log('🤖 RESOLVER: ✅ Mock Lightning payment successful');
-      console.log(`🤖 RESOLVER:    Secret: ${mockReceipt.secret}`);
-      console.log(`🤖 RESOLVER:    Payment Hash: ${mockReceipt.paymentHash}`);
-      console.log(`🤖 RESOLVER:    Amount: ${mockReceipt.amount} BTC`);
-      console.log(`🤖 RESOLVER:    Timestamp: ${mockReceipt.timestamp.toISOString()}`);
-      
-      return mockReceipt;
+      throw error
     }
   }
   

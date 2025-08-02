@@ -261,24 +261,6 @@ export async function payLightningInvoice(
     return receipt;
     
   } catch (error) {
-    console.error('❌ Lightning payment failed:', error);
-    
-    // For demo purposes, return a mock receipt if real payment fails
-    console.log('💡 Falling back to mock payment for demo purposes...');
-    
-    const mockReceipt: PaymentReceipt = {
-      secret: '0x' + Math.random().toString(16).substring(2, 66),
-      paymentHash: '0x' + Math.random().toString(16).substring(2, 66),
-      amount: 0.0005,
-      timestamp: new Date()
-    };
-    
-    console.log('✅ Mock Lightning payment successful');
-    console.log(`   Secret: ${mockReceipt.secret}`);
-    console.log(`   Payment Hash: ${mockReceipt.paymentHash}`);
-    console.log(`   Amount: ${mockReceipt.amount} BTC`);
-    console.log(`   Timestamp: ${mockReceipt.timestamp.toISOString()}`);
-    
-    return mockReceipt;
+    throw error
   }
 } 

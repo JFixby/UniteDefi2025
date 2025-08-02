@@ -33,7 +33,13 @@ export async function btcToEvmExample() {
   console.log('\n📋 Step 2: Decoding Lightning invoice...');
   const decodedInvoice = bolt11.decode(btcToEvmResponse.lightningNetworkInvoice);
   const paymentHash = decodedInvoice.tags.find(tag => tag.tagName === 'payment_hash')?.data;
-  const hashedSecret = paymentHash;
+  
+  if (!paymentHash) {
+    throw new Error('Payment hash not found in Lightning invoice');
+  }
+  
+  // Convert payment hash to hex string format expected by EVM
+  const hashedSecret = '0x' + paymentHash;
   
   console.log(`🔑 Payment Hash: ${paymentHash}`);
   console.log(`🔐 Hashed Secret: ${hashedSecret}`);
@@ -47,20 +53,22 @@ export async function btcToEvmExample() {
   // Step 4: Use the secret to claim the escrow deposit
   console.log('\n📋 Step 4: Claiming escrow deposit with secret...');
   
-
+  // Import the claimETH function
+  const { claimETH } = await import('../utils/evm');
   
-  // In a real implementation, you would call a claim function here
-  // For demo purposes, we simulate the claim transaction
-  const claimTxHash = '0x' + Math.random().toString(16).substring(2, 66);
-  const claimBlockNumber = Math.floor(Math.random() * 1000000) + 1000000;
-  const claimGasUsed = Math.floor(Math.random() * 100000) + 50000;
+  // Claim the deposit using the secret revealed from Lightning payment
+  const claimResult = await claimETH({
+    depositId: hashedSecret, // The payment hash from Lightning invoice
+    secret: secret, // The secret revealed from Lightning payment
+    claimerPrivateKey: ALICE_PRIVATE_KEY // Alice's private key to claim the deposit
+  });
   
   console.log('✅ Deposit claimed successfully!');
-  console.log(`🔗 Transaction Hash: ${claimTxHash}`);
-  console.log(`📦 Block Number: ${claimBlockNumber}`);
-  console.log(`⛽ Gas Used: ${claimGasUsed}`);
+  console.log(`🔗 Transaction Hash: ${claimResult.txHash}`);
+  console.log(`🌐 Explorer URL: ${claimResult.explorerUrl}`);
   console.log(`💰 Amount Claimed: ${amountEth} ETH`);
   console.log(`👤 Claimer: ${getAliceAddress()}`);
+  console.log(`🔓 Secret Used: ${claimResult.secret}`);
 
   console.log('\n✅ BTC to EVM example completed!');
 }

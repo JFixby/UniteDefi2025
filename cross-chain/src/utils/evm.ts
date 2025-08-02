@@ -13,10 +13,12 @@ import {
 // Escrow contract ABI - simplified version for deposit function
 const ESCROW_ABI = [
   "function deposit(address claimer, uint256 expirationTime, bytes32 hashlock) external payable",
+  "function claim(bytes32 depositId, bytes memory secret) external",
   "function getDeposit(bytes32 depositId) external view returns (address depositor, address claimer, uint256 amount, uint256 expirationTime, bytes32 hashlock, bool claimed, bool cancelled)",
   "function isExpired(bytes32 depositId) external view returns (bool)",
   "function getBalance() external view returns (uint256)",
-  "event DepositCreated(bytes32 indexed depositId, address indexed depositor, address indexed claimer, uint256 amount, uint256 expirationTime, bytes32 hashlock)"
+  "event DepositCreated(bytes32 indexed depositId, address indexed depositor, address indexed claimer, uint256 amount, uint256 expirationTime, bytes32 hashlock)",
+  "event DepositClaimed(bytes32 indexed depositId, address indexed claimer, bytes secret)"
 ];
 
 export interface DepositETHParams {
