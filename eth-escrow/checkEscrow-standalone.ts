@@ -82,6 +82,19 @@ async function main() {
     // Display deposit information
     await escrowManager.displayDepositInfo(depositResult.depositId);
 
+    // Verify deposit ID matches hashlock
+    console.log("\n🔍 VERIFYING DEPOSIT ID MATCHES HASHLOCK:");
+    console.log(`📋 Submitted hashlock: ${hashlock}`);
+    console.log(`🆔 Returned deposit ID: ${depositResult.depositId}`);
+    
+    if (depositResult.depositId.toLowerCase() === hashlock.toLowerCase()) {
+      console.log("✅ SUCCESS: Deposit ID matches hashlock!");
+    } else {
+      console.log("❌ ERROR: Deposit ID does NOT match hashlock!");
+      console.log("This indicates the contract is not using hashlock as deposit ID.");
+      throw new Error("Deposit ID mismatch with hashlock");
+    }
+
     // Check balances after deposit
     console.log("\n💰 Checking balances after deposit...");
     const aliceAfterDeposit = await escrowManager.getAccountBalance(escrowManager.getAliceAddress());
