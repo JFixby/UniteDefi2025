@@ -1,4 +1,6 @@
 import { ethers } from "ethers";
+import SHA256 from "crypto-js/sha256";
+import Hex from "crypto-js/enc-hex";
 import {
   createEscrowManager,
   EscrowContractManager,
@@ -57,7 +59,7 @@ async function main() {
     const depositAmount = ethers.parseEther("0.033").toString();
     const expirationTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
     const secret = "mysecret123"; // Mock secret
-    const hashlock = ethers.keccak256(ethers.toUtf8Bytes(secret)); // Generate hashlock from secret
+    const hashlock = "0x" + SHA256(secret).toString(Hex); // Generate SHA256 hashlock from secret (Lightning compatible)
 
     console.log("\n" + "=".repeat(60));
     console.log("🧪 ESCROW CONTRACT TEST");

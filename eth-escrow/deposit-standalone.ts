@@ -9,7 +9,7 @@ const ESCROW_ABI = require("./artifacts/contracts/escrow.sol/Escrow.json").abi;
 export interface DepositParams {
   claimer: string;
   expirationTime: number;
-  hashlock: string;
+  hashlock: string; // Will be converted to bytes32
   amount: string;
 }
 
@@ -23,7 +23,7 @@ export interface DepositInfo {
   claimer: string;
   amount: string;
   expirationTime: number;
-  hashlock: string;
+  hashlock: string; // Will be converted from bytes32
   claimed: boolean;
   cancelled: boolean;
 }
@@ -109,10 +109,13 @@ export class EscrowContractManager {
   async createDeposit(params: DepositParams): Promise<{ txHash: string; depositId: string }> {
     console.log(`📥 Creating deposit for ${ethers.formatEther(params.amount)} native tokens...`);
     
+    // Convert hashlock string to bytes32
+    const hashlockBytes32 = ethers.getBytes(params.hashlock);
+    
     const tx = await this.contract.deposit(
       params.claimer,
       params.expirationTime,
-      params.hashlock,
+      hashlockBytes32,
       { value: params.amount }
     );
     
@@ -204,7 +207,7 @@ export class EscrowContractManager {
       claimer: deposit.claimer,
       amount: deposit.amount.toString(),
       expirationTime: Number(deposit.expirationTime),
-      hashlock: deposit.hashlock,
+      hashlock: ethers.hexlify(deposit.hashlock), // Convert bytes32 to hex string
       claimed: deposit.claimed,
       cancelled: deposit.cancelled
     };

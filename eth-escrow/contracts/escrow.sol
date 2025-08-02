@@ -5,18 +5,33 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
+ * @title SHA256 Library
+ * @dev Simple SHA256 implementation for Lightning Network compatibility
+ */
+library SHA256 {
+    function sha256(bytes memory data) internal pure returns (bytes32) {
+        bytes32 hash;
+        assembly {
+            hash := sha256(data, mload(data))
+        }
+        return hash;
+    }
+}
+
+/**
  * @title Escrow Contract
  * @dev A Hash Time Locked Contract (HTLC) for secure conditional transfers
  */
 contract Escrow is ReentrancyGuard {
     using ECDSA for bytes32;
+    using SHA256 for bytes;
 
     struct Deposit {
         address depositor;
         address claimer;
         uint256 amount;
         uint256 expirationTime;
-        string hashlock;
+        bytes32 hashlock;
         bool claimed;
         bool cancelled;
     }
@@ -49,17 +64,17 @@ contract Escrow is ReentrancyGuard {
      * @dev Creates a new deposit with HTLC functionality
      * @param claimer Address of the user who can claim the deposit
      * @param expirationTime Unix timestamp after which depositor can cancel
-     * @param hashlock String hashlock from Lightning Network invoice
+     * @param hashlock Bytes32 hashlock from Lightning Network invoice
      */
     function deposit(
         address claimer,
         uint256 expirationTime,
-        string memory hashlock
+        bytes32 hashlock
     ) external payable nonReentrant {
         require(msg.value > 0, "Deposit amount must be greater than 0");
         require(claimer != address(0), "Invalid claimer address");
         require(expirationTime > block.timestamp, "Expiration time must be in the future");
-        require(bytes(hashlock).length > 0, "Hashlock cannot be empty");
+        require(hashlock != bytes32(0), "Hashlock cannot be empty");
 
         // Create unique deposit ID using depositor address and hashlock
         bytes32 depositId = keccak256(abi.encodePacked(msg.sender, hashlock, block.timestamp));
@@ -102,9 +117,9 @@ contract Escrow is ReentrancyGuard {
         require(msg.sender == deposit.claimer, "Only claimer can claim");
         require(block.timestamp <= deposit.expirationTime, "Deposit expired");
         
-        // Verify the secret matches the hashlock
-        bytes32 computedHashlock = keccak256(abi.encodePacked(secret));
-        require(keccak256(abi.encodePacked(deposit.hashlock)) == computedHashlock, "Invalid secret");
+        // Verify the secret matches the hashlock using SHA256 (Lightning Network compatible)
+        bytes32 computedHashlock = SHA256.sha256(abi.encodePacked(secret));
+        require(deposit.hashlock == computedHashlock, "Invalid secret");
 
         // Mark as claimed
         deposit.claimed = true;
@@ -146,7 +161,7 @@ contract Escrow is ReentrancyGuard {
      * @return claimer Address of the claimer
      * @return amount Amount of ETH deposited
      * @return expirationTime Expiration timestamp
-     * @return hashlock String hashlock from Lightning Network
+     * @return hashlock Bytes32 hashlock from Lightning Network
      * @return claimed Whether deposit has been claimed
      * @return cancelled Whether deposit has been cancelled
      */
@@ -155,7 +170,7 @@ contract Escrow is ReentrancyGuard {
         address claimer,
         uint256 amount,
         uint256 expirationTime,
-        string memory hashlock,
+        bytes32 hashlock,
         bool claimed,
         bool cancelled
     ) {
