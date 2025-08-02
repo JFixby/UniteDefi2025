@@ -1,0 +1,130 @@
+
+Moralis Web3 Forum - Largest Web3 Dev Community 📈
+Not enough allowance 1Inch swap
+Moralis General
+
+Not enough allowance 1Inch swap
+Moralis General
+nikbtc94
+2
+Dec '21
+
+Hello, i am trying to build a simple dex using Moralis and 1Inch plugin but i have saome problems.
+
+I am able to swap BNB to USDT without any issue but i am not able to swap USDT back to BNB even i have balance on both usdt and bnb address.
+
+i have changed fromTokenAddress and toTokenAddress from bnb to usdt like fromTokenAddress:USDT_ADDRESS,
+toTokenAddress:BNB_ADDRESS,
+
+amount is 0.01 BNB.
+
+but i am receiving this kind of error 74
+
+Not enough allowance. Amount: 10000000000000000
+on my wallet balance i have 28 USDT and over 200$ in BNB.
+
+Now i am trying to swap 10 USDT for BNB but i am not able to do and i don’t know why, everything i am doing is correct. Both addresses, amont…
+
+what i am missing please?
+
+    created
+    Dec '21
+    last reply
+    Apr '22
+    13
+    replies
+    3.3k
+    views
+    7
+    users
+    8
+    likes
+    5
+    3
+
+cryptokid
+Dec '21
+
+Not sure if that is the problem, but you could try to increase the slippage.
+nikbtc94
+Dec '21
+
+I tried from 1 to even 20, still the same.
+cryptokid
+Jan '22
+
+I see there that it says allowance: 0, maybe it requires an approve step
+YosephKS
+nikbtc94
+Jan '22
+
+yse as @cryptokid says, it needs the approve step, ERC20 token is different to native token such as BNB, you need to call the approve function from the USDT token contract in order for 1inch DEX to have access on your USDT fund to then swap it with BNB. This is because 1inch DEX is a third party, so it’s like you are giving the DEX permission to take USDT fund from your wallet and in return give you back some BNB~
+nikbtc94
+Jan '22
+
+How i can call approve function from USDT token contract using 1Inch API?
+nikbtc94
+Jan '22
+
+Ok i found it. Yea, that was an issue, now after approval everything working perfect!
+Thanks guys!
+cryptokid
+Jan '22
+
+what did you do to make it work?
+nikbtc94
+Jan '22
+
+First call hasAllowance function then if there is no allowance call approve function
+
+    hasAllowance({ chain: chain, fromTokenAddress: fromTokenAddress, amount: tokenAmount, fromAddress: user })
+
+    approve({ chain: chain, tokenAddress: fromTokenAddress, fromAddress: user })
+
+YosephKS
+Jan '22
+
+niceee :fire: the flow looks good to me :raised_hands:
+29 days later
+Dee
+Jan '22
+
+@nikbtc94 I am having same issues can you show me your code snippet for implementing the allowance section please
+17 days later
+fedex
+Feb '22
+
+I have the same issue.
+In which object you call the approve method?
+0xprof
+Dee
+Feb '22
+
+@Dee @fedex the approve is a function in the smart contract of your erc 20 token
+2 months later
+0xL
+Apr '22
+
+hello everyone
+
+I develop a bot using ethers and forking the main node. I unlock some wallets and I use those. In order to prepare my transaction, I need to call the “/v4.0/1/swap” and I get “400 Not enough allowance” I can approve the ERC20 transfer but since I’m using my local machine that won’t have any effect. Is there a way to jump the approval verification while calling the app? If not is there a way I can build the transaction manually?
+
+Thank you
+Suggested Topics
+Topic 	Replies 	Views 	Activity
+Filter on stream for watch addresses
+Moralis General
+	2 	659 	Jul '24
+Would like to know the total size of ipfs storage
+Moralis General
+	2 	631 	Sep '24
+Starting up guide
+Moralis General
+	1 	656 	Oct '24
+Update stream via API call
+Moralis General
+	0 	759 	Nov '24
+Core.mjs:7380 ERROR ProviderNotFoundError: Provider not found
+Moralis General
+	2 	684 	Jan 9
+Want to read more? Browse other topics in Moralis General or view latest topics.

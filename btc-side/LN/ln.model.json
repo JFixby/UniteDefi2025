@@ -1,0 +1,78 @@
+{
+  "": "http://json-schema.org/draft-07/schema#",
+  "title": "LNNodesAndChannels",
+  "type": "array",
+  "description": "List of Lightning Network nodes with their channels, docker image, and macaroon file paths.",
+  "items": {
+    "type": "object",
+    "properties": {
+      "alias": {
+        "type": "string",
+        "description": "Node alias (name)"
+      },
+      "docker_image": {
+        "type": "string",
+        "description": "Docker image name for the node container"
+      },
+      "rest_port": {
+        "type": "string",
+        "description": "REST API port mapped for this node"
+      },
+      "macaroons": {
+        "type": "array",
+        "description": "List of macaroon files for this node.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Macaroon type (e.g., admin, invoice, readonly, etc.)"
+            },
+            "path": {
+              "type": "string",
+              "description": "Filesystem path to the macaroon file"
+            }
+          },
+          "required": ["type", "path"]
+        }
+      },
+      "channels": {
+        "type": "array",
+        "description": "List of channels for this node.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "remote_pubkey": {
+              "type": "string",
+              "description": "Remote node's public key"
+            },
+            "local_pubkey": {
+              "type": "string",
+              "description": "Local node's public key"
+            },
+            "remote_alias": {
+              "type": "string",
+              "description": "Remote node's alias (if known)"
+            },
+            "channel_point": {
+              "type": "string",
+              "description": "Channel point (funding txid:index)"
+            },
+            "local_balance": {
+              "type": "string",
+              "pattern": "^\d+$",
+              "description": "Local balance in satoshis (as string)"
+            },
+            "remote_balance": {
+              "type": "string",
+              "pattern": "^\d+$",
+              "description": "Remote balance in satoshis (as string)"
+            }
+          },
+          "required": ["remote_pubkey", "local_pubkey", "remote_alias", "channel_point", "local_balance", "remote_balance"]
+        }
+      }
+    },
+    "required": ["alias", "docker_image", "rest_port", "macaroons", "channels"]
+  }
+}
