@@ -46,7 +46,7 @@ contract Escrow is ReentrancyGuard {
         address indexed claimer,
         uint256 amount,
         uint256 expirationTime,
-        string hashlock
+        bytes32 hashlock
     );
     
     event DepositClaimed(
