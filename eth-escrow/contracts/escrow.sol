@@ -52,7 +52,7 @@ contract Escrow is ReentrancyGuard {
     event DepositClaimed(
         bytes32 indexed depositId,
         address indexed claimer,
-        string secret
+        bytes secret
     );
     
     event DepositCancelled(
@@ -108,7 +108,7 @@ contract Escrow is ReentrancyGuard {
      * @param depositId The ID of the deposit to claim
      * @param secret The secret that hashes to the hashlock (from Lightning Network)
      */
-    function claim(bytes32 depositId, string memory secret) external nonReentrant {
+    function claim(bytes32 depositId, bytes memory secret) external nonReentrant {
         Deposit storage deposit = deposits[depositId];
         
         require(deposit.depositor != address(0), "Deposit does not exist");
@@ -118,7 +118,7 @@ contract Escrow is ReentrancyGuard {
         require(block.timestamp <= deposit.expirationTime, "Deposit expired");
         
         // Verify the secret matches the hashlock using SHA256 (Lightning Network compatible)
-        bytes32 computedHashlock = SHA256.sha256(abi.encodePacked(secret));
+        bytes32 computedHashlock = SHA256.sha256(secret);
         require(deposit.hashlock == computedHashlock, "Invalid secret");
 
         // Mark as claimed
