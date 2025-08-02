@@ -24,8 +24,9 @@ export class Resolver {
   sendToResolver(btcLightningNetInvoice: string): void {
     console.log('----------------------');
     console.log('🤖 RESOLVER PROCESSING STARTED');
+    console.log('🤖 RESOLVER: Order Type: Single Fill Order (100% Fill)');
     console.log('----------------------');
-    console.log('🤖 RESOLVER: Lightning Invoice:', btcLightningNetInvoice);
+    console.log('🤖 RESOLVER: Lightning Invoice:', btcLightningNetInvoice.substring(0, 25) + '...');
     
     // Decode the Lightning invoice
     const decodedData = this.decodeBtcLightningNetInvoice(btcLightningNetInvoice);
@@ -97,7 +98,7 @@ export class Resolver {
   
   payLightningNetInvoice(invoice: string): PaymentReceipt {
     console.log('🤖 RESOLVER: ⚡ Paying Lightning Network invoice...');
-    console.log(`🤖 RESOLVER:    Invoice: ${invoice.substring(0, 50)}...`);
+    console.log(`🤖 RESOLVER:    Invoice: ${invoice.substring(0, 25)}...`);
     
     // Dummy payment receipt
     const receipt: PaymentReceipt = {
@@ -117,8 +118,8 @@ export class Resolver {
   }
   
   claimEscrow(secret: string): EscrowTransaction {
-    console.log('🏦 Claiming funds from escrow contract...');
-    console.log(`   Secret: ${secret}`);
+    console.log('🤖 RESOLVER: 🏦 Claiming funds from escrow contract...');
+    console.log(`🤖 RESOLVER:    Secret: ${secret}`);
     
     // Dummy claim transaction
     const tx: EscrowTransaction = {
@@ -127,19 +128,19 @@ export class Resolver {
       gasUsed: Math.floor(Math.random() * 50000) + 25000
     };
     
-    console.log('✅ Escrow claim successful');
-    console.log(`   Transaction Hash: ${tx.txHash}`);
-    console.log(`   Block Number: ${tx.blockNumber}`);
-    console.log(`   Gas Used: ${tx.gasUsed}`);
+    console.log('🤖 RESOLVER: ✅ Escrow claim successful');
+    console.log(`🤖 RESOLVER:    Transaction Hash: ${tx.txHash}`);
+    console.log(`🤖 RESOLVER:    Block Number: ${tx.blockNumber}`);
+    console.log(`🤖 RESOLVER:    Gas Used: ${tx.gasUsed}`);
     
     return tx;
   }
   
   printBalance(): void {
-    console.log('💳 Current Balance Report:');
-    console.log('   ETH Balance: 0.985 ETH');
-    console.log('   BTC Balance: 0.001 BTC');
-    console.log('   USDC Balance: 150.00 USDC');
-    console.log('   Last Updated: ' + new Date().toISOString());
+    console.log('🤖 RESOLVER: 💳 Current Balance Report:');
+    console.log('🤖 RESOLVER:    ETH Balance: 0.985 ETH');
+    console.log('🤖 RESOLVER:    BTC Balance: 0.001 BTC');
+    console.log('🤖 RESOLVER:    USDC Balance: 150.00 USDC');
+    console.log('🤖 RESOLVER:    Last Updated: ' + new Date().toISOString());
   }
 } 

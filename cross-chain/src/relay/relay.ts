@@ -6,6 +6,7 @@ export class Relay {
   
   processOrderEVM2BTC(order: OrderEVM2BTC): OrderEVM2BTCResponse {
     console.log('🔄 Processing EVM to BTC order...');
+    console.log('📋 Order Type: Single Fill Order (100% Fill)');
     console.log('Order Details:', {
       amountBtc: order.amountBtc,
       btcLightningNetInvoice: order.btcLightningNetInvoice,
@@ -24,6 +25,7 @@ export class Relay {
   
   processOrderBTC2EVM(order: OrderBTC2EVM): OrderBTC2EVMResponse {
     console.log('🔄 Processing BTC to EVM order...');
+    console.log('📋 Order Type: Single Fill Order (100% Fill)');
     console.log('Order Details:', {
       amountBtc: order.amountBtc,
       amountEth: order.amountEth,
@@ -33,7 +35,7 @@ export class Relay {
     // Generate Lightning Network invoice
     const lightningInvoice = "lnbc100u1p5guy6ypp5eeyft8ntelam75uvpnz8lcx46qpp5aa6a4rrvc2qtc74qaz8776scqzyssp5us7lxaq6xny2e85sjfxa6dttua7v0ag32q2huzue5m67czzj5nes9q7sqqqqqqqqqqqqqqqqqqqsqqqqqysgqdqqmqz9gxqyjw5qrzjqwryaup9lh50kkranzgcdnn2fgvx390wgj5jd07rwr3vxeje0glcllmqlf20lk5u3sqqqqlgqqqqqeqqjqr4dqnmedj6pz9jvh2ufw0v0grfa27khg7tfwvun8u9fcxg952ua5zed68d2naa6whng33z7qnvt8x5x07lzf6lchegvr70xsrjmk8uqpsjef9k";
     
-    console.log('⚡ Generated Lightning Network invoice:', lightningInvoice);
+    console.log('⚡ Generated Lightning Network invoice:', lightningInvoice.substring(0, 25) + '...');
     console.log('✅ BTC to EVM order processing completed');
     
     console.log('----------------------');
@@ -96,6 +98,7 @@ export class Relay {
   
   private async claimDepositOnBehalfOfUser(order: OrderBTC2EVM): Promise<void> {
     console.log('🤖 RESOLVER: 🏦 Claiming deposit on behalf of user...');
+    console.log('🤖 RESOLVER: Order Type: Single Fill Order (100% Fill)');
     console.log('🤖 RESOLVER: User Order Details:', {
       amountBtc: order.amountBtc,
       amountEth: order.amountEth,

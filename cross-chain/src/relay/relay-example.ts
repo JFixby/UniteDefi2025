@@ -15,7 +15,7 @@ export function exampleUsage() {
   
   const btcToEvmResponse = relay.processOrderBTC2EVM(btcToEvmOrder);
   console.log('📋 BTC to EVM Response:', btcToEvmResponse);
-  console.log('⚡ Lightning Invoice:', btcToEvmResponse.lightningNetworkInvoice);
+  console.log('⚡ Lightning Invoice:', btcToEvmResponse.lightningNetworkInvoice.substring(0, 25) + '...');
 }
 
 export function evmToBtcExample() {
