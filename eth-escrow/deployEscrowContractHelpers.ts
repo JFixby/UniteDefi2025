@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 import { Contract, ContractFactory, Provider, Signer, Wallet, JsonRpcProvider } from "ethers";
 
 export interface DeploymentConfig {
@@ -37,18 +37,17 @@ export async function deployEscrowContract(config: DeploymentConfig): Promise<De
     signer = new Wallet(config.privateKey, provider);
     console.log(`📡 Connected to ${config.networkName} via RPC`);
   } else {
-    // Use Hardhat's built-in network
-    [signer] = await ethers.getSigners();
-    provider = signer.provider!;
-    console.log(`🔧 Using Hardhat network: ${config.networkName}`);
+    // For local development, require RPC URL and private key
+    throw new Error("RPC URL and private key are required for deployment");
   }
 
   // Get deployer address
   const deployer = await signer.getAddress();
   console.log(`👤 Deployer address: ${deployer}`);
 
-  // Get contract factory
-  const EscrowFactory: ContractFactory = await ethers.getContractFactory("Escrow");
+  // Load contract artifact
+  const contractArtifact = require("./artifacts/contracts/escrow.sol/Escrow.json");
+  const EscrowFactory = new ethers.ContractFactory(contractArtifact.abi, contractArtifact.bytecode, signer);
   
   // Prepare deployment overrides
   const deploymentOverrides: any = {
@@ -140,8 +139,8 @@ export async function getEscrowContract(
   address: string, 
   signer: Signer
 ): Promise<Contract> {
-  const EscrowFactory = await ethers.getContractFactory("Escrow");
-  return EscrowFactory.attach(address).connect(signer) as Contract;
+  const contractArtifact = require("./artifacts/contracts/escrow.sol/Escrow.json");
+  return new ethers.Contract(address, contractArtifact.abi, signer);
 }
 
 /**
@@ -156,7 +155,7 @@ export function saveDeploymentInfo(result: DeploymentResult, filename: string = 
   const deploymentInfo = {
     contractName: "Escrow",
     ...result,
-    abi: require("../artifacts/contracts/escrow.sol/Escrow.json").abi
+    abi: require("./artifacts/contracts/escrow.sol/Escrow.json").abi
   };
 
   const filePath = path.join(__dirname, "..", filename);

@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 import {
   deployEscrowContract,
   DeploymentConfig,
@@ -68,7 +68,7 @@ async function main() {
     // Get contract instance
     const provider = new ethers.JsonRpcProvider(deploymentConfig.rpcUrl);
     const signer = new ethers.Wallet(ALICE_PRIVATE_KEY, provider);
-    const contract = await ethers.getContractAt("Escrow", result.address, signer);
+    const contract = new ethers.Contract(result.address, result.contract.interface, signer);
 
     // Test basic contract functions
     console.log("🧪 Testing contract functions...");

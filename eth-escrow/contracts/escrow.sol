@@ -103,7 +103,7 @@ contract Escrow is ReentrancyGuard {
         require(!depositInfo.claimed, "Deposit already claimed");
         require(!depositInfo.cancelled, "Deposit already cancelled");
         require(msg.sender == depositInfo.claimer, "Only claimer can claim");
-        require(block.timestamp <= depositInfo.expirationTime, "Deposit expired");
+        // Removed expiration check - claimer can claim at any time with correct secret
         
         // Verify the secret matches the hashlock using SHA256 (Lightning Network compatible)
         bytes32 computedHashlock = sha256(secret);
