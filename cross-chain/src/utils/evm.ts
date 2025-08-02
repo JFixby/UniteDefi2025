@@ -313,8 +313,8 @@ export async function claimETH(params: ClaimETHParams): Promise<ClaimETHResult> 
     // Convert deposit ID to bytes32
     const depositIdBytes32 = ethers.getBytes(params.depositId);
     
-    // Convert secret to bytes
-    const secretBytes = ethers.toUtf8Bytes(params.secret);
+    // Convert secret from base64 to bytes (Lightning Network format)
+    const secretBytes = Buffer.from(params.secret, 'base64');
     
     // Get escrow contract address
     const escrowAddress = getEscrowContractAddress();
