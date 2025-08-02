@@ -88,6 +88,7 @@ Bitcoin Mainnet ←→ Lightning Network ←→ Polygon ←→ Ethereum Mainnet
 6. EVM escrow settles with revealed secret
 7. Cross-chain swap complete in <1 second
 ```
+![Image](https://github.com/user-attachments/assets/11561e39-34f5-494d-8acc-7e8bda801782)
 
 ---
 
