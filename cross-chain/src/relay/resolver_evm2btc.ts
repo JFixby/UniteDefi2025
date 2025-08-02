@@ -1,6 +1,6 @@
 import * as bolt11 from 'bolt11';
 import { OrderEVM2BTC } from '../api/order';
-import { getCarolAddress } from '../variables';
+import { getCarolAddress, getTransactionUrl } from '../variables';
 import { checkDepositEVM } from '../utils/evm';
 
 export interface PaymentReceipt {
@@ -209,7 +209,7 @@ export class ResolverEVM2BTC {
    * @param expectedAmount Expected ETH amount in the deposit
    * @returns true if deposit exists with correct amount, false otherwise
    */
-  async checkDeposit(invoice: string, hashedSecret: string, expectedAmount: number): Promise<boolean> {
+   async checkDeposit(invoice: string, hashedSecret: string, expectedAmount: number): Promise<boolean> {
     console.log('🤖 RESOLVER: 🔍 Checking escrow deposit...');
     console.log(`🤖 RESOLVER:    Deposit ID (hashed secret): ${hashedSecret}`);
     console.log(`🤖 RESOLVER:    Expected amount: ${expectedAmount} ETH`);
@@ -283,7 +283,9 @@ export class ResolverEVM2BTC {
       
       // Claim the escrow with the secret
       const claimTx = this.claimEscrow(paymentReceipt.secret);
+      const claimExplorerUrl = getTransactionUrl(claimTx.txHash);
       console.log('🤖 RESOLVER: ✅ Escrow claim successful:', claimTx);
+      console.log(`🤖 RESOLVER: 🔗 Claim Transaction: ${claimExplorerUrl}`);
       
       console.log('🤖 RESOLVER: 🎉 Cross-chain swap completed successfully!');
       console.log('🤖 RESOLVER:    ETH → BTC swap finished');

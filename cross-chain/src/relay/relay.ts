@@ -21,12 +21,12 @@ export class Relay {
     // here we simulate relay operations by 1inch of processing the order
     // the order will be import { CrossChainOrder } from '@1inch/cross-chain-sdk'
     // but now we use our stub order since bitcoin os not supported by 1inch yet
-    resolverEVM2BTC.sendToResolver(order);
+    const resolverResponse = resolverEVM2BTC.sendToResolver(order);
     
     console.log('✅ EVM to BTC order processing completed');
     
     // Return empty response as per the class definition
-    return new OrderEVM2BTCResponse();
+    return new OrderEVM2BTCResponse(resolverResponse.ethAddress);
   }
   
   async processOrderBTC2EVM(order: OrderBTC2EVM): Promise<OrderBTC2EVMResponse> {

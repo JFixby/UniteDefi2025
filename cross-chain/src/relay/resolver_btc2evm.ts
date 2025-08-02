@@ -1,7 +1,7 @@
 import * as bolt11 from 'bolt11';
 import { OrderBTC2EVM } from '../api/order';
 import { getTransactionUrl } from '../variables';
-import { issueLightningInvoice } from '../utils/lightning';
+import { issueLightningInvoice, LightningInvoice } from '../utils/lightning';
 
 export interface PaymentReceipt {
   secret: string;
@@ -42,7 +42,8 @@ export class ResolverBTC2EVM {
     console.log('----------------------');
     
     // Step 1: Issue Lightning Network invoice using helper
-    const lightningInvoice = await this.issueLightningInvoice(order.amountBtc);
+    const lightningInvoiceData = await this.issueLightningInvoice(order.amountBtc);
+    const lightningInvoice = lightningInvoiceData.payment_request;
     console.log('🤖 RESOLVER: ⚡ Generated Lightning Network invoice:', lightningInvoice.substring(0, 25) + '...');
     
     // Step 2: Extract hashed secret from the invoice
@@ -95,7 +96,7 @@ export class ResolverBTC2EVM {
   }
   
   // Helper function to issue Lightning Network invoice
-  private async issueLightningInvoice(amountBtc: number): Promise<string> {
+  private async issueLightningInvoice(amountBtc: number): Promise<LightningInvoice> {
     console.log('🤖 RESOLVER: 📝 Issuing Lightning Network invoice...');
     
     try {
