@@ -2,7 +2,8 @@ import { Relay } from './relay';
 import { OrderBTC2EVM, OrderEVM2BTC } from '../api/order';
 import { issueLightningInvoice } from '../utils/lightning';
 import { depositETH, checkDepositEVM } from '../utils/evm';
-import { ALICE_PRIVATE_KEY, getCarolAddress } from '../variables';
+import { ALICE_PRIVATE_KEY, getCarolAddress, getAliceAddress } from '../variables';
+import { decode } from 'punycode';
 
 // Example usage of the Relay class methods
 export async function btcToEvmExample() {
@@ -10,15 +11,33 @@ export async function btcToEvmExample() {
   
   // Example 1: Process BTC to EVM order
   console.log('\n🚀 === BTC to EVM Order Example ===');
+  const amountBtc = 0.0005;
+  const amountEth = 0.015;
+  
+  console.log('\n🚀 === EVM to BTC Order Example ===');
+  console.log(`💰 Amount BTC: ${amountBtc}`);
+  console.log(`💰 Amount ETH: ${amountEth}`);
+
   const btcToEvmOrder = new OrderBTC2EVM(
-    0.001, // amountBtc
-    0.015, // amountEth
-    "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6" // ethAddress
+    amountBtc, // amountBtc
+    amountEth, // amountEth
+    getAliceAddress(),
   );
   
-  const btcToEvmResponse = await relay.processOrderBTC2EVM(btcToEvmOrder);
+  const btcToEvmResponse = await relay.processOrderBTC2EVM(btcToEvmOrder);// get the OrderBTC2EVMResponse
   console.log('📋 BTC to EVM Response:', btcToEvmResponse);
   console.log('⚡ Lightning Invoice:', btcToEvmResponse.lightningNetworkInvoice.substring(0, 25) + '...');
+
+  from OrderBTC2EVMResponse extract invide and decode
+
+  pay Lightning Invoice payInvoice("alice",)
+
+  after paynent seret is revealed
+
+  use secret to claim escrow deposit
+
+  print resulting transaction of claiming deposit
+
 }
 
 /**
