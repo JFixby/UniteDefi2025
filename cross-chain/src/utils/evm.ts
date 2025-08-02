@@ -268,3 +268,120 @@ export async function checkDepositEVM(hashedSecret: string, expectedAmountEth?: 
     throw error;
   }
 } 
+
+export interface ClaimETHParams {
+  depositId: string;
+  secret: string;
+  claimerPrivateKey: string;
+}
+
+export interface ClaimETHResult {
+  txHash: string;
+  explorerUrl: string;
+  secret: string;
+}
+
+/**
+ * Claims ETH from the escrow contract using the secret
+ * @param params - Claim parameters
+ * @returns Promise<ClaimETHResult> - Transaction details
+ */
+export async function claimETH(params: ClaimETHParams): Promise<ClaimETHResult> {
+  try {
+    console.log(`📤 Claiming ETH deposit...`);
+    console.log(`   Deposit ID: ${params.depositId}`);
+    
+    // Validate private key
+    if (!params.claimerPrivateKey || params.claimerPrivateKey.length === 0) {
+      throw new Error('Claimer private key is required');
+    }
+
+    // Validate secret
+    if (!params.secret || params.secret.length === 0) {
+      throw new Error('Secret is required');
+    }
+
+    // Setup provider and signer
+    const provider = new ethers.JsonRpcProvider(getRpcUrl());
+    const claimerSigner = new ethers.Wallet(params.claimerPrivateKey, provider);
+    
+    // Get claimer address
+    const claimerAddress = await claimerSigner.getAddress();
+    
+    // Convert deposit ID to bytes32
+    const depositIdBytes32 = ethers.getBytes(params.depositId);
+    
+    // Convert secret to bytes
+    const secretBytes = ethers.toUtf8Bytes(params.secret);
+    
+    // Get escrow contract address
+    const escrowAddress = getEscrowContractAddress();
+    
+    // Create contract instance with claimer signer
+    const escrowContract = new ethers.Contract(escrowAddress, ESCROW_ABI, claimerSigner);
+    
+    console.log(`📋 Claim Details:`);
+    console.log(`   Deposit ID: ${params.depositId}`);
+    console.log(`   Claimer: ${claimerAddress}`);
+    console.log(`   Secret: ${params.secret}`);
+    console.log(`   Escrow Contract: ${escrowAddress}`);
+    
+    // First check if deposit exists and is claimable
+    const depositCheck = await checkDepositEVM(params.depositId);
+    
+    if (!depositCheck.exists) {
+      throw new Error(`No deposit found with ID: ${params.depositId}`);
+    }
+    
+    if (depositCheck.claimed) {
+      throw new Error(`Deposit ${params.depositId} has already been claimed`);
+    }
+    
+    if (depositCheck.cancelled) {
+      throw new Error(`Deposit ${params.depositId} has been cancelled`);
+    }
+    
+    if (depositCheck.expired) {
+      throw new Error(`Deposit ${params.depositId} has expired`);
+    }
+    
+    // Verify the claimer address matches
+    if (depositCheck.claimer.toLowerCase() !== claimerAddress.toLowerCase()) {
+      throw new Error(`Only the designated claimer (${depositCheck.claimer}) can claim this deposit. Current signer: ${claimerAddress}`);
+    }
+    
+    console.log(`✅ Deposit validation passed. Proceeding with claim...`);
+    
+    // Create claim transaction
+    const tx = await escrowContract.claim(depositIdBytes32, secretBytes);
+    
+    console.log(`⏳ Waiting for transaction confirmation...`);
+    console.log(`🔗 Transaction Hash: ${tx.hash}`);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    
+    if (!receipt) {
+      throw new Error('Transaction failed - no receipt received');
+    }
+    
+    // Generate explorer URL
+    const explorerUrl = getTransactionUrl(receipt.hash);
+    
+    console.log(`✅ ETH claim successful!`);
+    console.log(`🔗 Transaction: ${receipt.hash}`);
+    console.log(`🌐 Explorer: ${explorerUrl}`);
+    console.log(`⏰ Block Number: ${receipt.blockNumber}`);
+    console.log(`💰 Amount claimed: ${depositCheck.amount} ETH`);
+    
+    return {
+      txHash: receipt.hash,
+      explorerUrl,
+      secret: params.secret
+    };
+    
+  } catch (error) {
+    console.error('❌ Failed to claim ETH:', error);
+    throw error;
+  }
+} 

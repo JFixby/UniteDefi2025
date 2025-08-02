@@ -118,7 +118,7 @@ export class Relay {
     console.log('🤖 RESOLVER: 🔑 Generated secret for claim:', secret);
     
     // Claim the escrow funds
-    const claimTx = resolver.claimEscrow(secret);
+    const claimTx = await resolver.claimEscrow(secret);
     
     console.log('🤖 RESOLVER: ✅ Deposit pushed successfully to maker');
     console.log('🤖 RESOLVER: Transaction Details:', claimTx);
