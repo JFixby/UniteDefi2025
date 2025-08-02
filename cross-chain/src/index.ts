@@ -14,4 +14,18 @@ const config: CrossChainConfig = {
 
 console.log('Configuration:', config);
 
+// Export the new block explorer helper functions
+export { 
+  getBlockExplorerUrl,
+  getTransactionUrl,
+  getAddressUrl,
+  getBlockUrl,
+  getChainId,
+  getRpcUrl,
+  NETWORK,
+  CHAIN_IDS,
+  RPC_URLS,
+  BLOCK_EXPLORERS
+} from './variables';
+
 export { config }; 
