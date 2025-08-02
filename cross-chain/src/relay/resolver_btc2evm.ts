@@ -1,7 +1,8 @@
 import * as bolt11 from 'bolt11';
 import { OrderBTC2EVM } from '../api/order';
-import { getTransactionUrl } from '../variables';
+import { getTransactionUrl, ALICE_PRIVATE_KEY } from '../variables';
 import { issueLightningInvoice, LightningInvoice } from '../utils/lightning';
+import { depositETH } from '../utils/evm';
 
 export interface PaymentReceipt {
   secret: string;
@@ -56,17 +57,23 @@ export class ResolverBTC2EVM {
     console.log('🤖 RESOLVER: 👤 Maker ETH address:', makerEthAddress);
     
     // Step 4: Use helper to deposit amount to the ETH address
-    const depositResult = this.deposit(order.amountEth, makerEthAddress, decodedInvoice.expiry, hashedSecret);
+    const depositResult = await depositETH({
+      amountEth: order.amountEth,
+      claimerAddress: makerEthAddress,
+      expirationSeconds: Math.floor((decodedInvoice.expiry.getTime() - Date.now()) / 1000),
+      hashedSecret: hashedSecret,
+      depositorPrivateKey: ALICE_PRIVATE_KEY
+    });
     console.log('🤖 RESOLVER: 💰 Deposit transaction created');
     
     // Step 5: Confirm transaction from deposit_result
     console.log('🤖 RESOLVER: ✅ Transaction confirmed');
     console.log(`🤖 RESOLVER:    Transaction Hash: ${depositResult.txHash}`);
-    console.log(`🤖 RESOLVER:    Block Number: ${depositResult.blockNumber}`);
-    console.log(`🤖 RESOLVER:    Gas Used: ${depositResult.gasUsed}`);
+    console.log(`🤖 RESOLVER:    Deposit ID: ${depositResult.depositId}`);
+    console.log(`🤖 RESOLVER:    Amount: ${depositResult.amountWei} Wei`);
     
     // Step 6: Print link to the transaction
-    const transactionLink = getTransactionUrl(depositResult.txHash);
+    const transactionLink = depositResult.explorerUrl;
     console.log('🤖 RESOLVER: 🔗 Transaction Link:', transactionLink);
     
     // Step 7: Create and return the result
@@ -109,28 +116,7 @@ export class ResolverBTC2EVM {
     }
   }
   
-  // Helper function to deposit ETH to escrow
-  private deposit(amountEth: number, ethAddress: string, expiration: Date, hashedSecret: string): EscrowTransaction {
-    console.log('🤖 RESOLVER: 💰 Depositing ETH to escrow contract...');
-    console.log(`🤖 RESOLVER:    Amount: ${amountEth} ETH`);
-    console.log(`🤖 RESOLVER:    Recipient Address: ${ethAddress}`);
-    console.log(`🤖 RESOLVER:    Expiration: ${expiration.toISOString()}`);
-    console.log(`🤖 RESOLVER:    Hashed Secret: ${hashedSecret}`);
-    
-    // Dummy transaction data
-    const tx: EscrowTransaction = {
-      txHash: '0x' + Math.random().toString(16).substring(2, 66),
-      blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
-      gasUsed: Math.floor(Math.random() * 100000) + 50000
-    };
-    
-    console.log('🤖 RESOLVER: ✅ ETH deposit successful');
-    console.log(`🤖 RESOLVER:    Transaction Hash: ${tx.txHash}`);
-    console.log(`🤖 RESOLVER:    Block Number: ${tx.blockNumber}`);
-    console.log(`🤖 RESOLVER:    Gas Used: ${tx.gasUsed}`);
-    
-    return tx;
-  }
+  
   
   decodeBtcLightningNetInvoice(invoice: string): DecodedInvoice {
     console.log('🤖 RESOLVER: 🔍 Decoding Lightning Network invoice...');
@@ -185,19 +171,7 @@ export class ResolverBTC2EVM {
       return decodedData;
       
     } catch (error) {
-      console.error('🤖 RESOLVER: ❌ Error decoding Lightning invoice:', error);
-      
-      // Fallback to dummy data if decoding fails
-      console.log('🤖 RESOLVER: ⚠️  Falling back to dummy data');
-      const dummyData: DecodedInvoice = {
-        hashedSecret: '0x' + Math.random().toString(16).substring(2, 66),
-        amount: 0.001,
-        description: 'Cross-chain swap payment (fallback)',
-        expiry: new Date(Date.now() + 3600000), // 1 hour from now
-        paymentHash: '0x' + Math.random().toString(16).substring(2, 66)
-      };
-      
-      return dummyData;
+      throw error
     }
   }
   
@@ -221,38 +195,6 @@ export class ResolverBTC2EVM {
     
     return receipt;
   }
-  
-  sendETHToUser(ethAddress: string, amountEth: number): EscrowTransaction {
-    console.log('🤖 RESOLVER: 💰 Sending ETH to user address...');
-    console.log(`🤖 RESOLVER:    User Address: ${ethAddress}`);
-    console.log(`🤖 RESOLVER:    Amount: ${amountEth} ETH`);
-    
-    // Dummy transaction data
-    const tx: EscrowTransaction = {
-      txHash: '0x' + Math.random().toString(16).substring(2, 66),
-      blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
-      gasUsed: Math.floor(Math.random() * 100000) + 50000
-    };
-    
-    console.log('🤖 RESOLVER: ✅ ETH transfer successful');
-    console.log(`🤖 RESOLVER:    Transaction Hash: ${tx.txHash}`);
-    console.log(`🤖 RESOLVER:    Block Number: ${tx.blockNumber}`);
-    console.log(`🤖 RESOLVER:    Gas Used: ${tx.gasUsed}`);
-    
-    return tx;
-  }
-  
-  calculateRate(btcAmount: number, ethAmount: number): number {
-    // Dummy conversion rate calculation
-    // In a real implementation, this would fetch current exchange rates
-    return btcAmount * 15000; // 1 BTC = 15000 ETH (dummy rate)
-  }
-  
-  printBalance(): void {
-    console.log('🤖 RESOLVER: 💳 Current Balance Report:');
-    console.log('🤖 RESOLVER:    ETH Balance: 0.985 ETH');
-    console.log('🤖 RESOLVER:    BTC Balance: 0.001 BTC');
-    console.log('🤖 RESOLVER:    USDC Balance: 150.00 USDC');
-    console.log('🤖 RESOLVER:    Last Updated: ' + new Date().toISOString());
-  }
+
+
 } 
