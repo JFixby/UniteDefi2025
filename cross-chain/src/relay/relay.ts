@@ -23,8 +23,6 @@ export class Relay {
     // but now we use our stub order since bitcoin os not supported by 1inch yet
     const resolverResponse = resolverEVM2BTC.sendToResolver(order);
     
-    console.log('✅ EVM to BTC order processing completed');
-    
     // Return empty response as per the class definition
     return new OrderEVM2BTCResponse(resolverResponse.ethAddress);
   }

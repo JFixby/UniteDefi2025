@@ -216,7 +216,7 @@ export async function checkDepositEVM(hashedSecret: string, expectedAmountEth?: 
     const exists = depositor !== ethers.ZeroAddress;
     
     if (!exists) {
-      console.log(`❌ No deposit found for hashlock: ${hashedSecret}`);
+      //console.log(`❌ No deposit found for hashlock: ${hashedSecret}`);
       return {
         exists: false,
         amount: '0',

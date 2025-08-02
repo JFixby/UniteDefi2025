@@ -181,16 +181,16 @@ export class ResolverEVM2BTC {
     }
   }
   
-  async claimEscrow(secret: string): Promise<EscrowTransaction> {
+  async claimEscrow(secret: string, originalHashedSecret: string): Promise<EscrowTransaction> {
     console.log('🤖 RESOLVER: 🏦 Claiming funds from escrow contract...');
     console.log(`🤖 RESOLVER:    Secret: ${secret}`);
+    console.log(`🤖 RESOLVER:    Original Hashed Secret: ${originalHashedSecret}`);
     
     try {
-      // Generate the hashed secret from the secret (this should match the deposit ID)
-      const { ethers } = await import('ethers');
-      const hashedSecret = ethers.sha256(ethers.toUtf8Bytes(secret));
+      // Use the original hashed secret from the deposit instead of generating a new one
+      const hashedSecret = originalHashedSecret;
       
-      console.log(`🤖 RESOLVER:    Hashed Secret (Deposit ID): ${hashedSecret}`);
+      console.log(`🤖 RESOLVER:    Using Deposit ID: ${hashedSecret}`);
       
       // Use the implemented claimETH function
       const claimResult = await claimETH({
@@ -291,8 +291,8 @@ export class ResolverEVM2BTC {
       const paymentReceipt = await this.payLightningNetInvoice(invoice);
       console.log('🤖 RESOLVER: ✅ Lightning payment successful:', paymentReceipt);
       
-      // Claim the escrow with the secret
-      const claimTx = await this.claimEscrow(paymentReceipt.secret);
+      // Claim the escrow with the secret and original hashed secret
+      const claimTx = await this.claimEscrow(paymentReceipt.secret, hashedSecret);
       const claimExplorerUrl = getTransactionUrl(claimTx.txHash);
       console.log('🤖 RESOLVER: ✅ Escrow claim successful:', claimTx);
       console.log(`🤖 RESOLVER: 🔗 Claim Transaction: ${claimExplorerUrl}`);
