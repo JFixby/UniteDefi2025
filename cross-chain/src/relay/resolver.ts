@@ -1,3 +1,6 @@
+import * as bolt11 from 'bolt11';
+import { OrderEVM2BTC } from '../api/order';
+
 export interface PaymentReceipt {
   secret: string;
   paymentHash: string;
@@ -21,25 +24,31 @@ export interface DecodedInvoice {
 
 export class Resolver {
   
-  sendToResolver(btcLightningNetInvoice: string): void {
+  sendToResolver(order: OrderEVM2BTC): void {
+    // here we simulate relay operations by 1inch of processing the order
+    // the order will be import { CrossChainOrder } from '@1inch/cross-chain-sdk'
+    // but now we use our stub order since bitcoin os not supported by 1inch yet
+
     console.log('----------------------');
     console.log('🤖 RESOLVER PROCESSING STARTED');
     console.log('🤖 RESOLVER: Order Type: Single Fill Order (100% Fill)');
     console.log('----------------------');
-    console.log('🤖 RESOLVER: Lightning Invoice:', btcLightningNetInvoice.substring(0, 25) + '...');
-    
+    console.log('🤖 RESOLVER: received Lightning Invoice:', order.btcLightningNetInvoice.substring(0, 25) + '...');
+    const btcLightningNetInvoice = order.btcLightningNetInvoice;
     // Decode the Lightning invoice
     const decodedData = this.decodeBtcLightningNetInvoice(btcLightningNetInvoice);
-    console.log('🤖 RESOLVER: Decoded Invoice Data:', decodedData);
+    console.log('🤖 RESOLVER: Decoded Invoice Data:', decodedData); // print 
     
     // Extract hashed secret and amounts
     const { hashedSecret, amount } = decodedData;
+    const eth_amount = order.amountEth;
+    const btc_amount = amount;
     console.log('🤖 RESOLVER: Extracted Hashed Secret:', hashedSecret);
-    console.log('🤖 RESOLVER: Extracted Amount (BTC):', amount);
-    console.log('🤖 RESOLVER: Amount in ETH (converted):', amount * 15000); // Dummy conversion rate
+    console.log('🤖 RESOLVER: Extracted Amount (BTC):', btc_amount);
+    console.log('🤖 RESOLVER: Amount in ETH (converted):', this.calculateRate(btc_amount, eth_amount)); // Dummy conversion rate
     
     // Deposit to escrow
-    const ethAmount = amount * 15000; // Dummy conversion
+    const ethAmount = eth_amount; 
     const escrowTx = this.depositEscrowETH(hashedSecret, ethAmount);
     console.log('🤖 RESOLVER: Escrow Transaction:', escrowTx);
     
@@ -61,18 +70,73 @@ export class Resolver {
   
   decodeBtcLightningNetInvoice(invoice: string): DecodedInvoice {
     console.log('🤖 RESOLVER: 🔍 Decoding Lightning Network invoice...');
+    console.log(`🤖 RESOLVER:    Invoice: ${invoice.substring(0, 25)}...`);
     
-    // Dummy decoding logic - in real implementation this would use a proper Lightning library
-    const dummyData: DecodedInvoice = {
-      hashedSecret: '0x' + Math.random().toString(16).substring(2, 66),
-      amount: 0.001,
-      description: 'Cross-chain swap payment',
-      expiry: new Date(Date.now() + 3600000), // 1 hour from now
-      paymentHash: '0x' + Math.random().toString(16).substring(2, 66)
-    };
-    
-    console.log('🤖 RESOLVER: ✅ Invoice decoded successfully');
-    return dummyData;
+    try {
+      // Decode the Lightning Network invoice using bolt11 library
+      const decoded = bolt11.decode(invoice);
+      
+      console.log('🤖 RESOLVER:    Raw decoded data:', JSON.stringify(decoded, null, 2));
+      
+      // Extract the payment hash (this is the hashed secret)
+      const paymentHash = decoded.tags.find(tag => tag.tagName === 'payment_hash')?.data;
+      if (!paymentHash) {
+        throw new Error('Payment hash not found in invoice');
+      }
+      
+      // Extract the amount in satoshis
+      let amountSatoshis = 0;
+      if (decoded.satoshis) {
+        amountSatoshis = decoded.satoshis;
+      } else if (decoded.millisatoshis) {
+        amountSatoshis = Math.floor(Number(decoded.millisatoshis) / 1000);
+      }
+      
+      // Convert satoshis to BTC
+      const amountBTC = amountSatoshis / 100000000;
+      
+      // Extract description
+      const descriptionTag = decoded.tags.find(tag => tag.tagName === 'description');
+      const description = typeof descriptionTag?.data === 'string' ? descriptionTag.data : 'Cross-chain swap payment';
+      
+      // Extract expiry time
+      const expiryTag = decoded.tags.find(tag => tag.tagName === 'expiry');
+      const expirySeconds = typeof expiryTag?.data === 'number' ? expiryTag.data : 3600; // Default 1 hour
+      const expiry = new Date(Date.now() + (expirySeconds * 1000));
+      
+      // Create the decoded invoice object
+      const decodedData: DecodedInvoice = {
+        hashedSecret: '0x' + paymentHash,
+        amount: amountBTC,
+        description: description,
+        expiry: expiry,
+        paymentHash: '0x' + paymentHash
+      };
+      
+      console.log('🤖 RESOLVER: ✅ Invoice decoded successfully');
+      console.log(`🤖 RESOLVER:    Payment Hash: ${decodedData.paymentHash}`);
+      console.log(`🤖 RESOLVER:    Amount: ${decodedData.amount} BTC (${amountSatoshis} satoshis)`);
+      console.log(`🤖 RESOLVER:    Description: ${decodedData.description}`);
+      console.log(`🤖 RESOLVER:    Expiry: ${decodedData.expiry.toISOString()}`);
+      console.log(`🤖 RESOLVER:    Network: ${decoded.network || 'mainnet'}`);
+      
+      return decodedData;
+      
+    } catch (error) {
+      console.error('🤖 RESOLVER: ❌ Error decoding Lightning invoice:', error);
+      
+      // Fallback to dummy data if decoding fails
+      console.log('🤖 RESOLVER: ⚠️  Falling back to dummy data');
+      const dummyData: DecodedInvoice = {
+        hashedSecret: '0x' + Math.random().toString(16).substring(2, 66),
+        amount: 0.001,
+        description: 'Cross-chain swap payment (fallback)',
+        expiry: new Date(Date.now() + 3600000), // 1 hour from now
+        paymentHash: '0x' + Math.random().toString(16).substring(2, 66)
+      };
+      
+      return dummyData;
+    }
   }
   
   depositEscrowETH(hashedSecret: string, amountEth: number): EscrowTransaction {
@@ -134,6 +198,12 @@ export class Resolver {
     console.log(`🤖 RESOLVER:    Gas Used: ${tx.gasUsed}`);
     
     return tx;
+  }
+  
+  calculateRate(btcAmount: number, ethAmount: number): number {
+    // Dummy conversion rate calculation
+    // In a real implementation, this would fetch current exchange rates
+    return btcAmount * 15000; // 1 BTC = 15000 ETH (dummy rate)
   }
   
   printBalance(): void {

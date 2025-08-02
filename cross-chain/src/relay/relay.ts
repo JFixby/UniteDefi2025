@@ -1,21 +1,25 @@
-import { OrderBTC2EVM, OrderEVM2BTC, OrderBTC2EVMResponse, OrderEVM2BTCResponse } from '../maker-front/order';
+import { OrderBTC2EVM, OrderEVM2BTC, OrderBTC2EVMResponse, OrderEVM2BTCResponse } from '../api/order';
 import { Resolver } from './resolver';
+
+const resolver = new Resolver();
 
 export class Relay {
   private invoiceStartTime: number = 0;
   
   processOrderEVM2BTC(order: OrderEVM2BTC): OrderEVM2BTCResponse {
-    console.log('🔄 Processing EVM to BTC order...');
+    console.log('🔄 Received EVM to BTC order from maker...');
     console.log('📋 Order Type: Single Fill Order (100% Fill)');
-    console.log('Order Details:', {
+    console.log('Maker Order Details:', {
       amountBtc: order.amountBtc,
       btcLightningNetInvoice: order.btcLightningNetInvoice,
       amountEth: order.amountEth
     });
+
     
-    // Create resolver instance and send to resolver
-    const resolver = new Resolver();
-    resolver.sendToResolver(order.btcLightningNetInvoice);
+    // here we simulate relay operations by 1inch of processing the order
+    // the order will be import { CrossChainOrder } from '@1inch/cross-chain-sdk'
+    // but now we use our stub order since bitcoin os not supported by 1inch yet
+    resolver.sendToResolver(order);
     
     console.log('✅ EVM to BTC order processing completed');
     

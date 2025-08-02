@@ -1,5 +1,5 @@
 import { Relay } from './relay';
-import { OrderBTC2EVM, OrderEVM2BTC } from '../maker-front/order';
+import { OrderBTC2EVM, OrderEVM2BTC } from '../api/order';
 
 // Example usage of the Relay class methods
 export function exampleUsage() {
