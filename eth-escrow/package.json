@@ -1,0 +1,34 @@
+{
+  "name": "eth-escrow",
+  "version": "1.0.0",
+  "description": "Hash Time Locked Contract (HTLC) for secure conditional transfers",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:contract": "ts-node deployEscrowContract.ts",
+    "check:escrow": "ts-node checkEscrow.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "hardhat": "^2.19.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "keywords": [
+    "ethereum",
+    "smart-contracts",
+    "escrow",
+    "htlc",
+    "cross-chain"
+  ],
+  "author": "",
+  "license": "MIT"
+} 
