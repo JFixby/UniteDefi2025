@@ -12,11 +12,17 @@ The `Sdk.CrossChainOrder.new()` method creates cross-chain swap orders that enab
 4. **Auction & Access Control** - Auction settings and whitelist configuration
 5. **Order Options** - Fill permissions and nonce
 
+```typescript
+import { CrossChainOrder } from '@1inch/cross-chain-sdk'
+```
+
 ## Common Parameters
 
 All examples use these shared parameters:
 
 ```typescript
+
+
 // Common order parameters
 const commonParams = {
     salt: Sdk.randBigInt(1000n),
