@@ -95,17 +95,9 @@ export class ResolverBTC2EVM {
   // Helper function to issue Lightning Network invoice
   private issueLightningInvoice(amountBtc: number): string {
     console.log('🤖 RESOLVER: 📝 Issuing Lightning Network invoice...');
-    console.log(`🤖 RESOLVER:    Amount: ${amountBtc} BTC`);
-    
-    // Convert BTC to satoshis
-    const amountSatoshis = Math.floor(amountBtc * 100000000);
-    
-    // Generate a dummy Lightning Network invoice
-    // In a real implementation, this would call the Lightning Network API
-    const dummyInvoice = `lnbc${amountSatoshis}u1p5guy6ypp5eeyft8ntelam75uvpnz8lcx46qpp5aa6a4rrvc2qtc74qaz8776scqzyssp5us7lxaq6xny2e85sjfxa6dttua7v0ag32q2huzue5m67czzj5nes9q7sqqqqqqqqqqqqqqqqqqqsqqqqqysgqdqqmqz9gxqyjw5qrzjqwryaup9lh50kkranzgcdnn2fgvx390wgj5jd07rwr3vxeje0glcllmqlf20lk5u3sqqqqlgqqqqqeqqjqr4dqnmedj6pz9jvh2ufw0v0grfa27khg7tfwvun8u9fcxg952ua5zed68d2naa6whng33z7qnvt8x5x07lzf6lchegvr70xsrjmk8uqpsjef9k`;
-    
+  
     console.log('🤖 RESOLVER: ✅ Lightning Network invoice issued successfully');
-    return dummyInvoice;
+    return "lnbc100u1p5guy6ypp5eeyft8ntelam75uvpnz8lcx46qpp5aa6a4rrvc2qtc74qaz8776scqzyssp5us7lxaq6xny2e85sjfxa6dttua7v0ag32q2huzue5m67czzj5nes9q7sqqqqqqqqqqqqqqqqqqqsqqqqqysgqdqqmqz9gxqyjw5qrzjqwryaup9lh50kkranzgcdnn2fgvx390wgj5jd07rwr3vxeje0glcllmqlf20lk5u3sqqqqlgqqqqqeqqjqr4dqnmedj6pz9jvh2ufw0v0grfa27khg7tfwvun8u9fcxg952ua5zed68d2naa6whng33z7qnvt8x5x07lzf6lchegvr70xsrjmk8uqpsjef9k";
   }
   
   // Helper function to deposit ETH to escrow

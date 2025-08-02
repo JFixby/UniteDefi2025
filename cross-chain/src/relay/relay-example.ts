@@ -2,7 +2,7 @@ import { Relay } from './relay';
 import { OrderBTC2EVM, OrderEVM2BTC } from '../api/order';
 
 // Example usage of the Relay class methods
-export function exampleUsage() {
+export function btcToEvmExample() {
   const relay = new Relay();
   
   // Example 1: Process BTC to EVM order
@@ -35,7 +35,7 @@ export function evmToBtcExample() {
 
 export function runBothExamples() {
   console.log('🎯 Cross-Chain Relay Demo - Running Both Examples...\n');
-  exampleUsage();
+  btcToEvmExample();
   evmToBtcExample();
   console.log('\n🎉 Both demos completed successfully!');
 }
@@ -49,7 +49,7 @@ if (require.main === module) {
     case 'btc2evm':
     case 'btc-to-evm':
       console.log('🎯 Cross-Chain Relay Demo - BTC to EVM Example...\n');
-      exampleUsage();
+      btcToEvmExample();
       console.log('\n🎉 BTC to EVM demo completed successfully!');
       break;
       
