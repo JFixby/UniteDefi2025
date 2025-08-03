@@ -1,6 +1,6 @@
 import { Relay } from './relay';
 import { OrderEVM2BTC } from '../api/order';
-import { issueLightningInvoice } from '../utils/lightning';
+import { issueLightningInvoice, getLNBalances, printLNBalancesChange } from '../utils/lightning';
 import { depositETH, checkDepositEVM } from '../utils/evm';
 import { ALICE_PRIVATE_KEY } from '../variables';
 import { pause, confirm } from '../utils/pause';
@@ -92,6 +92,11 @@ async function waitResolverClaimDeposit(
 export async function evmToBtcExample() {
   const amountBtc = 0.0005;
   const amountEth = 0.015;
+
+  // Get initial balances for Alice and Carol
+  const aliceBalancesBefore = await getLNBalances('alice');
+  const carolBalancesBefore = await getLNBalances('carol');
+  
   
   console.log('\n🚀 === EVM to BTC Order Example ===');
   console.log(`💰 Amount BTC: ${amountBtc}`);
@@ -166,6 +171,13 @@ export async function evmToBtcExample() {
   await waitResolverClaimDeposit(hashedSecretHex, 60, 10, transactionInfo.escrowAddress); // Use hex format for contract
 
   console.log('\n--------------------------------------------');
+  const aliceBalancesAfter = await getLNBalances('alice');
+  const carolBalancesAfter = await getLNBalances('carol');
+  
+  printLNBalancesChange(aliceBalancesBefore, aliceBalancesAfter);
+  printLNBalancesChange(carolBalancesBefore, carolBalancesAfter);
+  
+  
   console.log('✅ EVM to BTC example completed!');
   console.log('--------------------------------------------');
 }
