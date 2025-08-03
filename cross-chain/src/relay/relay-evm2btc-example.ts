@@ -100,7 +100,9 @@ export async function evmToBtcExample() {
   await pause('Press Enter to start Step 1: Generating Lightning Network invoice...');
   
   // Step 1: Generate Lightning Network invoice for BTC
-  console.log('\n📋[USER] Step 1: Generating Lightning Network invoice...');
+  console.log('\n--------------------------------------------');
+  console.log('📋 Step 1: Generating Lightning Network invoice...');
+  console.log('--------------------------------------------');
   const invoiceData = await issueLightningInvoice(amountBtc, 'alice', "Alice selling BTC for ETH");
   const hashedSecret = invoiceData.r_hash;
   const btcLightningNetInvoice = invoiceData.payment_request;
@@ -111,7 +113,9 @@ export async function evmToBtcExample() {
   await pause('[USER]Press Enter to continue to Step 3: Processing order through relay...');
   
   // Step 3: Process EVM to BTC order through relay
-  console.log('\n📋 Step 3: Processing order through relay...');
+  console.log('\n--------------------------------------------');
+  console.log('📋 Step 2: Processing order through relay...');
+  console.log('--------------------------------------------');
   const relay = new Relay();
   
   const evmToBtcOrder = new OrderEVM2BTC(
@@ -126,7 +130,9 @@ export async function evmToBtcExample() {
   await pause('[USER] Press Enter to continue to Step 2: Depositing ETH into escrow...');
 
   // Step 2: Deposit ETH into escrow with HTLC
-  console.log('\n📋[USER] Step 2: Depositing ETH into escrow...');
+  console.log('\n--------------------------------------------');
+  console.log('📋 Step 3: Depositing ETH into escrow...');
+  console.log('--------------------------------------------');
   const expirationSeconds = 10; // 10 seconds for demo purposes
   
   // Convert base64 hashed secret to hex format for EVM contract
@@ -153,10 +159,15 @@ export async function evmToBtcExample() {
 
   await pause('[USER] Press Enter to continue to final step: Waiting for resolver to claim deposit...');
 
-  // wait for resolver to claim deposit...
+  // Step 4: Wait for resolver to claim deposit
+  console.log('\n--------------------------------------------');
+  console.log('📋 Step 4: Waiting for resolver to claim deposit...');
+  console.log('--------------------------------------------');
   await waitResolverClaimDeposit(hashedSecretHex, 60, 10, transactionInfo.escrowAddress); // Use hex format for contract
 
-  console.log('\n✅ EVM to BTC example completed!');
+  console.log('\n--------------------------------------------');
+  console.log('✅ EVM to BTC example completed!');
+  console.log('--------------------------------------------');
 }
 
 // Run the example if this file is executed directly
