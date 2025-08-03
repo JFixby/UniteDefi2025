@@ -31,8 +31,8 @@ export async function btcToEvmExample() {
   console.log('--------------------------------------------');
   const btcToEvmResponse = await relay.processOrderBTC2EVM(btcToEvmOrder);
   console.log('📋 BTC to EVM Response:', btcToEvmResponse);
-  console.log('⚡ Lightning Invoice:', btcToEvmResponse.lightningNetworkInvoice.substring(0, 25) + '...');
-
+  console.log('⚡ Lightning Invoice:', btcToEvmResponse.lightningNetworkInvoice.substring(0, 10) + '...');
+  console.log('[USER] Need to pay invoice from resolver to obtain secret');
   await pause('[USER] Press Enter to continue to Step 2: Paying Lightning invoice...');
 
   // Step 2: Extract and decode the Lightning invoice
@@ -65,7 +65,7 @@ export async function btcToEvmExample() {
 
   // Step 4: Use the secret to claim the escrow deposit
   console.log('\n--------------------------------------------');
-  console.log('📋 Step 4: Claiming escrow deposit with secret...');
+  console.log('📋 Step 4: User claiming escrow deposit with secret...');
   console.log('--------------------------------------------');
   
   // Import the claimETH function

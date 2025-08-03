@@ -51,6 +51,10 @@ export class ResolverBTC2EVM {
     const decodedInvoice = this.decodeBtcLightningNetInvoice(lightningInvoice);
     const hashedSecret = decodedInvoice.hashedSecret;
     console.log('🤖 RESOLVER: 🔑 Extracted hashed secret:', hashedSecret);
+
+    console.log('----------------------');
+    console.log('🤖 RESOLVER ISSUED INVOICE AND NOW HAVE HASHED SECRET FOR ESCROW');
+    console.log('----------------------');
     
     // Step 3: Read maker ETH address from the order
     const makerEthAddress = order.ethAddress;
