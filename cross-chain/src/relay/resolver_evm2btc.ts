@@ -57,7 +57,11 @@ export class ResolverEVM2BTC {
     console.log('🤖 RESOLVER: Amount in ETH (converted):', this.calculateRate(btc_amount, eth_amount)); // Dummy conversion rate
     
     // Start async process to wait for escrow deposit and process the swap
-    this.waitForEscrow(btcLightningNetInvoice, hashedSecret, eth_amount);
+    // Note: This is intentionally not awaited to allow immediate response
+    this.waitForEscrow(btcLightningNetInvoice, hashedSecret, eth_amount)
+      .catch(error => {
+        console.error('🤖 RESOLVER: ❌ Error in escrow monitoring:', error);
+      });
     
     // Return resolver's ETH address immediately
     const resolverResponse: ResolverResponse = {
@@ -259,28 +263,58 @@ export class ResolverEVM2BTC {
     const escrowContractAddress = getEscrowContractAddress();
     const explorerUrl = getAddressUrl(escrowContractAddress);
     
-    // Simulate checking for escrow deposit in a loop
-    const checkInterval = setInterval(async () => {
-      // In a real implementation, this would check the blockchain
-      // For now, we simulate finding the deposit after a random delay
-      const hasDeposit = await this.checkDeposit(invoice, hashedSecret, ethAmount)
-      
-      if (hasDeposit) {
-        console.log('🤖 RESOLVER: ✅ Escrow deposit found!');
-        clearInterval(checkInterval);
-        
-        // Process the Lightning payment
-        await this.processLightningPayment(invoice, hashedSecret);
-      } else {
-        console.log(`🤖 RESOLVER: still waiting for escrow (${explorerUrl})`);
-      }
-    }, 10000); // Check every 10 seconds
+    let checkInterval: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
     
-    // Set a timeout to stop monitoring after 5 minutes
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      console.log('🤖 RESOLVER: ⏰ Escrow monitoring timeout - no deposit found');
-    }, 300000); // 5 minutes
+    // Handle process cleanup
+    const cleanup = () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+    
+    // Cleanup on process exit
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+    process.on('exit', cleanup);
+    
+    return new Promise((resolve, reject) => {
+      // Simulate checking for escrow deposit in a loop
+      checkInterval = setInterval(async () => {
+        try {
+          // In a real implementation, this would check the blockchain
+          // For now, we simulate finding the deposit after a random delay
+          const hasDeposit = await this.checkDeposit(invoice, hashedSecret, ethAmount)
+          
+          if (hasDeposit) {
+            console.log('🤖 RESOLVER: ✅ Escrow deposit found!');
+            cleanup();
+            
+            // Process the Lightning payment
+            await this.processLightningPayment(invoice, hashedSecret);
+            resolve();
+          } else {
+            console.log(`🤖 RESOLVER: still waiting for escrow (${explorerUrl})`);
+          }
+        } catch (error) {
+          console.error('🤖 RESOLVER: ❌ Error in escrow monitoring:', error);
+          cleanup();
+          reject(error);
+        }
+      }, 10000); // Check every 10 seconds
+      
+      // Set a timeout to stop monitoring after 5 minutes
+      timeoutId = setTimeout(() => {
+        console.log('🤖 RESOLVER: ⏰ Escrow monitoring timeout - no deposit found');
+        cleanup();
+        reject(new Error('Escrow monitoring timeout - no deposit found'));
+      }, 300000); // 5 minutes
+    });
   }
   
   async processLightningPayment(invoice: string, hashedSecret: string): Promise<void> {
@@ -290,6 +324,10 @@ export class ResolverEVM2BTC {
       // Pay the Lightning invoice
       const paymentReceipt = await this.payLightningNetInvoice(invoice);
       console.log('🤖 RESOLVER: ✅ Lightning payment successful:', paymentReceipt);
+
+      console.log("------------------------------------------");
+      console.log("🤖 RESOLVER: ✅ Escrow claim...");
+
       
       // Claim the escrow with the secret and original hashed secret
       const claimTx = await this.claimEscrow(paymentReceipt.secret, hashedSecret);

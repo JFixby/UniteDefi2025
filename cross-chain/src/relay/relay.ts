@@ -38,11 +38,6 @@ export class Relay {
     
     // Generate Lightning Network invoice
     const result: OrderBTC2EVMResult = await resolverBTC2EVM.sendToResolver(order);
-    console.log('✅ BTC to EVM order processing completed');
-    
-    console.log('----------------------');
-    console.log('🤖 RESOLVER PUSH AUTOMATION STARTED');
-    console.log('----------------------');
     
     // Start async invoice payment checking loop
     // this.startInvoicePaymentCheck(result, order);
