@@ -420,6 +420,16 @@ npm run dev
 - 🔮 Institutional features
 - 🔮 Mobile SDK
 
+### 💸 Crypto Donations Welcome
+
+#### 🪙 Ethereum (ERC-20)
+`0xB936F34E0DC54957d85d67bE83eF6d1f6c40eaE9`  
+![Ethereum QR](eth-qr.png)
+
+#### 🪙 Bitcoin (BTC)
+`bc1qx2lxu90mhpjscc6yv7u82vzvvw4tthcjhlt2z2`  
+![Bitcoin QR](btc-qr.png)
+
 ---
 
 ## 🤝 **Contributing**
