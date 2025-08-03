@@ -450,6 +450,9 @@ export function printLNBalancesChange(balancesBefore: LNNodeBalances, balancesAf
   const totalChangeBtc = totalChange / 100000000;
   const changeSign = totalChange >= 0 ? '+' : '';
   
-  // Simple format: NodeName: +/-X.XX BTC
-  console.log(`${balancesBefore.nodeAlias}: ${changeSign}${totalChangeBtc.toFixed(2)} BTC`);
+  // Show more precision for small amounts
+  const displayAmount = Math.abs(totalChangeBtc) < 0.01 ? totalChangeBtc.toFixed(6) : totalChangeBtc.toFixed(4);
+  
+  // Simple format: NodeName: +/-X.XXXXXX BTC
+  console.log(`${balancesBefore.nodeAlias}: ${changeSign}${displayAmount} BTC`);
 } 
