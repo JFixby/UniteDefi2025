@@ -81,8 +81,8 @@ Bitcoin Mainnet ←→ Lightning Network ←→ Polygon ←→ Ethereum Mainnet
 
 **Applies to both directions (BTC→ETH and ETH→BTC):**
 
-1. **BTC Seller** creates a Lightning invoice whose payment hash is `H = SHA-256(secret)` and locks funds in an EVM escrow guarded by the same hash.  
-2. **BTC Buyer** pays the Lightning invoice.  
+1. **BTC Buyer (ETH Seller)** creates a Lightning invoice whose payment hash is `H = SHA-256(secret)` and locks funds in an EVM escrow guarded by the same hash.  
+2. **BTC Seller (ETH Buyer)** pays the Lightning invoice.  
 3. The Lightning settlement reveals the preimage (**secret**).  
 4. Using the revealed secret, either party can **unlock the on-chain escrow** and complete the swap.  
 5. If payment or claim doesn’t occur before expiry, the depositor can **cancel and recover** funds.
