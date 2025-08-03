@@ -232,7 +232,26 @@ export async function payLightningInvoice(
     const macaroonBuffer = fs.readFileSync(adminMacaroon.path);
     const macaroonHex = macaroonBuffer.toString('hex');
     
-    // Prepare request data
+    // First, decode the payment request to get the amount
+    const decodeResponse = await fetch(`https://localhost:${node.rest_port}/v1/payreq/${encodeURIComponent(paymentRequest)}`, {
+      method: 'GET',
+      headers: {
+        'Grpc-Metadata-macaroon': macaroonHex
+      },
+      // @ts-ignore - Node.js fetch supports agent
+      agent: httpsAgent
+    });
+    
+    if (!decodeResponse.ok) {
+      const errorText = await decodeResponse.text();
+      throw new Error(`Failed to decode payment request with status ${decodeResponse.status}: ${errorText}`);
+    }
+    
+    const decodedData = await decodeResponse.json() as any;
+    const amountSatoshis = parseInt(decodedData.num_satoshis || '0');
+    const amountBtc = amountSatoshis / 100000000;
+    
+    // Prepare request data for payment
     const requestData = {
       payment_request: paymentRequest
     };
@@ -258,9 +277,9 @@ export async function payLightningInvoice(
     
     // Extract payment details
     const receipt: PaymentReceipt = {
-      secret: paymentData.payment_preimage ,
+      secret: paymentData.payment_preimage,
       paymentHash: paymentData.payment_hash,
-      amount: paymentData.value_sat ? paymentData.value_sat / 100000000 : 0,
+      amount: amountBtc, // Use the amount from decoded payment request
       timestamp: new Date()
     };
     
