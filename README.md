@@ -79,16 +79,39 @@ Bitcoin Mainnet ←→ Lightning Network ←→ Polygon ←→ Ethereum Mainnet
 
 ### **Architecture Flow**
 
-```
-1. User creates Fusion+ order (BTC ↔ ETH)
-2. Resolver creates Lightning Network HTLC invoice
-3. Resolver deploys EVM escrow on Polygon
-4. Lightning Network payment settles instantly
-5. Secret automatically extracted and relayed
-6. EVM escrow settles with revealed secret
-7. Cross-chain swap complete in <1 second
-```
+**Applies to both directions (BTC→ETH and ETH→BTC):**
+
+1. **BTC Seller** creates a Lightning invoice whose payment hash is `H = SHA-256(secret)` and locks funds in an EVM escrow guarded by the same hash.  
+2. **BTC Buyer** pays the Lightning invoice.  
+3. The Lightning settlement reveals the preimage (**secret**).  
+4. Using the revealed secret, either party can **unlock the on-chain escrow** and complete the swap.  
+5. If payment or claim doesn’t occur before expiry, the depositor can **cancel and recover** funds.
+
 ![Image](https://github.com/user-attachments/assets/11561e39-34f5-494d-8acc-7e8bda801782)
+
+### **Complete Flow Architecture**
+
+#### **BTC → ETH Flow**
+```
+1. User creates Fusion+ order (BTC → ETH)
+2. Resolver creates Lightning Network HTLC invoice
+3. Resolver deploys Polygon escrow with same hashlock
+4. User pays Lightning invoice (instant)
+5. Resolver extracts secret from Lightning payment
+6. Resolver claims ETH from Polygon escrow using secret
+7. Swap complete in <1 second
+```
+
+#### **ETH → BTC Flow**
+```
+1. User creates Fusion+ order (ETH → BTC)
+2. Resolver deploys Polygon escrow with hashlock
+3. Resolver creates Lightning Network HTLC invoice
+4. User deposits ETH to Polygon escrow
+5. Resolver claims ETH using secret
+6. Resolver pays Lightning invoice (instant)
+7. Swap complete in <1 second
+```
 
 ---
 
@@ -134,62 +157,16 @@ Bitcoin Mainnet ←→ Lightning Network ←→ Polygon ←→ Ethereum Mainnet
 
 ---
 
-## 🎬 **Main User Scenario for Demo**
+## 🎬 **LN Setup for Demo**
 
-### **Demo Scenario: Alice swaps 0.001 BTC for 0.01 ETH**
+![Image](https://github.com/user-attachments/assets/a7f0adfa-ee07-46c5-9452-3632bd196d3f)
 
-#### **Setup Phase**
-```
-Alice (Bitcoin): 0.001 BTC
-Carol (Ethereum): 0.01 ETH
-Network: Lightning Network ↔ Polygon
-```
-
-#### **Step 1: Order Creation**
-```bash
-# Alice creates Fusion+ order
-npm run create-order
-# Output: Order ID, Lightning invoice, Polygon escrow address
-```
-
-#### **Step 2: Resolver Execution**
-```bash
-# Resolver automatically:
-# 1. Creates Lightning Network HTLC invoice
-# 2. Deploys Polygon escrow
-# 3. Monitors Lightning payment
-```
-
-#### **Step 3: Lightning Settlement**
-```bash
-# Lightning Network payment settles instantly
-# Secret automatically extracted
-# Status: "Lightning payment confirmed"
-```
-
-#### **Step 4: Cross-Chain Completion**
-```bash
-# Secret relayed to Polygon
-# EVM escrow settles
-# Status: "Swap complete"
-```
-
-#### **Final State**
-```
-Alice (Bitcoin): 0.000 BTC (-0.001)
-Alice (Ethereum): 0.010 ETH (+0.01)
-Carol (Bitcoin): 0.001 BTC (+0.001)
-Carol (Ethereum): 0.000 ETH (-0.01)
-```
-
-**Total Time**: <1 second
-**Total Fees**: ~$0.01 (Lightning + Polygon)
 
 ---
 
-## 🔧 **Technical Details for Developers & Jury**
+## 🔧 **Technical Details for Developers**
 
-### **Addressing 1inch Jury Concerns**
+### **Concerns**
 
 #### **1. "Hashlocked did not fully follow the existing cadence"**
 **Our Solution**: We follow the exact Fusion+ cadence:
@@ -295,29 +272,7 @@ Production: Lightning ↔ Polygon ↔ Ethereum Mainnet
 - **Production**: Seamless mainnet migration
 - **Flexibility**: Choose optimal settlement path
 
-### **Complete Flow Architecture**
 
-#### **BTC → ETH Flow**
-```
-1. User creates Fusion+ order (BTC → ETH)
-2. Resolver creates Lightning Network HTLC invoice
-3. Resolver deploys Polygon escrow with same hashlock
-4. User pays Lightning invoice (instant)
-5. Resolver extracts secret from Lightning payment
-6. Resolver claims ETH from Polygon escrow using secret
-7. Swap complete in <1 second
-```
-
-#### **ETH → BTC Flow**
-```
-1. User creates Fusion+ order (ETH → BTC)
-2. Resolver deploys Polygon escrow with hashlock
-3. Resolver creates Lightning Network HTLC invoice
-4. User deposits ETH to Polygon escrow
-5. Resolver claims ETH using secret
-6. Resolver pays Lightning invoice (instant)
-7. Swap complete in <1 second
-```
 
 ### **Security Model**
 
