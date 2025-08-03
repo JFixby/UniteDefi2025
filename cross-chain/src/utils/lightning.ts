@@ -443,82 +443,13 @@ export async function getLNBalances(nodeAlias: string): Promise<LNNodeBalances> 
  * @param balancesAfter - Balances after the operation
  */
 export function printLNBalancesChange(balancesBefore: LNNodeBalances, balancesAfter: LNNodeBalances): void {
-  console.log('\n' + '='.repeat(80));
-  console.log(`📊 LIGHTNING NETWORK BALANCE CHANGES FOR NODE: ${balancesBefore.nodeAlias}`);
-  console.log('='.repeat(80));
-  
-  // On-chain balance change
+  // Calculate total balance change (on-chain + local channel balance)
   const onchainChange = balancesAfter.onchainBalance - balancesBefore.onchainBalance;
-  const onchainChangeBtc = onchainChange / 100000000;
-  const onchainChangeSign = onchainChange >= 0 ? '+' : '';
-  
-  console.log(`\n💰 ON-CHAIN BALANCE:`);
-  console.log(`   Before: ${balancesBefore.onchainBalance} satoshis (${(balancesBefore.onchainBalance / 100000000).toFixed(8)} BTC)`);
-  console.log(`   After:  ${balancesAfter.onchainBalance} satoshis (${(balancesAfter.onchainBalance / 100000000).toFixed(8)} BTC)`);
-  console.log(`   Change: ${onchainChangeSign}${onchainChange} satoshis (${onchainChangeSign}${onchainChangeBtc.toFixed(8)} BTC)`);
-  
-  // Channel balance changes
-  console.log(`\n⚡ CHANNEL BALANCES:`);
-  
-  // Create a map of channels by channel point for easy comparison
-  const beforeChannels = new Map<string, LNChannelBalance>();
-  const afterChannels = new Map<string, LNChannelBalance>();
-  
-  balancesBefore.channels.forEach(ch => beforeChannels.set(ch.channelPoint, ch));
-  balancesAfter.channels.forEach(ch => afterChannels.set(ch.channelPoint, ch));
-  
-  // Get all unique channel points
-  const allChannelPoints = new Set([
-    ...beforeChannels.keys(),
-    ...afterChannels.keys()
-  ]);
-  
-  if (allChannelPoints.size === 0) {
-    console.log(`   No open channels found.`);
-  } else {
-    for (const channelPoint of allChannelPoints) {
-      const beforeChannel = beforeChannels.get(channelPoint);
-      const afterChannel = afterChannels.get(channelPoint);
-      
-      if (!beforeChannel && afterChannel) {
-        // New channel opened
-        console.log(`   📈 NEW CHANNEL: ${afterChannel.remoteAlias} (${afterChannel.remotePubkey.substring(0, 20)}...)`);
-        console.log(`      Local:  ${afterChannel.localBalance} satoshis`);
-        console.log(`      Remote: ${afterChannel.remoteBalance} satoshis`);
-      } else if (beforeChannel && !afterChannel) {
-        // Channel closed
-        console.log(`   📉 CLOSED CHANNEL: ${beforeChannel.remoteAlias} (${beforeChannel.remotePubkey.substring(0, 20)}...)`);
-        console.log(`      Was: Local ${beforeChannel.localBalance} / Remote ${beforeChannel.remoteBalance} satoshis`);
-      } else if (beforeChannel && afterChannel) {
-        // Channel balance changed
-        const localChange = afterChannel.localBalance - beforeChannel.localBalance;
-        const remoteChange = afterChannel.remoteBalance - beforeChannel.remoteBalance;
-        const localChangeSign = localChange >= 0 ? '+' : '';
-        const remoteChangeSign = remoteChange >= 0 ? '+' : '';
-        
-        if (localChange !== 0 || remoteChange !== 0) {
-          console.log(`   🔄 CHANNEL UPDATE: ${afterChannel.remoteAlias} (${afterChannel.remotePubkey.substring(0, 20)}...)`);
-          console.log(`      Local:  ${beforeChannel.localBalance} → ${afterChannel.localBalance} (${localChangeSign}${localChange})`);
-          console.log(`      Remote: ${beforeChannel.remoteBalance} → ${afterChannel.remoteBalance} (${remoteChangeSign}${remoteChange})`);
-        }
-      }
-    }
-  }
-  
-  // Total channel balance changes
   const totalLocalChange = balancesAfter.totalLocalBalance - balancesBefore.totalLocalBalance;
-  const totalRemoteChange = balancesAfter.totalRemoteBalance - balancesBefore.totalRemoteBalance;
-  const totalLocalChangeSign = totalLocalChange >= 0 ? '+' : '';
-  const totalRemoteChangeSign = totalRemoteChange >= 0 ? '+' : '';
+  const totalChange = onchainChange + totalLocalChange;
+  const totalChangeBtc = totalChange / 100000000;
+  const changeSign = totalChange >= 0 ? '+' : '';
   
-  console.log(`\n📋 TOTAL CHANNEL BALANCES:`);
-  console.log(`   Local balance:  ${balancesBefore.totalLocalBalance} → ${balancesAfter.totalLocalBalance} (${totalLocalChangeSign}${totalLocalChange})`);
-  console.log(`   Remote balance: ${balancesBefore.totalRemoteBalance} → ${balancesAfter.totalRemoteBalance} (${totalRemoteChangeSign}${totalRemoteChange})`);
-  
-  // Summary
-  console.log(`\n📊 SUMMARY:`);
-  console.log(`   Total balance change: ${onchainChangeSign}${onchainChange + totalLocalChange} satoshis`);
-  console.log(`   Total balance change: ${onchainChangeSign}${((onchainChange + totalLocalChange) / 100000000).toFixed(8)} BTC`);
-  
-  console.log('='.repeat(80) + '\n');
+  // Simple format: NodeName: +/-X.XX BTC
+  console.log(`${balancesBefore.nodeAlias}: ${changeSign}${totalChangeBtc.toFixed(2)} BTC`);
 } 
