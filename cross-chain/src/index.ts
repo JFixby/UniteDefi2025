@@ -28,4 +28,17 @@ export {
   BLOCK_EXPLORERS
 } from './variables';
 
+// Export Lightning Network functions
+export {
+  issueLightningInvoice,
+  payLightningInvoice,
+  validateLightningNode,
+  getLNBalances,
+  printLNBalancesChange,
+  type LightningInvoice,
+  type PaymentReceipt,
+  type LNNodeBalances,
+  type LNChannelBalance
+} from './utils/lightning';
+
 export { config }; 

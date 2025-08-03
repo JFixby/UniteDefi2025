@@ -9,6 +9,12 @@ export interface LightningNode {
     type: string;
     path: string;
   }>;
+  channels?: Array<{
+    remote_pubkey: string;
+    local_pubkey: string;
+    remote_alias: string;
+    channel_point: string;
+  }>;
 }
 
 export interface LightningInvoice {
@@ -294,4 +300,231 @@ export async function payLightningInvoice(
   } catch (error) {
     throw error
   }
+} 
+
+export interface LNChannelBalance {
+  channelPoint: string;
+  remotePubkey: string;
+  remoteAlias: string;
+  localBalance: number;
+  remoteBalance: number;
+}
+
+export interface LNNodeBalances {
+  nodeAlias: string;
+  onchainBalance: number; // in satoshis
+  channels: LNChannelBalance[];
+  totalLocalBalance: number; // sum of all local channel balances
+  totalRemoteBalance: number; // sum of all remote channel balances
+}
+
+/**
+ * Gets Lightning Network balances for a specific node
+ * @param nodeAlias - Alias of the node to check balances for
+ * @returns Promise<LNNodeBalances> - Complete balance information for the node
+ */
+export async function getLNBalances(nodeAlias: string): Promise<LNNodeBalances> {
+  try {
+    console.log(`🔍 Getting Lightning Network balances for node '${nodeAlias}'...`);
+    
+    // Load LN configuration
+    const lnConfig = await loadLightningConfig();
+    
+    // Find the specified node
+    const node = lnConfig.nodes.find(n => n.alias === nodeAlias);
+    if (!node) {
+      throw new Error(`Node with alias '${nodeAlias}' not found in configuration`);
+    }
+    
+    // Find admin macaroon
+    const adminMacaroon = node.macaroons.find(m => m.type === 'admin');
+    if (!adminMacaroon) {
+      throw new Error(`Admin macaroon not found for node '${nodeAlias}'`);
+    }
+    
+    // Check if macaroon file exists
+    if (!fs.existsSync(adminMacaroon.path)) {
+      throw new Error(`Admin macaroon file not found at: ${adminMacaroon.path}`);
+    }
+    
+    // Read macaroon file and convert to hex
+    const macaroonBuffer = fs.readFileSync(adminMacaroon.path);
+    const macaroonHex = macaroonBuffer.toString('hex');
+    
+    // Get on-chain balance
+    const onchainResponse = await fetch(`https://localhost:${node.rest_port}/v1/balance/blockchain`, {
+      method: 'GET',
+      headers: {
+        'Grpc-Metadata-macaroon': macaroonHex
+      },
+      // @ts-ignore - Node.js fetch supports agent
+      agent: httpsAgent
+    });
+    
+    if (!onchainResponse.ok) {
+      const errorText = await onchainResponse.text();
+      throw new Error(`Failed to get on-chain balance with status ${onchainResponse.status}: ${errorText}`);
+    }
+    
+    const onchainData = await onchainResponse.json() as any;
+    const onchainBalance = parseInt(onchainData.total_balance || '0');
+    
+    // Get channel balances
+    const channelsResponse = await fetch(`https://localhost:${node.rest_port}/v1/channels`, {
+      method: 'GET',
+      headers: {
+        'Grpc-Metadata-macaroon': macaroonHex
+      },
+      // @ts-ignore - Node.js fetch supports agent
+      agent: httpsAgent
+    });
+    
+    if (!channelsResponse.ok) {
+      const errorText = await channelsResponse.text();
+      throw new Error(`Failed to get channel balances with status ${channelsResponse.status}: ${errorText}`);
+    }
+    
+    const channelsData = await channelsResponse.json() as any;
+    const channels: LNChannelBalance[] = [];
+    let totalLocalBalance = 0;
+    let totalRemoteBalance = 0;
+    
+    if (channelsData.channels && Array.isArray(channelsData.channels)) {
+      for (const channel of channelsData.channels) {
+        const channelPoint = channel.channel_point;
+        const remotePubkey = channel.remote_pubkey;
+        const localBalance = parseInt(channel.local_balance || '0');
+        const remoteBalance = parseInt(channel.remote_balance || '0');
+        
+                 // Find remote alias from ln.json configuration
+         let remoteAlias = '(unknown)';
+         for (const configNode of lnConfig.nodes) {
+           if (configNode.alias === nodeAlias && configNode.channels) {
+             const configChannel = configNode.channels.find((c: { channel_point: string }) => c.channel_point === channelPoint);
+             if (configChannel) {
+               remoteAlias = configChannel.remote_alias;
+               break;
+             }
+           }
+         }
+        
+        channels.push({
+          channelPoint,
+          remotePubkey,
+          remoteAlias,
+          localBalance,
+          remoteBalance
+        });
+        
+        totalLocalBalance += localBalance;
+        totalRemoteBalance += remoteBalance;
+      }
+    }
+    
+    const balances: LNNodeBalances = {
+      nodeAlias,
+      onchainBalance,
+      channels,
+      totalLocalBalance,
+      totalRemoteBalance
+    };
+    
+    console.log(`✅ Retrieved balances for node '${nodeAlias}'`);
+    console.log(`   On-chain: ${onchainBalance} satoshis`);
+    console.log(`   Channels: ${channels.length} open channels`);
+    console.log(`   Total local balance: ${totalLocalBalance} satoshis`);
+    console.log(`   Total remote balance: ${totalRemoteBalance} satoshis`);
+    
+    return balances;
+    
+  } catch (error) {
+    console.error(`❌ Failed to get balances for node '${nodeAlias}':`, error);
+    throw error;
+  }
+}
+
+/**
+ * Prints a comparison of Lightning Network balances before and after an operation
+ * @param balancesBefore - Balances before the operation
+ * @param balancesAfter - Balances after the operation
+ */
+export function printLNBalancesChange(balancesBefore: LNNodeBalances, balancesAfter: LNNodeBalances): void {
+  console.log('\n' + '='.repeat(80));
+  console.log(`📊 LIGHTNING NETWORK BALANCE CHANGES FOR NODE: ${balancesBefore.nodeAlias}`);
+  console.log('='.repeat(80));
+  
+  // On-chain balance change
+  const onchainChange = balancesAfter.onchainBalance - balancesBefore.onchainBalance;
+  const onchainChangeBtc = onchainChange / 100000000;
+  const onchainChangeSign = onchainChange >= 0 ? '+' : '';
+  
+  console.log(`\n💰 ON-CHAIN BALANCE:`);
+  console.log(`   Before: ${balancesBefore.onchainBalance} satoshis (${(balancesBefore.onchainBalance / 100000000).toFixed(8)} BTC)`);
+  console.log(`   After:  ${balancesAfter.onchainBalance} satoshis (${(balancesAfter.onchainBalance / 100000000).toFixed(8)} BTC)`);
+  console.log(`   Change: ${onchainChangeSign}${onchainChange} satoshis (${onchainChangeSign}${onchainChangeBtc.toFixed(8)} BTC)`);
+  
+  // Channel balance changes
+  console.log(`\n⚡ CHANNEL BALANCES:`);
+  
+  // Create a map of channels by channel point for easy comparison
+  const beforeChannels = new Map<string, LNChannelBalance>();
+  const afterChannels = new Map<string, LNChannelBalance>();
+  
+  balancesBefore.channels.forEach(ch => beforeChannels.set(ch.channelPoint, ch));
+  balancesAfter.channels.forEach(ch => afterChannels.set(ch.channelPoint, ch));
+  
+  // Get all unique channel points
+  const allChannelPoints = new Set([
+    ...beforeChannels.keys(),
+    ...afterChannels.keys()
+  ]);
+  
+  if (allChannelPoints.size === 0) {
+    console.log(`   No open channels found.`);
+  } else {
+    for (const channelPoint of allChannelPoints) {
+      const beforeChannel = beforeChannels.get(channelPoint);
+      const afterChannel = afterChannels.get(channelPoint);
+      
+      if (!beforeChannel && afterChannel) {
+        // New channel opened
+        console.log(`   📈 NEW CHANNEL: ${afterChannel.remoteAlias} (${afterChannel.remotePubkey.substring(0, 20)}...)`);
+        console.log(`      Local:  ${afterChannel.localBalance} satoshis`);
+        console.log(`      Remote: ${afterChannel.remoteBalance} satoshis`);
+      } else if (beforeChannel && !afterChannel) {
+        // Channel closed
+        console.log(`   📉 CLOSED CHANNEL: ${beforeChannel.remoteAlias} (${beforeChannel.remotePubkey.substring(0, 20)}...)`);
+        console.log(`      Was: Local ${beforeChannel.localBalance} / Remote ${beforeChannel.remoteBalance} satoshis`);
+      } else if (beforeChannel && afterChannel) {
+        // Channel balance changed
+        const localChange = afterChannel.localBalance - beforeChannel.localBalance;
+        const remoteChange = afterChannel.remoteBalance - beforeChannel.remoteBalance;
+        const localChangeSign = localChange >= 0 ? '+' : '';
+        const remoteChangeSign = remoteChange >= 0 ? '+' : '';
+        
+        if (localChange !== 0 || remoteChange !== 0) {
+          console.log(`   🔄 CHANNEL UPDATE: ${afterChannel.remoteAlias} (${afterChannel.remotePubkey.substring(0, 20)}...)`);
+          console.log(`      Local:  ${beforeChannel.localBalance} → ${afterChannel.localBalance} (${localChangeSign}${localChange})`);
+          console.log(`      Remote: ${beforeChannel.remoteBalance} → ${afterChannel.remoteBalance} (${remoteChangeSign}${remoteChange})`);
+        }
+      }
+    }
+  }
+  
+  // Total channel balance changes
+  const totalLocalChange = balancesAfter.totalLocalBalance - balancesBefore.totalLocalBalance;
+  const totalRemoteChange = balancesAfter.totalRemoteBalance - balancesBefore.totalRemoteBalance;
+  const totalLocalChangeSign = totalLocalChange >= 0 ? '+' : '';
+  const totalRemoteChangeSign = totalRemoteChange >= 0 ? '+' : '';
+  
+  console.log(`\n📋 TOTAL CHANNEL BALANCES:`);
+  console.log(`   Local balance:  ${balancesBefore.totalLocalBalance} → ${balancesAfter.totalLocalBalance} (${totalLocalChangeSign}${totalLocalChange})`);
+  console.log(`   Remote balance: ${balancesBefore.totalRemoteBalance} → ${balancesAfter.totalRemoteBalance} (${totalRemoteChangeSign}${totalRemoteChange})`);
+  
+  // Summary
+  console.log(`\n📊 SUMMARY:`);
+  console.log(`   Total balance change: ${onchainChangeSign}${onchainChange + totalLocalChange} satoshis`);
+  console.log(`   Total balance change: ${onchainChangeSign}${((onchainChange + totalLocalChange) / 100000000).toFixed(8)} BTC`);
+  
+  console.log('='.repeat(80) + '\n');
 } 

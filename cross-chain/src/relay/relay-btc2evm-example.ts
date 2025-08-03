@@ -1,6 +1,6 @@
 import { Relay } from './relay';
 import { OrderBTC2EVM } from '../api/order';
-import { payLightningInvoice } from '../utils/lightning';
+import { payLightningInvoice, getLNBalances, printLNBalancesChange, type LNNodeBalances } from '../utils/lightning';
 import { ALICE_PRIVATE_KEY, getAliceAddress } from '../variables';
 import { pause } from '../utils/pause';
 import * as bolt11 from 'bolt11';
@@ -8,6 +8,11 @@ import * as bolt11 from 'bolt11';
 // Example usage of the Relay class methods for BTC to EVM
 export async function btcToEvmExample() {
   const relay = new Relay();
+
+  // Get initial balances for Alice and Carol
+  console.log('\n📊 Getting initial Lightning Network balances...');
+  const aliceBalancesBefore = await getLNBalances('alice');
+  const carolBalancesBefore = await getLNBalances('carol');
   
   // Example 1: Process BTC to EVM order
   console.log('\n🚀 === BTC to EVM Order Example ===');
@@ -86,6 +91,18 @@ export async function btcToEvmExample() {
   console.log(`🔓 Secret Used: ${claimResult.secret}`);
 
   console.log('\n--------------------------------------------');
+  
+  // Get final balances for Alice and Carol
+  console.log('\n📊 Getting final Lightning Network balances...');
+  const aliceBalancesAfter = await getLNBalances('alice');
+  const carolBalancesAfter = await getLNBalances('carol');
+  
+  // Print balance changes for both nodes
+  console.log('\n📊 BALANCE CHANGES SUMMARY:');
+  console.log('==========================================');
+  printLNBalancesChange(aliceBalancesBefore, aliceBalancesAfter);
+  printLNBalancesChange(carolBalancesBefore, carolBalancesAfter);
+  
   console.log('✅ BTC to EVM example completed!');
   console.log('--------------------------------------------');
 }
