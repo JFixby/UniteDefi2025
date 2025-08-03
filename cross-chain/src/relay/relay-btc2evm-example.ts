@@ -10,7 +10,6 @@ export async function btcToEvmExample() {
   const relay = new Relay();
 
   // Get initial balances for Alice and Carol
-  console.log('\n📊 Getting initial Lightning Network balances...');
   const aliceBalancesBefore = await getLNBalances('alice');
   const carolBalancesBefore = await getLNBalances('carol');
   
@@ -62,7 +61,7 @@ export async function btcToEvmExample() {
   console.log('\n--------------------------------------------');
   console.log('📋 Step 3: Paying Lightning invoice...');
   console.log('--------------------------------------------');
-  const paymentReceipt = await payLightningInvoice(btcToEvmResponse.lightningNetworkInvoice, 'bob');
+  const paymentReceipt = await payLightningInvoice(btcToEvmResponse.lightningNetworkInvoice, 'alice');
   const secret = paymentReceipt.secret;
   console.log(`🔓[USER] Payment completed! Secret revealed: ${secret}`);
 
@@ -91,9 +90,6 @@ export async function btcToEvmExample() {
   console.log(`🔓 Secret Used: ${claimResult.secret}`);
 
   console.log('\n--------------------------------------------');
-  
-  // Get final balances for Alice and Carol
-  console.log('\n📊 Getting final Lightning Network balances...');
   const aliceBalancesAfter = await getLNBalances('alice');
   const carolBalancesAfter = await getLNBalances('carol');
   
