@@ -26,9 +26,23 @@ async function waitResolverClaimDeposit(
   const startTime = Date.now();
   const maxWaitTimeMs = maxWaitTimeSeconds * 1000;
   let attempts = 0;
+  let checkInterval: NodeJS.Timeout | null = null;
   
   return new Promise((resolve, reject) => {
-    const checkInterval = setInterval(async () => {
+    // Handle process cleanup
+    const cleanup = () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+      }
+    };
+    
+    // Cleanup on process exit
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+    process.on('exit', cleanup);
+    
+    checkInterval = setInterval(async () => {
       attempts++;
       const elapsedMs = Date.now() - startTime;
       const elapsedSeconds = Math.floor(elapsedMs / 1000);
@@ -41,7 +55,7 @@ async function waitResolverClaimDeposit(
         
         if (!depositStatus.exists) {
           console.log('❌ Deposit not found - it may have been claimed or never existed');
-          clearInterval(checkInterval);
+          cleanup();
           reject(new Error('Deposit not found'));
           return;
         }
@@ -50,21 +64,21 @@ async function waitResolverClaimDeposit(
           console.log('✅ Deposit has been claimed by resolver!');
           console.log(`💰 Claimed amount: ${depositStatus.amount} ETH`);
           console.log(`👤 Claimer: ${depositStatus.claimer}`);
-          clearInterval(checkInterval);
+          cleanup();
           resolve();
           return;
         }
         
         if (depositStatus.cancelled) {
           console.log('❌ Deposit was cancelled');
-          clearInterval(checkInterval);
+          cleanup();
           reject(new Error('Deposit was cancelled'));
           return;
         }
         
         if (depositStatus.expired) {
           console.log('⏰ Deposit has expired');
-          clearInterval(checkInterval);
+          cleanup();
           reject(new Error('Deposit has expired'));
           return;
         }
@@ -75,14 +89,14 @@ async function waitResolverClaimDeposit(
         // Check if we've exceeded max wait time
         if (elapsedMs >= maxWaitTimeMs) {
           console.log(`⏰ Max wait time (${maxWaitTimeSeconds}s) exceeded`);
-          clearInterval(checkInterval);
+          cleanup();
           reject(new Error(`Max wait time (${maxWaitTimeSeconds}s) exceeded`));
           return;
         }
         
       } catch (error) {
         console.error('❌ Error checking deposit status:', error);
-        clearInterval(checkInterval);
+        cleanup();
         reject(error);
       }
     }, checkIntervalSeconds * 1000);
@@ -188,6 +202,7 @@ if (require.main === module) {
   evmToBtcExample()
     .then(() => {
       console.log('\n🎉 EVM to BTC demo completed successfully!');
+      process.exit(0);
     })
     .catch(async (error) => {
       console.error('\n❌ Error occurred:', error.message);

@@ -106,6 +106,10 @@ if (require.main === module) {
   btcToEvmExample()
     .then(() => {
       console.log('\n🎉 BTC to EVM demo completed successfully!');
+      process.exit(0);
     })
-    .catch(console.error);
+    .catch((error) => {
+      console.error('\n❌ Error occurred:', error);
+      process.exit(1);
+    });
 } 
