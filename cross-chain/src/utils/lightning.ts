@@ -325,7 +325,6 @@ export interface LNNodeBalances {
  */
 export async function getLNBalances(nodeAlias: string): Promise<LNNodeBalances> {
   try {
-    console.log(`🔍 Getting Lightning Network balances for node '${nodeAlias}'...`);
     
     // Load LN configuration
     const lnConfig = await loadLightningConfig();
@@ -429,12 +428,7 @@ export async function getLNBalances(nodeAlias: string): Promise<LNNodeBalances> 
       totalRemoteBalance
     };
     
-    console.log(`✅ Retrieved balances for node '${nodeAlias}'`);
-    console.log(`   On-chain: ${onchainBalance} satoshis`);
-    console.log(`   Channels: ${channels.length} open channels`);
-    console.log(`   Total local balance: ${totalLocalBalance} satoshis`);
-    console.log(`   Total remote balance: ${totalRemoteBalance} satoshis`);
-    
+
     return balances;
     
   } catch (error) {

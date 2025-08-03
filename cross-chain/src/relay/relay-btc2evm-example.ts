@@ -97,9 +97,6 @@ export async function btcToEvmExample() {
   const aliceBalancesAfter = await getLNBalances('alice');
   const carolBalancesAfter = await getLNBalances('carol');
   
-  // Print balance changes for both nodes
-  console.log('\n📊 BALANCE CHANGES SUMMARY:');
-  console.log('==========================================');
   printLNBalancesChange(aliceBalancesBefore, aliceBalancesAfter);
   printLNBalancesChange(carolBalancesBefore, carolBalancesAfter);
   
