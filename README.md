@@ -87,9 +87,6 @@ Bitcoin Mainnet ←→ Lightning Network ←→ Polygon ←→ Ethereum Mainnet
 4. Using the revealed secret, either party can **unlock the on-chain escrow** and complete the swap.  
 5. If payment or claim doesn’t occur before expiry, the depositor can **cancel and recover** funds.
 
-![Image](https://github.com/user-attachments/assets/11561e39-34f5-494d-8acc-7e8bda801782)
-
-### **Complete Flow Architecture**
 
 #### **BTC → ETH Flow**
 ```
@@ -97,21 +94,23 @@ Bitcoin Mainnet ←→ Lightning Network ←→ Polygon ←→ Ethereum Mainnet
 2. Resolver creates Lightning Network HTLC invoice
 3. Resolver deploys Polygon escrow with same hashlock
 4. User pays Lightning invoice (instant)
-5. Resolver extracts secret from Lightning payment
-6. Resolver claims ETH from Polygon escrow using secret
-7. Swap complete in <1 second
+5. User extracts secret from Lightning payment
+6. User claims ETH from Polygon escrow using secret
 ```
 
 #### **ETH → BTC Flow**
 ```
-1. User creates Fusion+ order (ETH → BTC)
-2. Resolver deploys Polygon escrow with hashlock
-3. Resolver creates Lightning Network HTLC invoice
+1. User creates Lightning Network HTLC invoice
+2. User creates Fusion+ order (ETH → BTC)
+2. Resolver returns EVM address vie relay to accept escrow
 4. User deposits ETH to Polygon escrow
-5. Resolver claims ETH using secret
-6. Resolver pays Lightning invoice (instant)
-7. Swap complete in <1 second
+5. Resolver pays Lightning invoice (instant)
+6. Resolver extracts secret from Lightning payment
+6. Resolver claims ETH using secret
 ```
+The swap logic **mirrors the 1inch Fusion flow** end to end.
+
+![Image](https://github.com/user-attachments/assets/11561e39-34f5-494d-8acc-7e8bda801782)
 
 ---
 
