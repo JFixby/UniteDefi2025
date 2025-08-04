@@ -7,100 +7,11 @@ import { pause, confirm } from '../utils/pause';
 
 /**
  * Waits for the resolver to claim the deposit from the escrow contract
- * @param hashedSecret - The deposit ID (hashed secret) to monitor
- * @param maxWaitTimeSeconds - Maximum time to wait in seconds (default: 60)
- * @param checkIntervalSeconds - Interval between checks in seconds (default: 10)
- * @param escrowAddress - The escrow contract address (optional)
  */
-async function waitResolverClaimDeposit(
-  hashedSecret: string, 
-  maxWaitTimeSeconds: number = 60, 
-  checkIntervalSeconds: number = 10,
-  escrowAddress?: string
-): Promise<void> {
-  console.log('\n⏳ Waiting for resolver to claim deposit...');
-  console.log(`🔍 Monitoring deposit ID: ${hashedSecret}`);
-  console.log(`⏰ Max wait time: ${maxWaitTimeSeconds} seconds`);
-  console.log(`🔄 Check interval: ${checkIntervalSeconds} seconds`);
-  
-  const startTime = Date.now();
-  const maxWaitTimeMs = maxWaitTimeSeconds * 1000;
-  let attempts = 0;
-  let checkInterval: NodeJS.Timeout | null = null;
-  
-  return new Promise((resolve, reject) => {
-    // Handle process cleanup
-    const cleanup = () => {
-      if (checkInterval) {
-        clearInterval(checkInterval);
-        checkInterval = null;
-      }
-    };
-    
-    // Cleanup on process exit
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
-    process.on('exit', cleanup);
-    
-    checkInterval = setInterval(async () => {
-      attempts++;
-      const elapsedMs = Date.now() - startTime;
-      const elapsedSeconds = Math.floor(elapsedMs / 1000);
-      
-      console.log(`\n🔍 Check attempt ${attempts} (${elapsedSeconds}s elapsed)...`);
-      
-      try {
-        // Check deposit status
-        const depositStatus = await checkDepositEVM(hashedSecret);
-        
-        if (!depositStatus.exists) {
-          console.log('❌ Deposit not found - it may have been claimed or never existed');
-          cleanup();
-          reject(new Error('Deposit not found'));
-          return;
-        }
-        
-        if (depositStatus.claimed) {
-          console.log('✅ Deposit has been claimed by resolver!');
-          console.log(`💰 Claimed amount: ${depositStatus.amount} ETH`);
-          console.log(`👤 Claimer: ${depositStatus.claimer}`);
-          cleanup();
-          resolve();
-          return;
-        }
-        
-        if (depositStatus.cancelled) {
-          console.log('❌ Deposit was cancelled');
-          cleanup();
-          reject(new Error('Deposit was cancelled'));
-          return;
-        }
-        
-        if (depositStatus.expired) {
-          console.log('⏰ Deposit has expired');
-          cleanup();
-          reject(new Error('Deposit has expired'));
-          return;
-        }
-        
-        const contractLink = escrowAddress ? `🌐 Contract: ${escrowAddress}` : '';
-        console.log(`⏳ Still waiting for deposit... ${contractLink}`);
-        
-        // Check if we've exceeded max wait time
-        if (elapsedMs >= maxWaitTimeMs) {
-          console.log(`⏰ Max wait time (${maxWaitTimeSeconds}s) exceeded`);
-          cleanup();
-          reject(new Error(`Max wait time (${maxWaitTimeSeconds}s) exceeded`));
-          return;
-        }
-        
-      } catch (error) {
-        console.error('❌ Error checking deposit status:', error);
-        cleanup();
-        reject(error);
-      }
-    }, checkIntervalSeconds * 1000);
-  });
+async function waitResolverClaimDeposit(): Promise<void> {
+  console.log('⏳ Waiting 5 seconds for resolver to claim deposit...');
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  console.log('✅ Wait completed');
 }
 
 export async function evmToBtcExample() {
@@ -179,10 +90,8 @@ export async function evmToBtcExample() {
   await pause('[USER] Press Enter to continue to final step: Waiting for resolver to claim deposit...');
 
   // Step 4: Wait for resolver to claim deposit
-  console.log('\n--------------------------------------------');
-  console.log('📋 Step 4: Waiting for resolver to claim deposit...');
-  console.log('--------------------------------------------');
-  await waitResolverClaimDeposit(hashedSecretHex, 60, 10, transactionInfo.escrowAddress); // Use hex format for contract
+  
+  await waitResolverClaimDeposit(); // Wait 5 seconds for resolver
 
   console.log('\n--------------------------------------------');
   const aliceBalancesAfter = await getLNBalances('alice');

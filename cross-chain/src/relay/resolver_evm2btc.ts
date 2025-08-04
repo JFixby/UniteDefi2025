@@ -324,8 +324,9 @@ export class ResolverEVM2BTC {
       // Pay the Lightning invoice
       const paymentReceipt = await this.payLightningNetInvoice(invoice);
       console.log('🤖 RESOLVER: ✅ Lightning payment successful:', paymentReceipt);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      console.log("------------------------------------------");
+      console.log("----------------------------------------------------");
       console.log("🤖 RESOLVER: ✅ Escrow claim...");
 
       
