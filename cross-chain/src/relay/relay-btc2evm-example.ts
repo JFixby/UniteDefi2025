@@ -23,6 +23,14 @@ export async function btcToEvmExample() {
   
   console.log(`💰 Amount BTC: ${amountBtc}`);
   console.log(`💰 Amount ETH: ${amountEth}`);
+  
+  console.log('\n📊 Initial Balances:');
+  console.log('Lightning Network:');
+  console.log(`Alice: ${(aliceBalancesBefore.onchainBalance / 100000000).toFixed(6)} BTC (on-chain), ${(aliceBalancesBefore.totalLocalBalance / 100000000).toFixed(6)} BTC (channels)`);
+  console.log(`Carol: ${(carolBalancesBefore.onchainBalance / 100000000).toFixed(6)} BTC (on-chain), ${(carolBalancesBefore.totalLocalBalance / 100000000).toFixed(6)} BTC (channels)`);
+  console.log('Ethereum:');
+  console.log(`Alice: ${aliceETHBalanceBefore.balanceEth} ETH`);
+  console.log(`Carol: ${carolETHBalanceBefore.balanceEth} ETH`);
 
   await pause('[USER] Press Enter to start Step 1: Processing order through relay...');
 
