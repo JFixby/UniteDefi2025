@@ -7,7 +7,9 @@ import {
   getEscrowContractAddress,
   hasValidAlicePrivateKey,
   hasValidCarolPrivateKey,
-  getTransactionUrl
+  getTransactionUrl,
+  getAliceAddress,
+  getCarolAddress
 } from '../variables';
 
 // Escrow contract ABI - simplified version for deposit function
@@ -382,4 +384,80 @@ export async function claimETH(params: ClaimETHParams): Promise<ClaimETHResult> 
     console.error('❌ Failed to claim ETH:', error);
     throw error;
   }
+} 
+
+/**
+ * Interface for ETH balance information
+ */
+export interface ETHBalance {
+  address: string;
+  balanceWei: bigint;
+  balanceEth: string;
+  network: string;
+}
+
+/**
+ * Gets ETH balance for a specific address
+ * @param address - The Ethereum address to check
+ * @returns Promise<ETHBalance> - Balance information
+ */
+export async function getETHBalance(address: string): Promise<ETHBalance> {
+  try {
+    const provider = new ethers.JsonRpcProvider(getRpcUrl());
+    const balanceWei = await provider.getBalance(address);
+    const balanceEth = ethers.formatEther(balanceWei);
+    const network = process.env.NETWORK || 'POLYGON';
+    
+    return {
+      address,
+      balanceWei,
+      balanceEth,
+      network
+    };
+  } catch (error) {
+    console.error(`❌ Failed to get ETH balance for address ${address}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Gets ETH balance for Alice
+ * @returns Promise<ETHBalance> - Alice's ETH balance
+ */
+export async function getAliceETHBalance(): Promise<ETHBalance> {
+  const aliceAddress = getAliceAddress();
+  return getETHBalance(aliceAddress);
+}
+
+/**
+ * Gets ETH balance for Carol
+ * @returns Promise<ETHBalance> - Carol's ETH balance
+ */
+export async function getCarolETHBalance(): Promise<ETHBalance> {
+  const carolAddress = getCarolAddress();
+  return getETHBalance(carolAddress);
+}
+
+/**
+ * Prints a comparison of ETH balances before and after an operation
+ * @param balanceBefore - Balance before the operation
+ * @param balanceAfter - Balance after the operation
+ */
+export function printETHBalanceChange(balanceBefore: ETHBalance, balanceAfter: ETHBalance): void {
+  const balanceBeforeEth = parseFloat(balanceBefore.balanceEth);
+  const balanceAfterEth = parseFloat(balanceAfter.balanceEth);
+  const change = balanceAfterEth - balanceBeforeEth;
+  const changeSign = change >= 0 ? '+' : '';
+  
+  // Show more precision for small amounts
+  const displayAmount = Math.abs(change) < 0.01 ? change.toFixed(6) : change.toFixed(4);
+  
+  // Extract name from address (Alice or Carol)
+  const address = balanceBefore.address;
+  const name = address === getAliceAddress() ? 'Alice' : 
+               address === getCarolAddress() ? 'Carol' : 
+               address.substring(0, 6) + '...' + address.substring(-4);
+  
+  // Simple format: Name: +/-X.XXXXXX ETH
+  console.log(`${name}: ${changeSign}${displayAmount} ETH`);
 } 

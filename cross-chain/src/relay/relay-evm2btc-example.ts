@@ -1,7 +1,7 @@
 import { Relay } from './relay';
 import { OrderEVM2BTC } from '../api/order';
 import { issueLightningInvoice, getLNBalances, printLNBalancesChange } from '../utils/lightning';
-import { depositETH, checkDepositEVM } from '../utils/evm';
+import { depositETH, checkDepositEVM, getAliceETHBalance, getCarolETHBalance, printETHBalanceChange } from '../utils/evm';
 import { ALICE_PRIVATE_KEY } from '../variables';
 import { pause, confirm } from '../utils/pause';
 
@@ -9,18 +9,20 @@ import { pause, confirm } from '../utils/pause';
  * Waits for the resolver to claim the deposit from the escrow contract
  */
 async function waitResolverClaimDeposit(): Promise<void> {
-  console.log('⏳ Waiting 5 seconds for resolver to claim deposit...');
-  await new Promise(resolve => setTimeout(resolve, 5000));
-  console.log('✅ Wait completed');
+  console.log('⏳ Wait 3 seconds...');
+  await pause('Press Enter to continue...');
+  await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
 export async function evmToBtcExample() {
   const amountBtc = 0.0005;
   const amountEth = 0.015;
 
-  // Get initial balances for Alice and Carol
+  // Get initial balances for Alice and Carol (LN and ETH)
   const aliceBalancesBefore = await getLNBalances('alice');
   const carolBalancesBefore = await getLNBalances('carol');
+  const aliceETHBalanceBefore = await getAliceETHBalance();
+  const carolETHBalanceBefore = await getCarolETHBalance();
   
   
   console.log('\n🚀 === EVM to BTC Order Example ===');
@@ -96,10 +98,16 @@ export async function evmToBtcExample() {
   console.log('\n--------------------------------------------');
   const aliceBalancesAfter = await getLNBalances('alice');
   const carolBalancesAfter = await getLNBalances('carol');
+  const aliceETHBalanceAfter = await getAliceETHBalance();
+  const carolETHBalanceAfter = await getCarolETHBalance();
   
+  console.log('📊 Balance Changes:');
+  console.log('Lightning Network:');
   printLNBalancesChange(aliceBalancesBefore, aliceBalancesAfter);
   printLNBalancesChange(carolBalancesBefore, carolBalancesAfter);
-  
+  console.log('Ethereum:');
+  printETHBalanceChange(aliceETHBalanceBefore, aliceETHBalanceAfter);
+  printETHBalanceChange(carolETHBalanceBefore, carolETHBalanceAfter);
   
   console.log('✅ EVM to BTC example completed!');
   console.log('--------------------------------------------');

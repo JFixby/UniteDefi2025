@@ -1,6 +1,6 @@
 import * as bolt11 from 'bolt11';
 import { OrderBTC2EVM } from '../api/order';
-import { getTransactionUrl, ALICE_PRIVATE_KEY } from '../variables';
+import { getTransactionUrl, CAROL_PRIVATE_KEY } from '../variables';
 import { issueLightningInvoice, LightningInvoice } from '../utils/lightning';
 import { depositETH } from '../utils/evm';
 
@@ -66,7 +66,7 @@ export class ResolverBTC2EVM {
       claimerAddress: makerEthAddress,
       expirationSeconds: Math.floor((decodedInvoice.expiry.getTime() - Date.now()) / 1000),
       hashedSecret: hashedSecret,
-      depositorPrivateKey: ALICE_PRIVATE_KEY
+      depositorPrivateKey: CAROL_PRIVATE_KEY
     });
     console.log('🤖 RESOLVER: 💰 Deposit transaction created');
     
